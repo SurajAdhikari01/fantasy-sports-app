@@ -23,6 +23,7 @@ const adjustedHeight = height * 0.23; // Adjusted height proportional to width
 const matches = [
   {
     id: "1",
+    sport: "football",
     team1: "Real Madrid",
     team2: "Chelsea Club",
     score: "2 - 0",
@@ -30,6 +31,7 @@ const matches = [
   },
   {
     id: "2",
+    sport: "cricket",
     team1: "M. Indians",
     team2: "Raj. Royals",
     score: "123/7 - 67/2",
@@ -37,6 +39,7 @@ const matches = [
   },
   {
     id: "3",
+    sport: "football",
     team1: "Barcelona",
     team2: "Juventus",
     score: "1 - 1",
@@ -44,6 +47,7 @@ const matches = [
   },
   {
     id: "4",
+    sport: "football",
     team1: "PSG",
     team2: "Bayern",
     score: "0 - 0",
@@ -57,10 +61,20 @@ const MatchesList = () => {
     <View className="mx-2">
       <MatchCard
         match={item}
-        onPress={() => router.push("/components/MatchDetail", { match: item })}
+        onPress={() => {
+          // Navigate based on the sport type
+          const routeName =
+            item.sport === "football" ? "FootballDetail" : "CricketDetail";
+
+          router.push({
+            pathname: `/components/${routeName}/[id]`, // Route to the correct detail page with dynamic id
+            params: { id: item.id }, // Pass the match id as a parameter
+          });
+        }}
       />
     </View>
   );
+
   return (
     <FlatList
       data={matches}
