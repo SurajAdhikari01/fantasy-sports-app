@@ -1,12 +1,18 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { BlurView } from "expo-blur"; // Import BlurView for blur effect
+import TeamView from "../components/TeamView";
 
-const Main = () => {
+const MainPage = () => {
+  const router = useRouter();
+
   return (
-    <View>
-      <Text>Main</Text>
-    </View>
+    <SafeAreaView className="flex-1 bg-[#1e3c72] pb-12">
+      <TeamView />
+    </SafeAreaView>
   );
 };
 
-export default Main;
+export default MainPage;

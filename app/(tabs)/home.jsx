@@ -13,6 +13,7 @@ import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
 import { useNavigation } from "@react-navigation/native";
 import MatchCard from "../components/MatchCard";
 import { router } from "expo-router";
+import UpcomingMatchCard from "../components/UpcomingMatchCard";
 
 // Get device screen width and height
 const { width, height } = Dimensions.get("window");
@@ -86,6 +87,22 @@ const MatchesList = () => {
     />
   );
 };
+const upcomingMatches = [
+  {
+    id: "4",
+    sport: "football",
+    team1: "PSG",
+    team2: "Bayern",
+    status: "UPCOMING",
+  },
+  {
+    id: "6",
+    sport: "cricket",
+    team1: "Rajistan",
+    team2: "Kathmandu",
+    status: "UPCOMING",
+  },
+];
 
 const HomeScreen = () => {
   return (
@@ -214,6 +231,23 @@ const HomeScreen = () => {
             Ongoing Matches
           </Text>
           <MatchesList />
+        </View>
+        {/* Upcoming Matches Section */}
+        <View>
+          <Text className="text-white text-lg font-semibold p-6">
+            Upcomings
+          </Text>
+          <View className="flex-col items-center pb-20">
+            {upcomingMatches.map((match) => (
+              <UpcomingMatchCard
+                key={match.id}
+                match={match}
+                onPress={() => {
+                  console.log(`Clicked on match ${match.id}`);
+                }}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
