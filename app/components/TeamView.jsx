@@ -1,25 +1,3 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Image,
-  TouchableOpacity,
-  SafeAreaView,
-  FlatList,
-  Modal,
-  TextInput,
-  Alert,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-  FontAwesome5,
-} from "@expo/vector-icons";
-
-// Simulated player database
 const allPlayers = [
   {
     id: "1",
@@ -112,32 +90,53 @@ const allPlayers = [
     price: 9.5,
   },
 ];
+import React, { useState, useCallback, useMemo } from "react";
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+  Modal,
+  Alert,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome5,
+} from "@expo/vector-icons";
 
-const PlayerCard = ({ player, isPitch, onPlayerPress }) => (
+// Assume allPlayers array is defined here
+
+const PlayerCard = React.memo(({ player, isPitch, onPlayerPress }) => (
   <TouchableOpacity
     onPress={() => onPlayerPress(player)}
     className={`${
       isPitch
-        ? "bg-white/90 rounded-lg shadow-md m-1 w-20 h-28"
-        : "flex-row bg-white rounded-lg shadow-sm p-3 mb-2"
+        ? "bg-transparent opacity-80 rounded-lg shadow-lg m-2 w-20 h-28" // Increased size for better visuals
+        : "flex-row bg-white rounded-2xl shadow-lg p-4 mb-3" // More rounded and spacious
     }`}
   >
-    <View className="relative flex items-center justify-center">
+    <View className="relative  flex items-center justify-center py-2">
       <Image
         source={{ uri: player.image }}
         className={`${
-          isPitch ? "w-14 h-14" : "w-16 h-16"
-        } rounded-full border-2 border-blue-500`}
+          isPitch ? "w-16 h-16 " : "w-20 h-20" // Adjust size for larger image
+        } rounded-full border-4 border-blue-500 shadow-md`} // Enhanced border size and shadow
       />
-      <View className="absolute -bottom-1 -right-1 bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center">
+      <View className="absolute -bottom-0 right-1 bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
         <Text className="text-xs font-bold text-white">{player.points}</Text>
       </View>
     </View>
-    <View className={`${isPitch ? "mt-2" : "ml-4 flex-1"}`}>
+    <View className={`${isPitch ? "mt-3 bg-slate-50" : "ml-4 flex-1"}`}>
       <Text
-        className={`font-bold ${isPitch ? "text-xs" : "text-sm"} ${
-          isPitch ? "text-center" : ""
-        } text-gray-800`}
+        className={`font-extrabold ${
+          isPitch ? "text-xs " : "text-base"
+        } text-gray-800 ${isPitch ? "text-center" : ""}`}
         numberOfLines={1}
       >
         {player.name}
@@ -146,12 +145,11 @@ const PlayerCard = ({ player, isPitch, onPlayerPress }) => (
         <>
           <Text className="text-xs text-gray-600">{player.team}</Text>
           <View className="flex-row mt-1">
-            <Text className="text-xs text-gray-500 mr-2">
-              <FontAwesome5 name="cricket" size={10} color="#4B5563" />{" "}
+            <Text className="text-xs text-gray-500 mr-3 flex items-center">
               {player.role}
             </Text>
-            <Text className="text-xs text-gray-500">
-              <FontAwesome5 name="dollar-sign" size={10} color="#4B5563" />{" "}
+            <Text className="text-xs text-gray-500 flex items-center">
+              <FontAwesome5 name="dollar-sign" size={12} color="#4B5563" />{" "}
               {player.price}M
             </Text>
           </View>
@@ -160,16 +158,16 @@ const PlayerCard = ({ player, isPitch, onPlayerPress }) => (
     </View>
     {!isPitch && (
       <TouchableOpacity
-        className="justify-center"
+        className="justify-center p-2"
         onPress={() => onPlayerPress(player)}
       >
         <Ionicons name="swap-horizontal" size={24} color="#3B82F6" />
       </TouchableOpacity>
     )}
   </TouchableOpacity>
-);
+));
 
-const SectionHeader = ({ title, count, onAddPlayer }) => (
+const SectionHeader = React.memo(({ title, count, onAddPlayer }) => (
   <View className="flex-row items-center justify-between p-4 bg-gray-100">
     <Text className="text-lg font-bold text-blue-800">{title}</Text>
     <View className="flex-row items-center">
@@ -181,10 +179,10 @@ const SectionHeader = ({ title, count, onAddPlayer }) => (
       </TouchableOpacity>
     </View>
   </View>
-);
+));
 
-const TeamStats = ({ totalPlayers, teamValue, avgPoints }) => (
-  <View className="flex-row justify-around items-center py-4 bg-white rounded-xl shadow-sm mb-4">
+const TeamStats = React.memo(({ totalPlayers, teamValue, avgPoints }) => (
+  <View className="flex-row justify-around items-center py-4 bg-gray-800 rounded-xl shadow-sm mb-4">
     <View className="items-center">
       <Text className="text-2xl font-bold text-blue-800">
         {totalPlayers}/11
@@ -200,48 +198,45 @@ const TeamStats = ({ totalPlayers, teamValue, avgPoints }) => (
       <Text className="text-xs text-gray-600">Avg. Points</Text>
     </View>
   </View>
-);
+));
 
-const PlayerSelectionModal = ({
-  visible,
-  onClose,
-  onSelectPlayer,
-  availablePlayers,
-}) => (
-  <Modal visible={visible} animationType="slide" transparent={true}>
-    <View className="flex-1 justify-end bg-black/50">
-      <View className="bg-white rounded-t-3xl p-5 h-3/4">
-        <Text className="text-2xl font-bold mb-4">Select Player</Text>
-        <FlatList
-          data={availablePlayers}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              onPress={() => onSelectPlayer(item)}
-              className="flex-row items-center p-2 border-b border-gray-200"
-            >
-              <Image
-                source={{ uri: item.image }}
-                className="w-10 h-10 rounded-full mr-3"
-              />
-              <View>
-                <Text className="font-bold">{item.name}</Text>
-                <Text className="text-sm text-gray-600">
-                  {item.team} - {item.role}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
-        />
-        <TouchableOpacity
-          onPress={onClose}
-          className="mt-4 bg-red-500 p-3 rounded-full"
-        >
-          <Text className="text-white text-center font-bold">Close</Text>
-        </TouchableOpacity>
+const PlayerSelectionModal = React.memo(
+  ({ visible, onClose, onSelectPlayer, availablePlayers }) => (
+    <Modal visible={visible} animationType="slide" transparent={true}>
+      <View className="flex-1 justify-end bg-black/50">
+        <View className="bg-white rounded-t-3xl p-5 h-3/4">
+          <Text className="text-2xl font-bold mb-4">Select Player</Text>
+          <FlatList
+            data={availablePlayers}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                onPress={() => onSelectPlayer(item)}
+                className="flex-row items-center p-2 border-b border-gray-200"
+              >
+                <Image
+                  source={{ uri: item.image }}
+                  className="w-10 h-10 rounded-full mr-3"
+                />
+                <View>
+                  <Text className="font-bold">{item.name}</Text>
+                  <Text className="text-sm text-gray-600">
+                    {item.team} - {item.role}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          />
+          <TouchableOpacity
+            onPress={onClose}
+            className="mt-4 bg-red-500 p-3 rounded-full"
+          >
+            <Text className="text-white text-center font-bold">Close</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  </Modal>
+    </Modal>
+  )
 );
 
 export default function TeamView() {
@@ -257,21 +252,31 @@ export default function TeamView() {
     useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
 
-  const totalPlayers = Object.values(teamData).flat().length;
-  const teamValue = Object.values(teamData)
-    .flat()
-    .reduce((sum, player) => sum + player.price, 0)
-    .toFixed(1);
-  const avgPoints =
-    totalPlayers > 0
-      ? (
-          Object.values(teamData)
-            .flat()
-            .reduce((sum, player) => sum + player.points, 0) / totalPlayers
-        ).toFixed(1)
-      : "0.0";
+  const totalPlayers = useMemo(
+    () => Object.values(teamData).flat().length,
+    [teamData]
+  );
+  const teamValue = useMemo(
+    () =>
+      Object.values(teamData)
+        .flat()
+        .reduce((sum, player) => sum + player.price, 0)
+        .toFixed(1),
+    [teamData]
+  );
+  const avgPoints = useMemo(
+    () =>
+      totalPlayers > 0
+        ? (
+            Object.values(teamData)
+              .flat()
+              .reduce((sum, player) => sum + player.points, 0) / totalPlayers
+          ).toFixed(1)
+        : "0.0",
+    [teamData, totalPlayers]
+  );
 
-  const handlePlayerPress = (player) => {
+  const handlePlayerPress = useCallback((player) => {
     Alert.alert(
       "Player Options",
       `What would you like to do with ${player.name}?`,
@@ -280,174 +285,185 @@ export default function TeamView() {
         { text: "Cancel", style: "cancel" },
       ]
     );
-  };
+  }, []);
 
-  const handleAddPlayer = (section) => {
+  const handleAddPlayer = useCallback((section) => {
     setSelectedSection(section);
     setShowPlayerSelectionModal(true);
-  };
+  }, []);
 
-  const addPlayer = (player) => {
-    if (totalPlayers >= 11) {
-      Alert.alert("Team Full", "You can only have 11 players in your team.");
-      return;
-    }
+  const addPlayer = useCallback(
+    (player) => {
+      if (totalPlayers >= 11) {
+        Alert.alert("Team Full", "You can only have 11 players in your team.");
+        return;
+      }
 
-    const newTeamData = { ...teamData };
-    newTeamData[selectedSection] = [...newTeamData[selectedSection], player];
-    setTeamData(newTeamData);
-    setShowPlayerSelectionModal(false);
-  };
+      setTeamData((prevTeamData) => ({
+        ...prevTeamData,
+        [selectedSection]: [...prevTeamData[selectedSection], player],
+      }));
+      setShowPlayerSelectionModal(false);
+    },
+    [totalPlayers, selectedSection]
+  );
 
-  const removePlayer = (player) => {
-    const newTeamData = { ...teamData };
-    Object.keys(newTeamData).forEach((section) => {
-      newTeamData[section] = newTeamData[section].filter(
-        (p) => p.id !== player.id
-      );
+  const removePlayer = useCallback((player) => {
+    setTeamData((prevTeamData) => {
+      const newTeamData = { ...prevTeamData };
+      Object.keys(newTeamData).forEach((section) => {
+        newTeamData[section] = newTeamData[section].filter(
+          (p) => p.id !== player.id
+        );
+      });
+      return newTeamData;
     });
-    setTeamData(newTeamData);
-  };
+  }, []);
 
-  const getAvailablePlayers = () => {
+  const getAvailablePlayers = useCallback(() => {
     const teamPlayerIds = new Set(
       Object.values(teamData)
         .flat()
         .map((player) => player.id)
     );
     return allPlayers.filter((player) => !teamPlayerIds.has(player.id));
-  };
+  }, [teamData]);
 
-  const renderListView = () => (
-    <FlatList
-      data={Object.entries(teamData)}
-      keyExtractor={(item) => item[0]}
-      renderItem={({ item: [section, players] }) => (
-        <View className="mb-4 bg-gray-50 rounded-xl overflow-hidden shadow-sm">
-          <SectionHeader
-            title={section}
-            count={players.length}
-            onAddPlayer={() => handleAddPlayer(section)}
-          />
-          <View className="p-2">
-            {players.map((player) => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                isPitch={false}
-                onPlayerPress={handlePlayerPress}
-              />
-            ))}
+  const renderListView = useCallback(
+    () => (
+      <FlatList
+        data={Object.entries(teamData)}
+        keyExtractor={(item) => item[0]}
+        renderItem={({ item: [section, players] }) => (
+          <View className="mb-4 bg-gray-50 rounded-xl overflow-hidden shadow-sm">
+            <SectionHeader
+              title={section}
+              count={players.length}
+              onAddPlayer={() => handleAddPlayer(section)}
+            />
+            <View className="p-2">
+              {players.map((player) => (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  isPitch={false}
+                  onPlayerPress={handlePlayerPress}
+                />
+              ))}
+            </View>
           </View>
-        </View>
-      )}
-      ListHeaderComponent={
+        )}
+        ListHeaderComponent={
+          <TeamStats
+            totalPlayers={totalPlayers}
+            teamValue={teamValue}
+            avgPoints={avgPoints}
+          />
+        }
+        contentContainerStyle="px-4 py-4"
+      />
+    ),
+    [
+      teamData,
+      totalPlayers,
+      teamValue,
+      avgPoints,
+      handleAddPlayer,
+      handlePlayerPress,
+    ]
+  );
+
+  const renderPitchView = useCallback(
+    () => (
+      <ScrollView contentContainerStyle="px-3 py-2">
         <TeamStats
           totalPlayers={totalPlayers}
           teamValue={teamValue}
           avgPoints={avgPoints}
         />
-      }
-      contentContainerStyle={{ padding: 16 }}
-    />
-  );
-
-  const renderPitchView = () => (
-    <ScrollView contentContainerStyle={{ flexGrow: 1 }} className="px-3 py-2">
-      <TeamStats
-        totalPlayers={totalPlayers}
-        teamValue={teamValue}
-        avgPoints={avgPoints}
-      />
-      <View className="flex-1 aspect-[2/3] relative rounded-xl overflow-hidden shadow-lg">
-        <Image
-          source={require("../../assets/cricket-field.jpeg")}
-          className="w-full h-full"
-        />
-        <LinearGradient
-          colors={["rgba(0,0,0,0.5)", "transparent", "rgba(0,0,0,0.5)"]}
-          className="absolute inset-0"
-        />
-        <View className="absolute inset-0 flex justify-around items-center p-2">
-          {Object.entries(teamData).map(([section, players]) => (
-            <View key={section} className="flex-row justify-around w-full">
-              {players.map((player) => (
-                <PlayerCard
-                  key={player.id}
-                  player={player}
-                  isPitch={true}
-                  onPlayerPress={handlePlayerPress}
-                />
-              ))}
-            </View>
-          ))}
+        <View className="flex-1 aspect-[5/6] relative rounded-xl overflow-hidden shadow-lg items-center">
+          <Image
+            source={require("../../assets/cricket-field.jpeg")}
+            className="w-full h-full"
+          />
+          <LinearGradient
+            colors={["rgba(0,0,0,0.5)", "transparent", "rgba(0,0,0,0.5)"]}
+            className="absolute inset-0"
+          />
+          <View className="absolute inset-0 flex justify-around items-center p-2">
+            {Object.entries(teamData).map(([section, players]) => (
+              <View key={section} className="flex-row justify-around w-full">
+                {players.map((player) => (
+                  <PlayerCard
+                    key={player.id}
+                    player={player}
+                    isPitch={true}
+                    onPlayerPress={handlePlayerPress}
+                  />
+                ))}
+              </View>
+            ))}
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    ),
+    [teamData, totalPlayers, teamValue, avgPoints, handlePlayerPress]
   );
 
-  const saveTeam = () => {
+  const saveTeam = useCallback(() => {
     // Implement team saving logic here
     console.log("Team saved:", teamData);
     Alert.alert("Success", "Your team has been saved!");
-  };
+  }, [teamData]);
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
       <LinearGradient
-        colors={["#1e3c72", "#2a5298"]}
-        className="py-4 px-5 rounded-b-3xl"
+        colors={["#0F172A", "#030712"]}
+        className="py-5 px-6 rounded-b-3xl shadow-lg"
       >
-        <View className="flex-row items-center justify-between mb-4">
-          <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
-            <Ionicons name="arrow-back" size={24} color="white" />
-          </TouchableOpacity>
-          <Text className="text-2xl font-bold text-white">My Dream Team</Text>
-          <TouchableOpacity className="p-2">
-            <Ionicons name="settings-outline" size={24} color="white" />
+        <View className="flex-row items-center justify-between ">
+          <Text className="text-2xl font-extrabold text-white">My Team</Text>
+          <View className="flex-row bg-gray-800 py-2 px-3 rounded-full shadow-sm">
+            <TouchableOpacity
+              className={`px-4 py-2 rounded-full ${
+                viewMode === "list" ? "bg-blue-200" : "bg-transparent"
+              }`}
+              onPress={() => setViewMode("list")}
+            >
+              <MaterialCommunityIcons
+                name="format-list-bulleted"
+                size={22}
+                color={viewMode === "list" ? "#1e3c72" : "#ffffff"}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              className={`px-4 py-2 rounded-full ${
+                viewMode === "pitch" ? "bg-blue-200" : "bg-transparent"
+              }`}
+              onPress={() => setViewMode("pitch")}
+            >
+              <MaterialCommunityIcons
+                name="cricket"
+                size={22}
+                color={viewMode === "pitch" ? "#1e3c72" : "#ffffff"}
+              />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity
+            onPress={saveTeam}
+            className="bg-green-500  w-14 h-10 rounded-3xl shadow-lg flex items-center justify-center"
+          >
+            <Text className="text-white text-center font-semibold text-base">
+              Save
+            </Text>
           </TouchableOpacity>
         </View>
       </LinearGradient>
 
-      <View className="flex-row justify-center bg-white shadow-md py-2 px-4 mx-4 -mt-5 rounded-full">
-        <TouchableOpacity
-          className={`px-4 py-2 rounded-full ${
-            viewMode === "list" ? "bg-blue-100" : ""
-          }`}
-          onPress={() => setViewMode("list")}
-        >
-          <MaterialCommunityIcons
-            name="format-list-bulleted"
-            size={20}
-            color={viewMode === "list" ? "#1e3c72" : "#4B5563"}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          className={`px-4 py-2 rounded-full ${
-            viewMode === "pitch" ? "bg-blue-100" : ""
-          }`}
-          onPress={() => setViewMode("pitch")}
-        >
-          <MaterialCommunityIcons
-            name="cricket"
-            size={20}
-            color={viewMode === "pitch" ? "#1e3c72" : "#4B5563"}
-          />
-        </TouchableOpacity>
-      </View>
-
-      <View className="flex-1 mt-2">
+      <View className="flex-1 mt-4">
         {viewMode === "list" ? renderListView() : renderPitchView()}
       </View>
-
-      <TouchableOpacity
-        onPress={saveTeam}
-        className="bg-orange-600 mx-4 my-4 p-3 rounded-full shadow-md"
-      >
-        <Text className="text-white text-center font-bold text-lg">
-          Save Team
-        </Text>
-      </TouchableOpacity>
 
       <PlayerSelectionModal
         visible={showPlayerSelectionModal}

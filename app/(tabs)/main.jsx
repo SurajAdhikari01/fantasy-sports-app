@@ -9,7 +9,7 @@ const MainPage = () => {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-[#1e3c72] pb-12">
+    <SafeAreaView className="flex-1 bg-slate-900 pb-12">
       <TeamView />
     </SafeAreaView>
   );
