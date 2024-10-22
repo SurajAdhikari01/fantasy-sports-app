@@ -1,95 +1,4 @@
-const allPlayers = [
-  {
-    id: "1",
-    name: "Virat Kohli",
-    team: "RCB",
-    points: 50,
-    image: "https://example.com/virat.jpg",
-    role: "Batsman",
-    price: 10.5,
-  },
-  {
-    id: "2",
-    name: "AB de Villiers",
-    team: "RCB",
-    points: 48,
-    image: "https://example.com/ab.jpg",
-    role: "Batsman",
-    price: 9.5,
-  },
-  {
-    id: "3",
-    name: "Yuzvendra Chahal",
-    team: "RCB",
-    points: 40,
-    image: "https://example.com/chahal.jpg",
-    role: "Bowler",
-    price: 8.5,
-  },
-  {
-    id: "4",
-    name: "Kagiso Rabada",
-    team: "DC",
-    points: 42,
-    image: "https://example.com/rabada.jpg",
-    role: "Bowler",
-    price: 9.0,
-  },
-  {
-    id: "5",
-    name: "Hardik Pandya",
-    team: "MI",
-    points: 45,
-    image: "https://example.com/hardik.jpg",
-    role: "All-Rounder",
-    price: 11.0,
-  },
-  {
-    id: "6",
-    name: "Jos Buttler",
-    team: "RR",
-    points: 38,
-    image: "https://example.com/buttler.jpg",
-    role: "Wicket-Keeper",
-    price: 9.0,
-  },
-  {
-    id: "7",
-    name: "Rohit Sharma",
-    team: "MI",
-    points: 47,
-    image: "https://example.com/rohit.jpg",
-    role: "Batsman",
-    price: 10.0,
-  },
-  {
-    id: "8",
-    name: "Jasprit Bumrah",
-    team: "MI",
-    points: 46,
-    image: "https://example.com/bumrah.jpg",
-    role: "Bowler",
-    price: 9.5,
-  },
-  {
-    id: "9",
-    name: "Andre Russell",
-    team: "KKR",
-    points: 44,
-    image: "https://example.com/russell.jpg",
-    role: "All-Rounder",
-    price: 10.5,
-  },
-  {
-    id: "10",
-    name: "MS Dhoni",
-    team: "CSK",
-    points: 41,
-    image: "https://example.com/dhoni.jpg",
-    role: "Wicket-Keeper",
-    price: 9.5,
-  },
-];
+// TeamBuilder.js
 import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
@@ -101,7 +10,10 @@ import {
   FlatList,
   Modal,
   Alert,
+  Dimensions,
 } from "react-native";
+import cricketPitch from "../../assets/cricket-field.jpeg";
+import footballPitch from "../../assets/football-field.jpg";
 import { useNavigation } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -110,102 +22,237 @@ import {
   FontAwesome5,
 } from "@expo/vector-icons";
 
-// Assume allPlayers array is defined here
+// Sample players data for both sports
+const allPlayers = {
+  cricket: [
+    {
+      id: "c1",
+      name: "Virat Kohli",
+      team: "RCB",
+      points: 50,
+      image: "https://example.com/virat.jpg",
+      role: "Batsman",
+      price: 10.5,
+    },
+    {
+      id: "c2",
+      name: "MS Dhoni",
+      team: "CSK",
+      points: 48,
+      image: "https://example.com/dhoni.jpg",
+      role: "WicketKeeper",
+      price: 9.5,
+    },
+    {
+      id: "c3",
+      name: "Jasprit Bumrah",
+      team: "MI",
+      points: 46,
+      image: "https://example.com/bumrah.jpg",
+      role: "Bowler",
+      price: 9.0,
+    },
+    {
+      id: "c4",
+      name: "Ben Stokes",
+      team: "RR",
+      points: 45,
+      image: "https://example.com/stokes.jpg",
+      role: "AllRounder",
+      price: 11.0,
+    },
+  ],
+  football: [
+    {
+      id: "f1",
+      name: "Lionel Messi",
+      team: "Inter Miami",
+      points: 92,
+      image: "https://example.com/messi.jpg",
+      role: "Forward",
+      price: 15.0,
+    },
+    {
+      id: "f2",
+      name: "Manuel Neuer",
+      team: "Bayern Munich",
+      points: 89,
+      image: "https://example.com/neuer.jpg",
+      role: "Goalkeeper",
+      price: 12.0,
+    },
+    {
+      id: "f3",
+      name: "Virgil van Dijk",
+      team: "Liverpool",
+      points: 90,
+      image: "https://example.com/vandijk.jpg",
+      role: "Defender",
+      price: 13.5,
+    },
+    {
+      id: "f4",
+      name: "Kevin De Bruyne",
+      team: "Man City",
+      points: 91,
+      image: "https://example.com/kdb.jpg",
+      role: "Midfielder",
+      price: 14.0,
+    },
+  ],
+};
 
-const PlayerCard = React.memo(({ player, isPitch, onPlayerPress }) => (
-  <TouchableOpacity
-    onPress={() => onPlayerPress(player)}
-    className={`${
-      isPitch
-        ? "bg-transparent opacity-80 rounded-lg shadow-lg m-2 w-20 h-28" // Increased size for better visuals
-        : "flex-row bg-white rounded-2xl shadow-lg p-4 mb-3" // More rounded and spacious
-    }`}
-  >
-    <View className="relative  flex items-center justify-center py-2">
-      <Image
-        source={{ uri: player.image }}
-        className={`${
-          isPitch ? "w-16 h-16 " : "w-20 h-20" // Adjust size for larger image
-        } rounded-full border-4 border-blue-500 shadow-md`} // Enhanced border size and shadow
+const SPORT_CONFIGS = {
+  cricket: {
+    maxPlayers: 11,
+    sections: {
+      Batsmen: { min: 3, max: 6, positions: ["top", "middle"] },
+      Bowlers: { min: 3, max: 6, positions: ["bottom"] },
+      AllRounders: { min: 1, max: 4, positions: ["middle"] },
+      WicketKeepers: { min: 1, max: 2, positions: ["top"] },
+    },
+    fieldPositions: {
+      top: { y: "15%", spread: true },
+      middle: { y: "45%", spread: true },
+      bottom: { y: "75%", spread: true },
+    },
+  },
+  football: {
+    maxPlayers: 11,
+    sections: {
+      Goalkeepers: { min: 1, max: 1, positions: ["gk"] },
+      Defenders: { min: 3, max: 5, positions: ["def"] },
+      Midfielders: { min: 2, max: 5, positions: ["mid"] },
+      Forwards: { min: 1, max: 3, positions: ["fwd"] },
+    },
+    fieldPositions: {
+      gk: { y: "85%", spread: false },
+      def: { y: "65%", spread: true },
+      mid: { y: "45%", spread: true },
+      fwd: { y: "25%", spread: true },
+    },
+    formations: ["4-3-3", "4-4-2", "3-5-2", "5-3-2"],
+  },
+};
+
+const SportSelector = React.memo(({ currentSport, onSportChange }) => (
+  <View className="bg-gray-800 rounded-full p-2 flex-row">
+    <TouchableOpacity
+      onPress={() => onSportChange("cricket")}
+      className={`p-2 rounded-full ${
+        currentSport === "cricket" ? "bg-blue-500" : ""
+      }`}
+    >
+      <MaterialCommunityIcons
+        name="cricket"
+        size={24}
+        color={currentSport === "cricket" ? "#ffffff" : "#a0aec0"}
       />
-      <View className="absolute -bottom-0 right-1 bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-        <Text className="text-xs font-bold text-white">{player.points}</Text>
-      </View>
-    </View>
-    <View className={`${isPitch ? "mt-3 bg-slate-50" : "ml-4 flex-1"}`}>
-      <Text
-        className={`font-extrabold ${
-          isPitch ? "text-xs " : "text-base"
-        } text-gray-800 ${isPitch ? "text-center" : ""}`}
-        numberOfLines={1}
+    </TouchableOpacity>
+    <TouchableOpacity
+      onPress={() => onSportChange("football")}
+      className={`p-2 rounded-full ${
+        currentSport === "football" ? "bg-blue-500" : ""
+      }`}
+    >
+      <MaterialCommunityIcons
+        name="soccer"
+        size={24}
+        color={currentSport === "football" ? "#ffffff" : "#a0aec0"}
+      />
+    </TouchableOpacity>
+  </View>
+));
+
+const PlayerCard = React.memo(
+  ({ player, isPitch, onPlayerPress, position }) => {
+    const cardStyle = position
+      ? {
+          position: "absolute",
+          top: position.y,
+          left: position.x,
+        }
+      : {};
+
+    return (
+      <TouchableOpacity
+        onPress={() => onPlayerPress(player)}
+        style={cardStyle}
+        className={`${
+          isPitch
+            ? "bg-transparent opacity-80 rounded-lg shadow-lg m-2 w-20 h-28"
+            : "flex-row bg-white rounded-2xl shadow-lg p-4 mb-3"
+        }`}
       >
-        {player.name}
-      </Text>
-      {!isPitch && (
-        <>
-          <Text className="text-xs text-gray-600">{player.team}</Text>
-          <View className="flex-row mt-1">
-            <Text className="text-xs text-gray-500 mr-3 flex items-center">
-              {player.role}
-            </Text>
-            <Text className="text-xs text-gray-500 flex items-center">
-              <FontAwesome5 name="dollar-sign" size={12} color="#4B5563" />{" "}
-              {player.price}M
+        <View className="relative flex items-center justify-center py-2">
+          <Image
+            source={{ uri: player.image }}
+            className={`${
+              isPitch ? "w-12 h-12" : "w-20 h-20"
+            } rounded-full border-4 border-blue-500 shadow-md`}
+          />
+          <View className="absolute -bottom-0 right-1 bg-blue-600 rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
+            <Text className="text-xs font-bold text-white">
+              {player.points}
             </Text>
           </View>
-        </>
-      )}
-    </View>
-    {!isPitch && (
-      <TouchableOpacity
-        className="justify-center p-2"
-        onPress={() => onPlayerPress(player)}
-      >
-        <Ionicons name="swap-horizontal" size={24} color="#3B82F6" />
+        </View>
+        <View className={`${isPitch ? "mt-3 bg-slate-50" : "ml-4 flex-1"}`}>
+          <Text
+            className={`font-extrabold ${
+              isPitch ? "text-xs" : "text-base"
+            } text-gray-800 ${isPitch ? "text-center" : ""}`}
+            numberOfLines={1}
+          >
+            {player.name}
+          </Text>
+          {!isPitch && (
+            <>
+              <Text className="text-xs text-gray-600">{player.team}</Text>
+              <View className="flex-row mt-1">
+                <Text className="text-xs text-gray-500 mr-3">
+                  {player.role}
+                </Text>
+                <Text className="text-xs text-gray-500">
+                  <FontAwesome5 name="dollar-sign" size={12} color="#4B5563" />{" "}
+                  {player.price}M
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
       </TouchableOpacity>
-    )}
-  </TouchableOpacity>
-));
+    );
+  }
+);
 
-const SectionHeader = React.memo(({ title, count, onAddPlayer }) => (
-  <View className="flex-row items-center justify-between p-4 bg-gray-100">
-    <Text className="text-lg font-bold text-blue-800">{title}</Text>
-    <View className="flex-row items-center">
-      <View className="bg-blue-800 rounded-full px-2 py-1 mr-2">
-        <Text className="text-xs font-bold text-white">{count}</Text>
+const TeamStats = React.memo(
+  ({ totalPlayers, teamValue, avgPoints, sport }) => (
+    <View className="flex-row justify-around items-center py-4 bg-gray-800 rounded-xl shadow-sm mb-4">
+      <View className="items-center">
+        <Text className="text-2xl font-bold text-white">
+          {totalPlayers}/{SPORT_CONFIGS[sport].maxPlayers}
+        </Text>
+        <Text className="text-xs text-gray-400">Players</Text>
       </View>
-      <TouchableOpacity onPress={onAddPlayer}>
-        <Ionicons name="add-circle-outline" size={24} color="#3B82F6" />
-      </TouchableOpacity>
+      <View className="items-center">
+        <Text className="text-2xl font-bold text-green-500">${teamValue}M</Text>
+        <Text className="text-xs text-gray-400">Team Value</Text>
+      </View>
+      <View className="items-center">
+        <Text className="text-2xl font-bold text-blue-500">{avgPoints}</Text>
+        <Text className="text-xs text-gray-400">Avg. Points</Text>
+      </View>
     </View>
-  </View>
-));
-
-const TeamStats = React.memo(({ totalPlayers, teamValue, avgPoints }) => (
-  <View className="flex-row justify-around items-center py-4 bg-gray-800 rounded-xl shadow-sm mb-4">
-    <View className="items-center">
-      <Text className="text-2xl font-bold text-blue-800">
-        {totalPlayers}/11
-      </Text>
-      <Text className="text-xs text-gray-600">Players</Text>
-    </View>
-    <View className="items-center">
-      <Text className="text-2xl font-bold text-green-600">${teamValue}M</Text>
-      <Text className="text-xs text-gray-600">Team Value</Text>
-    </View>
-    <View className="items-center">
-      <Text className="text-2xl font-bold text-orange-500">{avgPoints}</Text>
-      <Text className="text-xs text-gray-600">Avg. Points</Text>
-    </View>
-  </View>
-));
+  )
+);
 
 const PlayerSelectionModal = React.memo(
-  ({ visible, onClose, onSelectPlayer, availablePlayers }) => (
+  ({ visible, onClose, onSelectPlayer, availablePlayers, section }) => (
     <Modal visible={visible} animationType="slide" transparent={true}>
       <View className="flex-1 justify-end bg-black/50">
         <View className="bg-white rounded-t-3xl p-5 h-3/4">
-          <Text className="text-2xl font-bold mb-4">Select Player</Text>
+          <Text className="text-2xl font-bold mb-4">Select {section}</Text>
           <FlatList
             data={availablePlayers}
             keyExtractor={(item) => item.id}
@@ -241,21 +288,25 @@ const PlayerSelectionModal = React.memo(
 
 export default function TeamView() {
   const navigation = useNavigation();
+  const [sport, setSport] = useState("cricket");
   const [viewMode, setViewMode] = useState("pitch");
-  const [teamData, setTeamData] = useState({
-    Batsmen: [],
-    Bowlers: [],
-    AllRounders: [],
-    WicketKeepers: [],
+  const [teamData, setTeamData] = useState(() => {
+    const initialData = {};
+    Object.keys(SPORT_CONFIGS[sport].sections).forEach((section) => {
+      initialData[section] = [];
+    });
+    return initialData;
   });
   const [showPlayerSelectionModal, setShowPlayerSelectionModal] =
     useState(false);
   const [selectedSection, setSelectedSection] = useState(null);
+  const [formation, setFormation] = useState("4-3-3"); // For football only
 
   const totalPlayers = useMemo(
     () => Object.values(teamData).flat().length,
     [teamData]
   );
+
   const teamValue = useMemo(
     () =>
       Object.values(teamData)
@@ -264,6 +315,7 @@ export default function TeamView() {
         .toFixed(1),
     [teamData]
   );
+
   const avgPoints = useMemo(
     () =>
       totalPlayers > 0
@@ -275,6 +327,71 @@ export default function TeamView() {
         : "0.0",
     [teamData, totalPlayers]
   );
+
+  const handleSportChange = useCallback(
+    (newSport) => {
+      if (Object.values(teamData).flat().length > 0) {
+        Alert.alert(
+          "Change Sport",
+          "Changing sports will clear your current team. Are you sure?",
+          [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Continue",
+              onPress: () => {
+                setSport(newSport);
+                // Reset team data with correct sections for new sport
+                const newData = {};
+                Object.keys(SPORT_CONFIGS[newSport].sections).forEach(
+                  (section) => {
+                    newData[section] = [];
+                  }
+                );
+                setTeamData(newData);
+                // Reset formation to default if changing to football
+                if (newSport === "football") {
+                  setFormation(SPORT_CONFIGS.football.formations[0]);
+                }
+              },
+            },
+          ]
+        );
+      } else {
+        setSport(newSport);
+        // Reset team data with correct sections for new sport
+        const newData = {};
+        Object.keys(SPORT_CONFIGS[newSport].sections).forEach((section) => {
+          newData[section] = [];
+        });
+        setTeamData(newData);
+        // Reset formation to default if changing to football
+        if (newSport === "football") {
+          setFormation(SPORT_CONFIGS.football.formations[0]);
+        }
+      }
+    },
+    [teamData]
+  );
+
+  const validateTeamComposition = useCallback(() => {
+    const config = SPORT_CONFIGS[sport].sections;
+    let isValid = true;
+    let message = "";
+
+    Object.entries(config).forEach(([section, { min, max }]) => {
+      const count = teamData[section]?.length || 0;
+      if (count < min) {
+        isValid = false;
+        message += `Need at least ${min} ${section}. `;
+      }
+      if (count > max) {
+        isValid = false;
+        message += `Cannot have more than ${max} ${section}. `;
+      }
+    });
+
+    return { isValid, message };
+  }, [teamData, sport]);
 
   const handlePlayerPress = useCallback((player) => {
     Alert.alert(
@@ -294,55 +411,214 @@ export default function TeamView() {
 
   const addPlayer = useCallback(
     (player) => {
-      if (totalPlayers >= 11) {
-        Alert.alert("Team Full", "You can only have 11 players in your team.");
+      const config = SPORT_CONFIGS[sport];
+      if (Object.values(teamData).flat().length >= config.maxPlayers) {
+        Alert.alert(
+          "Team Full",
+          `You can only have ${config.maxPlayers} players in your team.`
+        );
         return;
       }
+      setTeamData((prev) => ({
+        ...prev,
 
-      setTeamData((prevTeamData) => ({
-        ...prevTeamData,
-        [selectedSection]: [...prevTeamData[selectedSection], player],
+        [selectedSection]: [...prev[selectedSection], player],
       }));
       setShowPlayerSelectionModal(false);
     },
-    [totalPlayers, selectedSection]
+    [teamData, sport, selectedSection]
   );
 
-  const removePlayer = useCallback((player) => {
-    setTeamData((prevTeamData) => {
-      const newTeamData = { ...prevTeamData };
-      Object.keys(newTeamData).forEach((section) => {
-        newTeamData[section] = newTeamData[section].filter(
-          (p) => p.id !== player.id
+  const removePlayer = useCallback((playerToRemove) => {
+    setTeamData((prev) => {
+      const newData = { ...prev };
+      Object.keys(newData).forEach((section) => {
+        newData[section] = newData[section].filter(
+          (player) => player.id !== playerToRemove.id
         );
       });
-      return newTeamData;
+      return newData;
     });
   }, []);
 
-  const getAvailablePlayers = useCallback(() => {
-    const teamPlayerIds = new Set(
-      Object.values(teamData)
-        .flat()
-        .map((player) => player.id)
-    );
-    return allPlayers.filter((player) => !teamPlayerIds.has(player.id));
-  }, [teamData]);
+  const calculateFootballPositions = (
+    section,
+    players,
+    fieldWidth,
+    fieldHeight
+  ) => {
+    const positions = [];
+    const padding = 10; // Padding from edges
 
-  const renderListView = useCallback(
-    () => (
-      <FlatList
-        data={Object.entries(teamData)}
-        keyExtractor={(item) => item[0]}
-        renderItem={({ item: [section, players] }) => (
-          <View className="mb-4 bg-gray-50 rounded-xl overflow-hidden shadow-sm">
-            <SectionHeader
-              title={section}
-              count={players.length}
-              onAddPlayer={() => handleAddPlayer(section)}
+    switch (section) {
+      case "Goalkeepers":
+        positions.push({
+          x: (fieldWidth * 0.66) / 2,
+          y: fieldHeight * 0.36,
+        });
+        break;
+
+      case "Defenders":
+        const defLine = fieldHeight * 0.28;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: defLine,
+          });
+        });
+        break;
+
+      case "Midfielders":
+        const midLine = fieldHeight * 0.12;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: midLine,
+          });
+        });
+        break;
+
+      case "Forwards":
+        const fwdLine = fieldHeight * 0.0;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: fwdLine,
+          });
+        });
+        break;
+    }
+
+    return positions;
+  };
+
+  // Helper function to calculate positions for cricket
+  const calculateCricketPositions = (
+    section,
+    players,
+    fieldWidth,
+    fieldHeight
+  ) => {
+    const positions = [];
+    const padding = 3;
+
+    switch (section) {
+      case "WicketKeepers":
+        positions.push({
+          x: fieldWidth / 2,
+          y: fieldHeight * 0.85,
+        });
+        break;
+
+      case "Batsmen":
+        const batsmenLine = fieldHeight * 0.3;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: batsmenLine,
+          });
+        });
+        break;
+
+      case "Bowlers":
+        const bowlersLine = fieldHeight * 0.7;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: bowlersLine,
+          });
+        });
+        break;
+
+      case "AllRounders":
+        const allRoundersLine = fieldHeight * 0.5;
+        players.forEach((player, index) => {
+          const totalWidth = fieldWidth - padding * 2;
+          const spacing = (totalWidth * 0.66) / (players.length + 1);
+          positions.push({
+            x: padding + spacing * (index + 1),
+            y: allRoundersLine,
+          });
+        });
+        break;
+    }
+
+    return positions;
+  };
+
+  // Updated renderPitchView function
+  const renderPitchView = useCallback(() => {
+    const pitchBg = sport === "cricket" ? cricketPitch : footballPitch;
+    const { width: fieldWidth, height: fieldHeight } = Dimensions.get("window");
+
+    return (
+      <View style={{ flex: 1, position: "relative" }}>
+        <Image
+          source={pitchBg}
+          style={{
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+            borderRadius: 8,
+          }}
+          resizeMode="cover"
+        />
+        {console.log(fieldHeight, fieldWidth)}
+        {Object.entries(teamData).map(([section, players]) => {
+          const positions =
+            sport === "football"
+              ? calculateFootballPositions(
+                  section,
+                  players,
+                  fieldWidth,
+                  fieldHeight
+                )
+              : calculateCricketPositions(
+                  section,
+                  players,
+                  fieldWidth,
+                  fieldHeight
+                );
+
+          return players.map((player, index) => (
+            <PlayerCard
+              key={player.id}
+              player={player}
+              isPitch={true}
+              onPlayerPress={handlePlayerPress}
+              position={positions[index]}
             />
-            <View className="p-2">
-              {players.map((player) => (
+          ));
+        })}
+      </View>
+    );
+  }, [teamData, sport, handlePlayerPress]);
+
+  const renderListView = useCallback(() => {
+    return (
+      <ScrollView className="flex-1">
+        {Object.entries(SPORT_CONFIGS[sport].sections).map(
+          ([section, config]) => (
+            <View key={section} className="mb-6">
+              <View className="flex-row justify-between items-center mb-2">
+                <Text className="text-lg font-bold text-gray-800">
+                  {section}
+                </Text>
+                <Text className="text-sm text-gray-600">
+                  {teamData[section]?.length || 0}/{config.max}
+                </Text>
+              </View>
+              {teamData[section]?.map((player) => (
                 <PlayerCard
                   key={player.id}
                   player={player}
@@ -350,127 +626,124 @@ export default function TeamView() {
                   onPlayerPress={handlePlayerPress}
                 />
               ))}
+              {(teamData[section]?.length || 0) < config.max && (
+                <TouchableOpacity
+                  onPress={() => handleAddPlayer(section)}
+                  className="bg-blue-500 p-4 rounded-xl flex-row justify-center items-center"
+                >
+                  <Ionicons name="add-circle-outline" size={24} color="white" />
+                  <Text className="text-white font-bold ml-2">
+                    Add {section}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
-          </View>
+          )
         )}
-        ListHeaderComponent={
-          <TeamStats
-            totalPlayers={totalPlayers}
-            teamValue={teamValue}
-            avgPoints={avgPoints}
-          />
-        }
-        contentContainerStyle="px-4 py-4"
-      />
-    ),
-    [
-      teamData,
-      totalPlayers,
-      teamValue,
-      avgPoints,
-      handleAddPlayer,
-      handlePlayerPress,
-    ]
-  );
+      </ScrollView>
+    );
+  }, [teamData, sport, handleAddPlayer, handlePlayerPress]);
 
-  const renderPitchView = useCallback(
-    () => (
-      <ScrollView contentContainerStyle="px-3 py-2">
+  const handleSave = useCallback(() => {
+    const { isValid, message } = validateTeamComposition();
+    if (!isValid) {
+      Alert.alert("Invalid Team", message);
+      return;
+    }
+    // Save team logic here
+    Alert.alert("Success", "Team saved successfully!");
+    navigation.goBack();
+  }, [validateTeamComposition, navigation]);
+
+  return (
+    <SafeAreaView className="flex-1 bg-gray-900">
+      <View className="flex-1 px-4">
+        <View className="flex-row justify-between items-center py-4">
+          <SportSelector
+            currentSport={sport}
+            onSportChange={handleSportChange}
+          />
+          <View className="flex-row">
+            <TouchableOpacity
+              onPress={() => setViewMode("pitch")}
+              className={`p-2 rounded-full mr-2 ${
+                viewMode === "pitch" ? "bg-blue-500" : "bg-gray-300"
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="view-grid"
+                size={24}
+                color={viewMode === "pitch" ? "white" : "black"}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setViewMode("list")}
+              className={`p-2 rounded-full ${
+                viewMode === "list" ? "bg-blue-500" : "bg-gray-300"
+              }`}
+            >
+              <MaterialCommunityIcons
+                name="view-list"
+                size={24}
+                color={viewMode === "list" ? "white" : "black"}
+              />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         <TeamStats
           totalPlayers={totalPlayers}
           teamValue={teamValue}
           avgPoints={avgPoints}
+          sport={sport}
         />
-        <View className="flex-1 aspect-[5/6] relative rounded-xl overflow-hidden shadow-lg items-center">
-          <Image
-            source={require("../../assets/cricket-field.jpeg")}
-            className="w-full h-full"
-          />
-          <LinearGradient
-            colors={["rgba(0,0,0,0.5)", "transparent", "rgba(0,0,0,0.5)"]}
-            className="absolute inset-0"
-          />
-          <View className="absolute inset-0 flex justify-around items-center p-2">
-            {Object.entries(teamData).map(([section, players]) => (
-              <View key={section} className="flex-row justify-around w-full">
-                {players.map((player) => (
-                  <PlayerCard
-                    key={player.id}
-                    player={player}
-                    isPitch={true}
-                    onPlayerPress={handlePlayerPress}
-                  />
-                ))}
-              </View>
-            ))}
+
+        {sport === "football" && (
+          <View className="mb-4">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {SPORT_CONFIGS.football.formations.map((f) => (
+                <TouchableOpacity
+                  key={f}
+                  onPress={() => setFormation(f)}
+                  className={`px-4 py-2 rounded-full mr-2 ${
+                    formation === f ? "bg-blue-500" : "bg-gray-300"
+                  }`}
+                >
+                  <Text
+                    className={`font-bold ${
+                      formation === f ? "text-white" : "text-gray-700"
+                    }`}
+                  >
+                    {f}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
           </View>
-        </View>
-      </ScrollView>
-    ),
-    [teamData, totalPlayers, teamValue, avgPoints, handlePlayerPress]
-  );
+        )}
 
-  const saveTeam = useCallback(() => {
-    // Implement team saving logic here
-    console.log("Team saved:", teamData);
-    Alert.alert("Success", "Your team has been saved!");
-  }, [teamData]);
+        {viewMode === "pitch" ? renderPitchView() : renderListView()}
 
-  return (
-    <SafeAreaView className="flex-1 bg-gray-900">
-      <LinearGradient
-        colors={["#0F172A", "#030712"]}
-        className="py-5 px-6 rounded-b-3xl shadow-lg"
-      >
-        <View className="flex-row items-center justify-between ">
-          <Text className="text-2xl font-extrabold text-white">My Team</Text>
-          <View className="flex-row bg-gray-800 py-2 px-3 rounded-full shadow-sm">
-            <TouchableOpacity
-              className={`px-4 py-2 rounded-full ${
-                viewMode === "list" ? "bg-blue-200" : "bg-transparent"
-              }`}
-              onPress={() => setViewMode("list")}
-            >
-              <MaterialCommunityIcons
-                name="format-list-bulleted"
-                size={22}
-                color={viewMode === "list" ? "#1e3c72" : "#ffffff"}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              className={`px-4 py-2 rounded-full ${
-                viewMode === "pitch" ? "bg-blue-200" : "bg-transparent"
-              }`}
-              onPress={() => setViewMode("pitch")}
-            >
-              <MaterialCommunityIcons
-                name="cricket"
-                size={22}
-                color={viewMode === "pitch" ? "#1e3c72" : "#ffffff"}
-              />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            onPress={saveTeam}
-            className="bg-green-500  w-14 h-10 rounded-3xl shadow-lg flex items-center justify-center"
-          >
-            <Text className="text-white text-center font-semibold text-base">
-              Save
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
+        <TouchableOpacity
+          onPress={handleSave}
+          className="bg-green-500 py-4 rounded-xl mb-4"
+        >
+          <Text className="text-white font-bold text-center">Save Team</Text>
+        </TouchableOpacity>
 
-      <View className="flex-1 mt-4">
-        {viewMode === "list" ? renderListView() : renderPitchView()}
+        <PlayerSelectionModal
+          visible={showPlayerSelectionModal}
+          onClose={() => setShowPlayerSelectionModal(false)}
+          onSelectPlayer={addPlayer}
+          availablePlayers={allPlayers[sport].filter(
+            (player) =>
+              !Object.values(teamData)
+                .flat()
+                .some((p) => p.id === player.id)
+          )}
+          section={selectedSection}
+        />
       </View>
-
-      <PlayerSelectionModal
-        visible={showPlayerSelectionModal}
-        onClose={() => setShowPlayerSelectionModal(false)}
-        onSelectPlayer={addPlayer}
-        availablePlayers={getAvailablePlayers()}
-      />
     </SafeAreaView>
   );
 }
