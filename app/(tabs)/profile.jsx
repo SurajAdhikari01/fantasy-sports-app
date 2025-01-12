@@ -1,7 +1,9 @@
-// app/.tab/profile.js
-import { View, Text, Pressable } from "react-native";
+import React from "react";
+import { View, Text, Pressable, Alert } from "react-native";
 import { styled } from "nativewind";
 import { useRouter } from "expo-router";
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
 
 const Container = styled(
   View,
@@ -14,8 +16,21 @@ const ButtonText = styled(Text, "text-white text-lg font-bold");
 export default function ProfileScreen() {
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push("/.auth/signin");
+  const handleLogout = async () => {
+    try {
+      await axios.post("http://localhost:9005/api/v1/users/logout");
+
+      // Clear the stored user data
+      await SecureStore.deleteItemAsync("userData");
+
+      Alert.alert("Success", "Logged out successfully!");
+
+      // Redirect to sign-in page
+      router.push("/.auth/signin");
+    } catch (error) {
+      console.error("Logout error:", error);
+      Alert.alert("Error", "Failed to log out. Please try again.");
+    }
   };
 
   return (

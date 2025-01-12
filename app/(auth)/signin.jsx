@@ -1,9 +1,19 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Pressable, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Animated,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { styled } from "nativewind";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
+import axios from "axios";
+import * as SecureStore from "expo-secure-store";
 
 const GradientBackground = styled(
   LinearGradient,
@@ -21,51 +31,68 @@ const Button = styled(
   "w-full p-4 bg-purple-600 rounded-lg items-center mt-4"
 );
 const ButtonText = styled(Text, "text-white text-lg font-bold");
-const ErrorMessage = styled(Text, "text-red-500 mt-2"); // Error message styling
+const ErrorMessage = styled(Text, "text-red-500 mt-2");
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // State for error message
-  const [loading, setLoading] = useState(false); // For loading state
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const scaleValue = useRef(new Animated.Value(1)).current;
 
-  const simulateBackendCall = () => {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Simulate success or failure randomly
-        if (Math.random() > 0.5) {
-          resolve("Login successful!");
-        } else {
-          reject("Invalid email or password");
-        }
-      }, 2000); // Simulating 2 seconds delay
-    });
+  const validateInputs = () => {
+    if (!email || !password) {
+      setError("All fields are required.");
+      return false;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters.");
+      return false;
+    }
+    return true;
   };
 
   const handleSignIn = async () => {
-    // Start loading animation
-    setLoading(true);
-    setError(""); // Reset error message before each login attempt
+    if (!validateInputs()) return;
 
-    // Prepare data to send to backend
-    const payload = {
-      email,
-      password,
-    };
+    setLoading(true);
+    setError("");
 
     try {
-      // Simulating a backend call
-      await simulateBackendCall();
+      const response = await axios.post(
+        "http://localhost:9005/api/v1/users/login",
+        {
+          email, // Updated to use email instead of username
+          password,
+        }
+      );
 
-      // If login is successful, forward to home
+      // Store the user data securely as a JSON string
+      const userData = {
+        token: response.data.token,
+        username: response.data.username, // Assuming the response includes username
+        email: response.data.email, // Assuming the response includes email
+      };
+      await SecureStore.setItemAsync("userData", JSON.stringify(userData));
+
+      // Redirect to home page
       router.replace("/(tabs)/home");
     } catch (error) {
-      // Show error message in case of failure
-      setError(error); // Set the error message
+      if (error.response && error.response.data && error.response.data.error) {
+        setError(error.response.data.error);
+      } else if (error.code === "ECONNABORTED") {
+        setError("Network timeout. Please try again.");
+      } else {
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
-      setLoading(false); // Stop loading animation
+      setLoading(false);
     }
   };
 
@@ -84,7 +111,6 @@ export default function SignIn() {
     }).start();
   };
 
-  // Determine input field border color based on error state
   const emailInputStyle = error ? "border-red-500" : "border-purple-700";
   const passwordInputStyle = error ? "border-red-500" : "border-purple-700";
 
@@ -104,10 +130,12 @@ export default function SignIn() {
         <Input
           placeholder="Email"
           placeholderTextColor="#9CA3AF"
+          keyboardType="email-address"
+          autoCapitalize="none"
           value={email}
           onChangeText={(text) => {
             setEmail(text);
-            if (error) setError(""); // Clear error on input change
+            if (error) setError("");
           }}
         />
       </InputContainer>
@@ -124,12 +152,12 @@ export default function SignIn() {
           value={password}
           onChangeText={(text) => {
             setPassword(text);
-            if (error) setError(""); // Clear error on input change
+            if (error) setError("");
           }}
         />
       </InputContainer>
 
-      {/* Error Message Display */}
+      {/* Error Message */}
       <View style={{ minHeight: 30 }}>
         {error ? <ErrorMessage>{error}</ErrorMessage> : null}
       </View>
@@ -140,9 +168,13 @@ export default function SignIn() {
           onPressIn={onPressIn}
           onPressOut={onPressOut}
           onPress={handleSignIn}
-          disabled={loading} // Disable button while loading
+          disabled={loading}
         >
-          <ButtonText>{loading ? "Signing In..." : "Sign In"}</ButtonText>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <ButtonText>Sign In</ButtonText>
+          )}
         </Button>
       </Animated.View>
 
