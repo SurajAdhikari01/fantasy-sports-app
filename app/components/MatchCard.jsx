@@ -5,7 +5,7 @@ import { styled } from "nativewind";
 
 const teamPlaceholder = "https://via.placeholder.com/50";
 import cricketBg from "../../assets/cricketbg.png"; // Ensure this path is correct
-import footballBg from "../../assets/footballbg.png"; // Ensure this path is correct
+import footballBg from "../../assets/footballbg.jpg"; // Ensure this path is correct
 
 const StyledGradient = styled(LinearGradient);
 

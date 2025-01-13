@@ -85,7 +85,7 @@ export default function SignUp() {
 
       router.replace("/(tabs)/home");
       // Navigate to OTP verification screen
-      //router.replace("/otp");
+      // router.replace("/otp");
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         setError(error.response.data.error);
