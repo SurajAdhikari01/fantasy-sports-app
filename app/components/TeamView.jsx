@@ -234,14 +234,6 @@ const PlayerCard = React.memo(
   }
 );
 
-// Team Stats Component
-const TeamStats = React.memo(({ teamValue, totalPoints }) => (
-  <View className="flex-row justify-around items-center py-3 w-2/3">
-    <StatsBox label="Team Value" value={`$${teamValue}M`} icon="dollar-sign" />
-    <StatsBox label="Total Points" value={totalPoints} icon="star" />
-  </View>
-));
-
 // Player Stats Modal
 const PlayerStatsModal = React.memo(({ player, visible, onClose }) => {
   if (!player) return null;
@@ -761,8 +753,8 @@ export default function TeamView() {
           <View className="flex-row justify-between">
             <TouchableOpacity
               onPress={() => setShowPlayerSelectionModal(true)}
-              className="flex-1 bg-blue-500 p-4 rounded-xl mr-2 shadow-sm
-                         active:bg-blue-600"
+              className="flex-1 bg-blue-700 py-4 px-2 rounded-xl mr-2 shadow-sm
+                         active:bg-blue-900"
             >
               <Text className="text-white text-center font-bold">
                 + Add Players
@@ -770,7 +762,7 @@ export default function TeamView() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleNext}
-              className="flex-1 bg-green-500 p-4 rounded-xl ml-2 shadow-sm
+              className="flex-1 bg-green-500 py-4 px-2 rounded-xl ml-2 shadow-sm
                          active:bg-green-600"
             >
               <Text className="text-white text-center font-bold">Next</Text>
@@ -822,7 +814,12 @@ export default function TeamView() {
             currentSport={sport}
             onSportChange={handleSportChange}
           />
-          <TeamStats teamValue={teamValue} totalPoints={totalPoints} />
+          <View className="flex-col items-center">
+            <Text className="text-green-500 font-bold mr-1 text-2xl">
+              ${teamValue}M
+            </Text>
+            <Text className="text-gray-500">Team Value</Text>
+          </View>
         </View>
 
         {renderPitchView()}
