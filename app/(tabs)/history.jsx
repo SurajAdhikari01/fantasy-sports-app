@@ -58,7 +58,7 @@ const HistoryPage = () => {
   const [data, setData] = useState([
     {
       id: 1,
-      date: "May 25",
+      date: "May 29",
       sport: "cricket",
       match: "Mumbai Indians vs Rajasthan Royals",
       score: "MI: 210/6 | RR: 180/8",
