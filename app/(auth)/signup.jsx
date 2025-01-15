@@ -1,9 +1,19 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Pressable, Animated } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  Pressable,
+  Animated,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { styled } from "nativewind";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
+import axios from "axios";
+import * as SecureStore from "expo-secure-store"; // For secure storage
 
 const GradientBackground = styled(
   LinearGradient,
@@ -21,14 +31,14 @@ const Button = styled(
   "w-full p-4 bg-teal-500 rounded-lg items-center mt-4"
 );
 const ButtonText = styled(Text, "text-white text-lg font-bold");
-const ErrorMessage = styled(Text, "text-red-500 mt-2"); // Error message styling
+const ErrorMessage = styled(Text, "text-red-500 mt-2");
 
 export default function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); // State for error message
-  const [loading, setLoading] = useState(false); // For loading state
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const scaleValue = useRef(new Animated.Value(1)).current;
 
@@ -37,38 +47,56 @@ export default function SignUp() {
       setError("All fields are required.");
       return false;
     }
-    // Add more validations as needed (e.g., email format)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      return false;
+    }
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters long.");
+      return false;
+    }
     return true;
   };
 
   const handleSignUp = async () => {
-    // Validate inputs
     if (!validateInputs()) return;
 
-    // Start loading animation
     setLoading(true);
-    setError(""); // Reset error message before each signup attempt
+    setError("");
 
     try {
-      // Simulate a backend call (replace with actual signup logic)
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          // Simulate success or failure
-          if (Math.random() > 0.5) {
-            resolve("Signup successful!");
-          } else {
-            reject("Signup failed. Please try again.");
-          }
-        }, 2000); // Simulating 2 seconds delay
-      });
+      const response = await axios.post(
+        "http://localhost:9005/api/v1/users/register",
+        {
+          username,
+          email,
+          password,
+        }
+      );
 
-      // If signup is successful, forward to OTP screen
-      router.replace("/otp");
+      // Store the user data securely as a JSON string
+      const userData = {
+        token: response.data.token,
+        username: response.data.username,
+        email: response.data.email,
+      };
+      await SecureStore.setItemAsync("userData", JSON.stringify(userData));
+
+      router.replace("/(tabs)/home");
+      // Navigate to OTP verification screen
+      // router.replace("/otp");
     } catch (error) {
-      // Show error message in case of failure
-      setError(error); // Set the error message
+      if (error.response && error.response.data && error.response.data.error) {
+        setError(error.response.data.error);
+      } else if (error.code === "ECONNABORTED") {
+        setError("Network timeout. Please try again.");
+      } else {
+        console.log(error);
+        setError("Something went wrong. Please try again.");
+      }
     } finally {
-      setLoading(false); // Stop loading animation
+      setLoading(false);
     }
   };
 
@@ -104,7 +132,10 @@ export default function SignUp() {
           placeholder="Username"
           placeholderTextColor="#9CA3AF"
           value={username}
-          onChangeText={setUsername}
+          onChangeText={(text) => {
+            setUsername(text);
+            if (error) setError("");
+          }}
         />
       </InputContainer>
 
@@ -116,8 +147,13 @@ export default function SignUp() {
         <Input
           placeholder="Email"
           placeholderTextColor="#9CA3AF"
+          keyboardType="email-address"
+          autoCapitalize="none"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            if (error) setError("");
+          }}
         />
       </InputContainer>
 
@@ -131,7 +167,10 @@ export default function SignUp() {
           placeholderTextColor="#9CA3AF"
           secureTextEntry
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            if (error) setError("");
+          }}
         />
       </InputContainer>
 
@@ -146,9 +185,13 @@ export default function SignUp() {
           onPressIn={onPressIn}
           onPressOut={onPressOut}
           onPress={handleSignUp}
-          disabled={loading} // Disable button while loading
+          disabled={loading}
         >
-          <ButtonText>{loading ? "Signing Up..." : "Sign Up"}</ButtonText>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <ButtonText>Sign Up</ButtonText>
+          )}
         </Button>
       </Animated.View>
 

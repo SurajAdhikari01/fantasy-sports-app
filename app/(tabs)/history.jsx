@@ -8,16 +8,14 @@ import {
   Dimensions,
   Image,
   SafeAreaView,
-  ActivityIndicator,
 } from "react-native";
 import { styled } from "nativewind";
 import { useNavigation } from "@react-navigation/native";
-import LottieView from "lottie-react-native"; // Import Lottie
-import loadingAnimation from "../../assets/loadinganimation.json"; // Add your Lottie animation
+import LottieView from "lottie-react-native";
+import loadingAnimation from "../../assets/loadinganimation.json";
 
 const { height } = Dimensions.get("window");
 
-// Mock data for football and cricket matches with simulated delay
 const generateNewData = (currentLength) => {
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -33,7 +31,6 @@ const generateNewData = (currentLength) => {
             "A high-scoring game with a spectacular finish between two great teams in the IPL.",
           club1: "https://via.placeholder.com/50",
           club2: "https://via.placeholder.com/50",
-          sportLogo: "https://via.placeholder.com/30?text=🏏",
         },
         {
           id: currentLength + 2,
@@ -46,10 +43,9 @@ const generateNewData = (currentLength) => {
             "A nail-biting finish with both teams putting up a good fight, leading to an exciting draw.",
           club1: "https://via.placeholder.com/50",
           club2: "https://via.placeholder.com/50",
-          sportLogo: "https://via.placeholder.com/30?text=⚽",
         },
       ]);
-    }, 2000); // Simulates a 2-second delay
+    }, 2000);
   });
 };
 
@@ -67,7 +63,6 @@ const HistoryPage = () => {
         "A high-scoring game with a spectacular finish between two great teams in the IPL.",
       club1: "https://via.placeholder.com/50",
       club2: "https://via.placeholder.com/50",
-      sport: "Cricket",
     },
     {
       id: 2,
@@ -80,14 +75,13 @@ const HistoryPage = () => {
         "A nail-biting finish with both teams putting up a good fight, leading to an exciting draw.",
       club1: "https://via.placeholder.com/50",
       club2: "https://via.placeholder.com/50",
-      sport: "Football",
     },
   ]);
   const [loading, setLoading] = useState(false);
   const timelineScrollY = useRef(new Animated.Value(0)).current;
 
   const fetchMoreData = async () => {
-    if (loading) return; // Prevent duplicate fetching
+    if (loading) return;
     setLoading(true);
     const newData = await generateNewData(data.length);
     setData((prevData) => [...prevData, ...newData]);
@@ -95,40 +89,47 @@ const HistoryPage = () => {
   };
 
   const renderItem = ({ item }) => (
-    <View className="flex-row items-start mb-6">
-      {/* Left Side Timeline */}
-      <View className="w-16 items-center justify-start">
-        <View className="w-10 h-10 bg-gray-800 justify-center items-center rounded-full mb-2">
+    <View className="flex-row  items-start mb-2 rounded-xl overflow-hidden shadow-lg ">
+      <View className="w-16 items-center justify-start ">
+        <View className="w-10 h-10 bg-gray-700 justify-center items-center rounded-full mb-2">
           <Text className="text-white">{item.date.split(" ")[1]}</Text>
         </View>
         <View className="w-1 bg-gray-600 flex-1" />
       </View>
 
       {/* Right Side Card */}
-      <View className="flex-1 bg-gray-900 p-4 rounded-2xl shadow-lg">
-        <Text
-          className="text-white text-xl font-bold mb-2"
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
+      <View className="flex-1 rounded-lg bg-gray-900 p-4">
+        <Text className="text-white text-xl font-bold mb-4" numberOfLines={1}>
           {item.match}
         </Text>
 
-        <View className="flex-row justify-between items-center mb-4">
+        <View className="flex-row  justify-between items-center mb-4">
           <View className="flex-row items-center space-x-4">
             <Image
               source={{ uri: item.club1 }}
-              style={{ width: 50, height: 50, borderRadius: 25 }}
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                borderWidth: 2,
+                borderColor: "#fff",
+              }}
             />
             <Image
               source={{ uri: item.club2 }}
-              style={{ width: 50, height: 50, borderRadius: 25 }}
+              style={{
+                width: 50,
+                height: 50,
+                borderRadius: 25,
+                borderWidth: 2,
+                borderColor: "#fff",
+              }}
             />
           </View>
           <View className="flex-row items-center">
             <Text className="text-gray-400 text-sm">{item.date}</Text>
-            <Text className=" p-2">
-              {item.sport === "Football" ? "⚽️" : "🏏"}
+            <Text className="text-white ml-2">
+              {item.sport === "football" ? "⚽️" : "🏏"}
             </Text>
           </View>
         </View>
@@ -137,28 +138,20 @@ const HistoryPage = () => {
           <Text className="text-gray-400 text-lg mb-1">{item.score}</Text>
           <Text
             className={`text-lg font-bold ${
-              item.result.includes("Won")
-                ? "text-green-500"
-                : item.result.includes("Draw")
-                ? "text-yellow-500"
-                : "text-red-500"
+              item.result.includes("Won") ? "text-green-500" : "text-yellow-500"
             }`}
           >
             {item.result}
           </Text>
         </View>
 
-        <Text
-          className="text-gray-400 text-sm mb-4"
-          numberOfLines={2}
-          ellipsizeMode="tail"
-        >
+        <Text className="text-gray-400 text-sm mb-4" numberOfLines={2}>
           {item.description}
         </Text>
 
         <TouchableOpacity
           onPress={() => navigateToDetails(item.id)}
-          className="bg-pink-600 mt-4 p-3 rounded-lg items-center"
+          className="bg-green-600 mt-4 p-3 rounded-lg items-center"
         >
           <Text className="text-white text-base font-semibold">
             View Match Details
@@ -173,12 +166,9 @@ const HistoryPage = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-black">
-      <View className="flex-row justify-between items-center p-4">
+    <SafeAreaView className="flex-1 bg-gray-950">
+      <View className="flex-row justify-between items-center p-4 mb-6">
         <Text className="text-white text-2xl font-bold">Match History</Text>
-        <TouchableOpacity className="w-8 h-8 bg-gray-700 justify-center items-center rounded-full">
-          <Text className="text-white">⚙️</Text>
-        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -195,15 +185,9 @@ const HistoryPage = () => {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
         ListFooterComponent={() => {
           return loading ? (
-            <View
-              style={{
-                alignItems: "center",
-                justifyContent: "center",
-                paddingVertical: 20,
-              }}
-            >
+            <View className="flex items-center justify-center py-5">
               <LottieView
-                source={loadingAnimation} // Lottie animation JSON file
+                source={loadingAnimation}
                 autoPlay
                 loop
                 style={{ width: 100, height: 100 }}
