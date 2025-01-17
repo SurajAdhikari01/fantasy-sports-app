@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import DropDownPicker from "react-native-dropdown-picker";
 import { styled } from "nativewind";
@@ -13,7 +14,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import axios from "axios";
+import * as SecureStore from "expo-secure-store";
+import { useAuth } from "../context/AuthContext";
+import api from "../config/axios";
 
 const StyledSafeAreaView = styled(SafeAreaView);
 const StyledView = styled(View);
@@ -24,6 +27,10 @@ const StyledScrollView = styled(ScrollView);
 
 const AdminForm = () => {
   const router = useRouter();
+  const { userData } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state
   const [sport, setSport] = useState("Cricket");
   const [tournamentName, setTournamentName] = useState("");
   const [registrationLimit, setRegistrationLimit] = useState("5k");
@@ -41,6 +48,7 @@ const AdminForm = () => {
     { name: "", location: "" },
   ]);
 
+  // Dropdown options
   const sports = [
     { label: "Cricket", value: "Cricket" },
     { label: "Football", value: "Football" },
@@ -51,6 +59,54 @@ const AdminForm = () => {
     { label: "15k", value: "15k" },
     { label: "20k", value: "20k" },
   ];
+
+  const validateForm = () => {
+    if (!tournamentName.trim()) {
+      Alert.alert("Error", "Tournament name is required");
+      return false;
+    }
+    if (!rules.trim()) {
+      Alert.alert("Error", "Rules are required");
+      return false;
+    }
+    if (!playerLimitPerTeam || isNaN(parseInt(playerLimitPerTeam))) {
+      Alert.alert("Error", "Valid player limit per team is required");
+      return false;
+    }
+    if (!knockoutStart || !semifinalStart || !finalStart) {
+      Alert.alert("Error", "All tournament dates are required");
+      return false;
+    }
+
+    // Validate dates are in future and in correct order
+    const currentDate = new Date();
+    const knockoutDate = new Date(knockoutStart);
+    const semifinalDate = new Date(semifinalStart);
+    const finalDate = new Date(finalStart);
+
+    if (knockoutDate <= currentDate) {
+      Alert.alert("Error", "Knockout date must be in the future");
+      return false;
+    }
+    if (semifinalDate <= knockoutDate) {
+      Alert.alert("Error", "Semifinal date must be after knockout date");
+      return false;
+    }
+    if (finalDate <= semifinalDate) {
+      Alert.alert("Error", "Final date must be after semifinal date");
+      return false;
+    }
+
+    // Validate franchises
+    for (const franchise of franchises) {
+      if (!franchise.name.trim() || !franchise.location.trim()) {
+        Alert.alert("Error", "All franchise details are required");
+        return false;
+      }
+    }
+
+    return true;
+  };
 
   const handleFranchiseChange = (index, field, value) => {
     const newFranchises = [...franchises];
@@ -72,33 +128,66 @@ const AdminForm = () => {
   };
 
   const handleSubmit = async () => {
-    const registrationLimitNumber = parseInt(
-      registrationLimit.replace("k", "000"),
-      10
-    );
-    const tournamentData = {
-      name: tournamentName,
-      rules,
-      registrationLimits: registrationLimitNumber,
-      playerLimitPerTeam: parseInt(playerLimitPerTeam, 10),
-      knockoutStart: new Date(knockoutStart).toISOString(),
-      semifinalStart: new Date(semifinalStart).toISOString(),
-      finalStart: new Date(finalStart).toISOString(),
-      franchises,
-    };
+    if (!validateForm()) return;
 
+    setIsSubmitting(true);
     try {
-      await axios.post(
-        "http://localhost:9005/api/tournaments/new",
-        tournamentData
-      );
-      Alert.alert("Success", "Tournament created successfully!");
+      const token = await SecureStore.getItemAsync("accessToken");
+      if (!token) {
+        Alert.alert("Error", "Authentication token not found");
+        router.replace("/(auth)/signin");
+        return;
+      }
 
-      router.back();
+      const currentUTCDate = new Date().toISOString();
+      const registrationLimitNumber = parseInt(
+        registrationLimit.replace("k", "000"),
+        10
+      );
+
+      const tournamentData = {
+        name: tournamentName,
+        rules,
+        registrationLimits: registrationLimitNumber,
+        playerLimitPerTeam: parseInt(playerLimitPerTeam, 10),
+        knockoutStart: new Date(knockoutStart).toISOString(),
+        semifinalStart: new Date(semifinalStart).toISOString(),
+        finalStart: new Date(finalStart).toISOString(),
+        franchises,
+        sport,
+      };
+      console.log("Tournament data:", tournamentData);
+
+      const response = await api.post("/tournaments/new", tournamentData);
+
+      Alert.alert("Success", "Tournament created successfully!", [
+        {
+          text: "OK",
+          onPress: () => router.back(),
+        },
+      ]);
     } catch (error) {
-      console.log("Tournament created successfully!", tournamentData);
-      Alert.alert("Error", "An error occurred while creating the tournament.");
       console.error("Failed to create tournament:", error);
+
+      if (error.response?.status === 401) {
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please login again.",
+          [
+            {
+              text: "OK",
+              onPress: () => router.replace("/(auth)/signin"),
+            },
+          ]
+        );
+      } else {
+        Alert.alert(
+          "Error",
+          error.response?.data?.message || "Failed to create tournament"
+        );
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -114,12 +203,46 @@ const AdminForm = () => {
 
   const handleConfirm = (date) => {
     const formattedDate = date.toISOString().split("T")[0];
-    if (currentDateField === "knockoutStart") {
-      setKnockoutStart(formattedDate);
-    } else if (currentDateField === "semifinalStart") {
-      setSemifinalStart(formattedDate);
-    } else if (currentDateField === "finalStart") {
-      setFinalStart(formattedDate);
+    const currentDate = new Date();
+
+    // Validate the selected date
+    if (date < currentDate) {
+      Alert.alert("Invalid Date", "Please select a future date");
+      return;
+    }
+
+    switch (currentDateField) {
+      case "knockoutStart":
+        setKnockoutStart(formattedDate);
+        break;
+      case "semifinalStart":
+        if (!knockoutStart) {
+          Alert.alert("Error", "Please select knockout date first");
+          return;
+        }
+        if (date <= new Date(knockoutStart)) {
+          Alert.alert(
+            "Invalid Date",
+            "Semifinal date must be after knockout date"
+          );
+          return;
+        }
+        setSemifinalStart(formattedDate);
+        break;
+      case "finalStart":
+        if (!semifinalStart) {
+          Alert.alert("Error", "Please select semifinal date first");
+          return;
+        }
+        if (date <= new Date(semifinalStart)) {
+          Alert.alert(
+            "Invalid Date",
+            "Final date must be after semifinal date"
+          );
+          return;
+        }
+        setFinalStart(formattedDate);
+        break;
     }
     hideDatePicker();
   };
