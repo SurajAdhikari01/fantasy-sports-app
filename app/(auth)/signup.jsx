@@ -39,6 +39,7 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false); // State to track if admin registration is enabled
   const router = useRouter();
   const scaleValue = useRef(new Animated.Value(1)).current;
 
@@ -66,26 +67,35 @@ export default function SignUp() {
     setError("");
 
     try {
+      const payload = {
+        username,
+        email,
+        password,
+      };
+
+      // Include role in payload if admin registration is enabled
+      if (isAdmin) {
+        payload.role = "admin";
+      }
+
       const response = await axios.post(
         "http://localhost:9005/api/v1/users/register",
-        {
-          username,
-          email,
-          password,
-        }
+        payload
       );
 
-      // Store the user data securely as a JSON string
       const userData = {
         token: response.data.token,
-        username: response.data.username,
-        email: response.data.email,
+        username: response.data.data.username,
+        email: response.data.data.email,
+        role: response.data.data.role,
       };
       await SecureStore.setItemAsync("userData", JSON.stringify(userData));
 
-      router.replace("/(tabs)/home");
-      // Navigate to OTP verification screen
-      // router.replace("/otp");
+      if (userData.role === "admin") {
+        router.replace("/(admin)/adminDashboard");
+      } else {
+        router.replace("/(tabs)/home");
+      }
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         setError(error.response.data.error);
@@ -115,13 +125,21 @@ export default function SignUp() {
     }).start();
   };
 
+  const handleLongPress = () => {
+    // Enable admin registration on long press
+    setIsAdmin(true);
+    Alert.alert("Admin Mode", "You are now in admin registration mode.");
+  };
+
   return (
     <GradientBackground
       colors={["#0f2027", "#203a43", "#2c5364"]}
       start={[0, 0]}
       end={[1, 1]}
     >
-      <Title>Create Account</Title>
+      <Pressable onLongPress={handleLongPress}>
+        <Title>Create Account</Title>
+      </Pressable>
 
       {/* Username Input */}
       <InputContainer>

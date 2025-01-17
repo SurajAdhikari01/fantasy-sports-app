@@ -68,7 +68,7 @@ export default function SignIn() {
       const response = await axios.post(
         "http://localhost:9005/api/v1/users/login",
         {
-          email, // Updated to use email instead of username
+          email,
           password,
         }
       );
@@ -76,13 +76,18 @@ export default function SignIn() {
       // Store the user data securely as a JSON string
       const userData = {
         token: response.data.token,
-        username: response.data.username, // Assuming the response includes username
-        email: response.data.email, // Assuming the response includes email
+        username: response.data.data.username, // Assuming the response includes username
+        email: response.data.data.email, // Assuming the response includes email
+        role: response.data.data.role, // Assuming the response includes role
       };
       await SecureStore.setItemAsync("userData", JSON.stringify(userData));
 
-      // Redirect to home page
-      router.replace("/(tabs)/home");
+      // Redirect based on user role
+      if (userData.role === "admin") {
+        router.replace("/(admin)/adminDashboard");
+      } else {
+        router.replace("/(tabs)/home");
+      }
     } catch (error) {
       if (error.response && error.response.data && error.response.data.error) {
         setError(error.response.data.error);

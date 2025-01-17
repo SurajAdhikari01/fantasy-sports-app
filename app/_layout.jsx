@@ -36,8 +36,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (isReady) {
       if (!isAuthenticated) {
-        router.replace("/(admin)/adminDashboard");
-        //router.replace("/(auth)/signin");
+        router.replace("/(auth)/signin");
       } else {
         router.replace("/(tabs)/home");
       }
