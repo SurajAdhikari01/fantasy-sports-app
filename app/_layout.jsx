@@ -36,10 +36,10 @@ export default function RootLayout() {
   useEffect(() => {
     if (isReady) {
       if (!isAuthenticated) {
-        router.replace("/(admin)/adminDashboard");
+        // router.replace("/(admin)/adminDashboard");
+        router.replace("/(tabs)/home");
         //router.replace("/(auth)/signin");
       } else {
-        router.replace("/(tabs)/home");
       }
     }
   }, [isReady, isAuthenticated, router]);
