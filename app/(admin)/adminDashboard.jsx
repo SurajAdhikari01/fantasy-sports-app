@@ -76,7 +76,7 @@ const AdminDashboard = () => {
         <StyledView className="w-full items-center mt-4 mb-8">
           <StyledTouchableOpacity
             className="w-full"
-            onPress={() => router.push("(admin)/createTeamForm")}
+            onPress={() => router.push("../adminComponents/createTeamForm")}
           >
             <LinearGradient
               colors={["#ff9a9e", "#fad0c4", "#fad0c4", "#ff9a9e"]}
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
               className="mt-2 bg-blue-500 p-2 rounded-lg"
               onPress={() =>
                 router.push({
-                  pathname: "(admin)/addPlayerForm",
+                  pathname: "../adminComponents/addPlayerForm",
                   params: {
                     tournamentId: tournament._id,
                     franchiseId: tournament.franchises._id,
