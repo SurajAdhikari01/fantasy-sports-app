@@ -156,7 +156,6 @@ const AdminForm = () => {
         franchises,
         sport,
       };
-      console.log("Tournament data:", tournamentData);
 
       const response = await api.post("/tournaments/new", tournamentData);
 
@@ -167,8 +166,6 @@ const AdminForm = () => {
         },
       ]);
     } catch (error) {
-      console.error("Failed to create tournament:", error);
-
       if (error.response?.status === 401) {
         Alert.alert(
           "Session Expired",

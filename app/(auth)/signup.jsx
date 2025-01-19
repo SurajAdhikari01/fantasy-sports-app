@@ -12,8 +12,7 @@ import { styled } from "nativewind";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
-import axios from "axios";
-import * as SecureStore from "expo-secure-store"; // For secure storage
+import api from "../config/axios";
 
 const GradientBackground = styled(
   LinearGradient,
@@ -39,12 +38,12 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false); // State to track if admin registration is enabled
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const scaleValue = useRef(new Animated.Value(1)).current;
 
   const validateInputs = () => {
-    if (!username || !email || !password) {
+    if (!username.trim() || !email.trim() || !password.trim()) {
       setError("All fields are required.");
       return false;
     }
@@ -67,42 +66,52 @@ export default function SignUp() {
     setError("");
 
     try {
-      const payload = {
+      const data = {
         username,
         email,
         password,
+        ...(isAdmin && { role: "admin" }),
       };
 
-      // Include role in payload if admin registration is enabled
-      if (isAdmin) {
-        payload.role = "admin";
+      const response = await api.post("/v1/users/register", data);
+
+      let token = null;
+      const authHeader = response.headers["authorization"];
+      if (authHeader?.startsWith("Bearer ")) {
+        token = authHeader.substring(7);
       }
 
-      const response = await axios.post(
-        "http://localhost:9005/api/v1/users/register",
-        payload
-      );
+      if (!token) {
+        const cookies = response.headers["set-cookie"];
+        if (cookies) {
+          const accessTokenCookie = cookies.find((cookie) =>
+            cookie.startsWith("accessToken=")
+          );
+          if (accessTokenCookie) {
+            token = accessTokenCookie.split(";")[0].split("=")[1];
+          }
+        }
+      }
+
+      if (!token) {
+        throw new Error("No authentication token received.");
+      }
 
       const userData = {
-        token: response.data.token,
         username: response.data.data.username,
         email: response.data.data.email,
         role: response.data.data.role,
       };
-      await SecureStore.setItemAsync("userData", JSON.stringify(userData));
 
-      if (userData.role === "admin") {
-        router.replace("/(admin)/adminDashboard");
-      } else {
-        router.replace("/(tabs)/home");
-      }
+      // Save token and redirect
+      Alert.alert("Success", "Account created successfully!");
+      router.push("/(auth)/signin");
     } catch (error) {
-      if (error.response && error.response.data && error.response.data.error) {
-        setError(error.response.data.error);
+      if (error.response?.data?.message) {
+        setError(error.response.data.message);
       } else if (error.code === "ECONNABORTED") {
         setError("Network timeout. Please try again.");
       } else {
-        console.log(error);
         setError("Something went wrong. Please try again.");
       }
     } finally {
@@ -126,7 +135,6 @@ export default function SignUp() {
   };
 
   const handleLongPress = () => {
-    // Enable admin registration on long press
     setIsAdmin(true);
     Alert.alert("Admin Mode", "You are now in admin registration mode.");
   };
@@ -141,7 +149,6 @@ export default function SignUp() {
         <Title>Create Account</Title>
       </Pressable>
 
-      {/* Username Input */}
       <InputContainer>
         <IconWrapper>
           <Icon name="person-outline" size={24} color="#9CA3AF" />
@@ -152,12 +159,11 @@ export default function SignUp() {
           value={username}
           onChangeText={(text) => {
             setUsername(text);
-            if (error) setError("");
+            setError("");
           }}
         />
       </InputContainer>
 
-      {/* Email Input */}
       <InputContainer>
         <IconWrapper>
           <Icon name="mail-outline" size={24} color="#9CA3AF" />
@@ -165,17 +171,14 @@ export default function SignUp() {
         <Input
           placeholder="Email"
           placeholderTextColor="#9CA3AF"
-          keyboardType="email-address"
-          autoCapitalize="none"
           value={email}
           onChangeText={(text) => {
             setEmail(text);
-            if (error) setError("");
+            setError("");
           }}
         />
       </InputContainer>
 
-      {/* Password Input */}
       <InputContainer>
         <IconWrapper>
           <Icon name="lock-closed-outline" size={24} color="#9CA3AF" />
@@ -187,17 +190,13 @@ export default function SignUp() {
           value={password}
           onChangeText={(text) => {
             setPassword(text);
-            if (error) setError("");
+            setError("");
           }}
         />
       </InputContainer>
 
-      {/* Error Message Display */}
-      <View style={{ minHeight: 30 }}>
-        {error ? <ErrorMessage>{error}</ErrorMessage> : null}
-      </View>
+      {error ? <ErrorMessage>{error}</ErrorMessage> : null}
 
-      {/* Animated Button */}
       <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
         <Button
           onPressIn={onPressIn}

@@ -124,19 +124,17 @@ const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
         {/* Background Path */}
         <Path
           d={`
-            M 0 ${adjustedHeight * 0.3} 
-            A 30, 30 0 0 1 ${adjustedWidth * 0.05}, ${
-            adjustedHeight * 0.1
-          }                  
-            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.3}      
-            L ${adjustedWidth * 0.9} ${adjustedHeight * 0.1} 
-            A 30,30 0 0 1 ${adjustedWidth}, ${adjustedHeight * 0.3}           
-            L ${adjustedWidth} ${adjustedHeight * 0.78}  
+            M 0 ${adjustedHeight * 0.3}
+            A 30, 30 0 0 1 ${adjustedWidth * 0.05}, ${adjustedHeight * 0.1}
+            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.3}
+            L ${adjustedWidth * 0.9} ${adjustedHeight * 0.1}
+            A 30,30 0 0 1 ${adjustedWidth}, ${adjustedHeight * 0.3}
+            L ${adjustedWidth} ${adjustedHeight * 0.78}
             A 30, 30 0 0 1 ${adjustedWidth * 0.9}, ${adjustedHeight * 0.99}
-            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.9} 
+            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.9}
             L ${adjustedWidth * 0.09} ${adjustedHeight}
-            A 30,30 0 0 1 0, ${adjustedHeight * 0.8}   
-            L 0 ${adjustedHeight * 0.3} 
+            A 30,30 0 0 1 0, ${adjustedHeight * 0.8}
+            L 0 ${adjustedHeight * 0.3}
             Z
           `}
           fill="#1f1f1f"
@@ -167,7 +165,7 @@ const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
           d={`
             M ${adjustedWidth * 0.1} 0
             A 20, 20 1 1 1 ${adjustedWidth * 0.07} 0
-            L ${adjustedWidth * 0.6} 0 
+            L ${adjustedWidth * 0.6} 0
             A 20, 20 0 0 1 ${adjustedWidth * 0.65}, ${adjustedHeight * 0.15}
             L ${adjustedWidth * 0.58} ${adjustedHeight * 0.6}
             A 20, 20 0 0 1 ${adjustedWidth * 0.54}, ${adjustedHeight * 0.69}

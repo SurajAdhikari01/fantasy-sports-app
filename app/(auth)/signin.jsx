@@ -22,7 +22,7 @@ import api from "../config/axios";
 // Styled components
 const GradientBackground = styled(
   LinearGradient,
-  "flex-1 justify-center items-center px-4"
+  "flex-1 justify-center items-center w-full"
 );
 const StyledScrollView = styled(ScrollView, "flex-1 w-full");
 const Container = styled(
@@ -38,11 +38,11 @@ const Input = styled(TextInput, "flex-1 p-4 text-lg text-white");
 const IconWrapper = styled(View, "px-3");
 const Button = styled(
   Pressable,
-  "w-full p-4 bg-purple-600 rounded-lg items-center mt-4"
+  "w-full p-4 bg-green-600 rounded-lg items-center mt-4"
 );
 const ButtonText = styled(Text, "text-white text-lg font-bold");
 const ErrorMessage = styled(Text, "text-red-500 mt-2 text-center");
-const ForgotPasswordText = styled(Text, "text-white mt-4 text-center");
+const ForgotPasswordText = styled(Text, "text-white mt-4 text-center mb-2");
 
 export default function SignIn() {
   const [email, setEmail] = useState("");
@@ -158,106 +158,100 @@ export default function SignIn() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ flex: 1 }}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+    <GradientBackground
+      colors={["#6a11cb", "#2575fc"]}
+      start={[0, 0]}
+      end={[1, 1]}
     >
-      <GradientBackground
-        colors={["#6a11cb", "#2575fc"]}
-        start={[0, 0]}
-        end={[1, 1]}
+      <StyledScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+        }}
+        keyboardShouldPersistTaps="handled"
       >
-        <StyledScrollView
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: "center",
-          }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <Container>
-            <Title>Welcome Back</Title>
+        <Container>
+          <Title>Welcome Back</Title>
 
-            <InputContainer
-              className={error ? "border-red-500" : "border-purple-700"}
-            >
-              <IconWrapper>
-                <Icon name="mail-outline" size={24} color="#9CA3AF" />
-              </IconWrapper>
-              <Input
-                placeholder="Email"
-                placeholderTextColor="#9CA3AF"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoComplete="email"
-                value={email}
-                onChangeText={(text) => {
-                  setEmail(text);
-                  setError("");
-                }}
-              />
-            </InputContainer>
-
-            <InputContainer
-              className={error ? "border-red-500" : "border-purple-700"}
-            >
-              <IconWrapper>
-                <Icon name="lock-closed-outline" size={24} color="#9CA3AF" />
-              </IconWrapper>
-              <Input
-                placeholder="Password"
-                placeholderTextColor="#9CA3AF"
-                secureTextEntry
-                value={password}
-                onChangeText={(text) => {
-                  setPassword(text);
-                  setError("");
-                }}
-                onSubmitEditing={handleSignIn}
-                returnKeyType="done"
-              />
-            </InputContainer>
-
-            {error ? <ErrorMessage>{error}</ErrorMessage> : null}
-
-            <Animated.View
-              style={{
-                transform: [{ scale: scaleValue }],
-                width: "100%",
+          <InputContainer
+            className={error ? "border-red-500" : "border-purple-700"}
+          >
+            <IconWrapper>
+              <Icon name="mail-outline" size={24} color="#9CA3AF" />
+            </IconWrapper>
+            <Input
+              placeholder="Email"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={email}
+              onChangeText={(text) => {
+                setEmail(text);
+                setError("");
               }}
-            >
-              <Button
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}
-                onPress={handleSignIn}
-                disabled={loading}
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <ButtonText>Sign In</ButtonText>
-                )}
-              </Button>
-            </Animated.View>
+            />
+          </InputContainer>
 
-            <ForgotPasswordText
-              onPress={() => router.push("/(auth)/forgot-password")}
-            >
-              Forgot Password?
-            </ForgotPasswordText>
+          <InputContainer
+            className={error ? "border-red-500" : "border-purple-700"}
+          >
+            <IconWrapper>
+              <Icon name="lock-closed-outline" size={24} color="#9CA3AF" />
+            </IconWrapper>
+            <Input
+              placeholder="Password"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                setError("");
+              }}
+              onSubmitEditing={handleSignIn}
+              returnKeyType="done"
+            />
+          </InputContainer>
 
-            <Text className="text-white mt-6 text-center">
-              Don't have an account?{" "}
-              <Text
-                onPress={() => router.push("/(auth)/signup")}
-                className="text-pink-300 font-bold"
-              >
-                Sign Up
-              </Text>
+          {error ? <ErrorMessage>{error}</ErrorMessage> : null}
+
+          <Animated.View
+            style={{
+              transform: [{ scale: scaleValue }],
+              width: "100%",
+            }}
+          >
+            <Button
+              onPressIn={onPressIn}
+              onPressOut={onPressOut}
+              onPress={handleSignIn}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <ButtonText>Sign In</ButtonText>
+              )}
+            </Button>
+          </Animated.View>
+
+          <ForgotPasswordText
+            onPress={() => router.push("/(auth)/forgot-password")}
+          >
+            Forgot Password?
+          </ForgotPasswordText>
+
+          <Text className="text-white mt-6 text-center">
+            Don't have an account?{" "}
+            <Text
+              onPress={() => router.push("/(auth)/signup")}
+              className="text-pink-300 font-bold"
+            >
+              Sign Up
             </Text>
-          </Container>
-        </StyledScrollView>
-      </GradientBackground>
-    </KeyboardAvoidingView>
+          </Text>
+        </Container>
+      </StyledScrollView>
+    </GradientBackground>
   );
 }
