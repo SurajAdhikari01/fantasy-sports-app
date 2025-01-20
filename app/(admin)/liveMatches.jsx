@@ -1,67 +1,111 @@
-import { Tabs } from "expo-router";
+import React, { useState, useEffect } from "react";
+import {
+  ScrollView,
+  SafeAreaView,
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
 import { styled } from "nativewind";
-import { BlurView } from "expo-blur"; // Import BlurView
+import api from "../config/axios";
+import { useRouter } from "expo-router";
 
 // Styling container with NativeWind
-const Container = styled(View, "flex-1 bg-gray-900");
+const StyledSafeAreaView = styled(SafeAreaView);
+const StyledView = styled(View);
+const StyledText = styled(Text);
+const StyledTouchableOpacity = styled(TouchableOpacity);
 
 export default function AdminTabsLayout() {
-  return (
-    <Container>
-      {/* Main content of the application */}
-      <View style={{ flex: 1 }}>
-        <Tabs
-          screenOptions={{
-            tabBarStyle: {
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: 80, // Adjust for padding
-              borderRadius: 30, // Rounded edges for the bar
-              backgroundColor: "rgba(0,0,0,0.5)", // Slightly transparent background
-              borderTopWidth: 0, // Remove the top border
-              elevation: 5, // Add elevation for Android shadow
-              zIndex: 2, // Ensure the tab bar is above the BlurView
-            },
-            tabBarActiveTintColor: "#F97316", // Orange color for active state
-            tabBarInactiveTintColor: "#9CA3AF", // Grey for inactive state
-            headerShown: false,
-            tabBarBackground: () => (
-              <BlurView
-                style={{ height: 80 }} // Match the height of the tab bar
-                intensity={100} // Adjust as needed
-                tint="dark"
-                borderRadius={30} // Rounded edges for the BlurView
-              />
-            ),
-          }}
-        >
-          {/* Admin Dashboard Tab */}
-          <Tabs.Screen
-            name="adminDashboard"
-            options={{
-              tabBarLabel: "Dashboard",
-              tabBarIcon: ({ color }) => (
-                <Ionicons name="grid" size={24} color={color} />
-              ),
-            }}
-          />
+  const [tournaments, setTournaments] = useState([]);
+  const router = useRouter();
 
-          {/* Live Matches Tab */}
-          <Tabs.Screen
-            name="liveMatches"
-            options={{
-              tabBarLabel: "Live Matches",
-              tabBarIcon: ({ color }) => (
-                <Ionicons name="pulse" size={24} color={color} />
-              ),
-            }}
-          />
-        </Tabs>
-      </View>
-    </Container>
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const response = await api.get("tournaments/getTournamentsByUserId");
+        if (response.data && response.data.message) {
+          setTournaments(response.data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching tournaments:", error);
+        Alert.alert("Error", "Failed to fetch tournaments. Please try again.");
+      }
+    };
+
+    fetchTournaments();
+  }, []);
+
+  const isCurrentDate = (date) => {
+    const givenDate = new Date(date).toDateString();
+    const currentDate = new Date().toDateString();
+    return givenDate === currentDate;
+  };
+
+  const filteredTournaments = tournaments.filter(
+    (tournament) =>
+      isCurrentDate(tournament.knockoutStart) ||
+      isCurrentDate(tournament.semifinalStart) ||
+      isCurrentDate(tournament.finalStart)
+  );
+
+  return (
+    <StyledSafeAreaView className="flex-1 bg-gray-900 p-4">
+      {/* Header */}
+      <StyledView className="w-full flex-row justify-between items-center mb-6">
+        <StyledText className="text-white text-xl font-bold px-4 pt-4">
+          Today's Matches
+        </StyledText>
+      </StyledView>
+      <ScrollView className="mt-6">
+        {/* Tournament Cards */}
+        {filteredTournaments.map((tournament) => (
+          <StyledView
+            key={tournament._id}
+            className="mb-4 p-6 bg-gray-800 rounded-lg"
+            style={{ marginHorizontal: 16 }}
+          >
+            <StyledText className="text-white text-lg font-bold mb-2">
+              {tournament.name}
+            </StyledText>
+            <StyledText className="text-white mb-1">
+              Rules: {tournament.rules}
+            </StyledText>
+            <StyledText className="text-white mb-1">
+              Player Limit Per Team: {tournament.playerLimitPerTeam}
+            </StyledText>
+            <StyledText className="text-white mb-1">
+              Knockout Start:{" "}
+              {new Date(tournament.knockoutStart).toLocaleDateString()}
+            </StyledText>
+            <StyledText className="text-white mb-1">
+              Semifinal Start:{" "}
+              {new Date(tournament.semifinalStart).toLocaleDateString()}
+            </StyledText>
+            <StyledText className="text-white mb-2">
+              Final Start:{" "}
+              {new Date(tournament.finalStart).toLocaleDateString()}
+            </StyledText>
+            <StyledTouchableOpacity
+              className="mt-2 bg-green-500 p-3 rounded-lg"
+              onPress={() =>
+                router.push({
+                  pathname: "../adminComponents/addMatchDetails",
+                  params: {
+                    tournament: JSON.stringify(tournament),
+                  },
+                })
+              }
+            >
+              <StyledText className="text-white text-center font-bold">
+                Add Match Details
+              </StyledText>
+            </StyledTouchableOpacity>
+          </StyledView>
+        ))}
+      </ScrollView>
+    </StyledSafeAreaView>
   );
 }
