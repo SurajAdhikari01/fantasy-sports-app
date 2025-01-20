@@ -1,9 +1,14 @@
 // index.jsx
-import React from 'react';
-import EnhancedTeamView from './components/EnhancedTeamView.jsx';
+import React from "react";
+import EnhancedTeamView from "./components/EnhancedTeamView.jsx";
+import { RecoilRoot } from "recoil";
 
 const App = () => {
-  return <EnhancedTeamView />;
+  return (
+    <RecoilRoot>
+      <EnhancedTeamView />
+    </RecoilRoot>
+  );
 };
 
 export default App;

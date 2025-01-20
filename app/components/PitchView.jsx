@@ -1,161 +1,55 @@
 import React from "react";
-import {
-  View,
-  Image,
-  TouchableOpacity,
-  Dimensions,
-  Text,
-  ScrollView,
-} from "react-native";
+import { View, TouchableOpacity, Dimensions,Image } from "react-native";
 import PlayerCard from "./PlayerCard";
+import { FontAwesome5 } from "@expo/vector-icons";
 import footballPitch from "../../assets/football-field.jpg";
+
+
+// Define constants for number of players
+const NUM_DEFENDERS = 5;
+const NUM_MIDFIELDERS = 5;
+const NUM_FORWARDS = 3;
+
+// Get the width and height of the screen
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
+const calculateFixedPositions = (section, numPlayers) => {
+  const positions = [];
+  const spacing = screenWidth / (numPlayers + 1);
+
+  // Adjust these percentages to better fit the screen
+  const yPositions = {
+    Forwards: 15,
+    Midfielders: 40,
+    Defenders: 65,
+    Goalkeepers: 85,
+  };
+
+  for (let i = 0; i < numPlayers; i++) {
+    positions.push({
+      x: spacing * (i + 1),
+      y: yPositions[section] || 85,
+    });
+  }
+
+  return positions;
+};
 
 const PitchView = ({
   teamData,
   handlePlayerPress,
   handleOpenPlayerSelection,
 }) => {
-  // Dynamic position calculation based on number of players in each section
-  const calculateDynamicPositions = (section, numPlayers) => {
-    const positions = [];
-
-    switch (section) {
-      case "Goalkeepers":
-        // Single goalkeeper position
-        positions.push({ x: 50, y: 90 });
-        break;
-
-      case "Defenders":
-        // Minimum 3 defenders, spread across the back
-        for (let i = 0; i < numPlayers; i++) {
-          positions.push({
-            x: 20 + (60 / Math.max(1, numPlayers - 1)) * i,
-            y: 70,
-          });
-        }
-        break;
-
-      case "Midfielders":
-        // Minimum 3 midfielders, spread in middle
-        for (let i = 0; i < numPlayers; i++) {
-          positions.push({
-            x: 20 + (60 / Math.max(1, numPlayers - 1)) * i,
-            y: 45,
-          });
-        }
-        break;
-
-      case "Forwards":
-        // Minimum 1 forward, spread at front
-        for (let i = 0; i < numPlayers; i++) {
-          positions.push({
-            x: 35 + (30 / Math.max(1, numPlayers - 1)) * i,
-            y: 20,
-          });
-        }
-        break;
-    }
-
-    return positions;
-  };
-
-  const renderPlaceholders = (section, players) => {
-    const positions = calculateDynamicPositions(section, players.length + 1);
-    const placeholders = [];
-
-    // Render existing players
-    players.forEach((player, i) => {
-      const position = positions[i];
-      placeholders.push(
-        <PlayerCard
-          key={player.id}
-          player={player}
-          isPitch={true}
-          onPlayerPress={handlePlayerPress}
-          position={position}
-        />
-      );
-    });
-
-    // Add one placeholder position for each section
-    const nextPosition = positions[players.length];
-    if (nextPosition) {
-      placeholders.push(
-        <TouchableOpacity
-          key={`${section}-add`}
-          style={{
-            position: "absolute",
-            top: `${nextPosition.y}%`,
-            left: `${nextPosition.x}%`,
-            width: 50,
-            height: 50,
-            justifyContent: "center",
-            alignItems: "center",
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            borderRadius: 25,
-            borderWidth: 1,
-            borderColor: "#ccc",
-            transform: [{ translateX: -25 }, { translateY: -25 }],
-          }}
-          onPress={() => handleOpenPlayerSelection(section)}
-        >
-          <Text style={{ fontSize: 24, color: "#666" }}>+</Text>
-        </TouchableOpacity>
-      );
-    }
-
-    return placeholders;
-  };
-
-  const renderSubstitutes = (players) => {
-    // const substitutes = players.slice(positionConfig[players[0]?.role] || 0);
-    const substitutes = players;
-    return (
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: "rgba(255, 255, 255, 0.8)",
-          paddingVertical: 8,
-          paddingHorizontal: 16,
-        }}
-      >
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            {substitutes.map((player) => (
-              <PlayerCard
-                key={player.id}
-                player={player}
-                isPitch={false}
-                onPlayerPress={handlePlayerPress}
-              />
-            ))}
-            <TouchableOpacity
-              style={{
-                width: 64,
-                height: 64,
-                backgroundColor: "rgba(255, 255, 255, 0.9)",
-                borderRadius: 32,
-                justifyContent: "center",
-                alignItems: "center",
-                borderWidth: 1,
-                borderColor: "#ccc",
-                marginLeft: 8,
-              }}
-              onPress={() => handleOpenPlayerSelection("Substitutes")}
-            >
-              <Text style={{ fontSize: 24, color: "#666" }}>+</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
-      </View>
-    );
-  };
-
   return (
-    <View style={{ flex: 1, position: "relative" }}>
+    <View
+      style={{
+        flex: 1,
+        width: "100%",
+        height: screenHeight * 0.8, // Use 80% of screen height
+        backgroundColor: "transparent",
+        position: "relative",
+      }}
+    >
       <Image
         source={footballPitch}
         style={{
@@ -164,21 +58,84 @@ const PitchView = ({
           position: "absolute",
           borderRadius: 8,
           transform: [
-            { perspective: 500 },
-            { rotateX: "60deg" },
-            { scale: 1.2 },
+            { perspective: 400 },
+            { rotateX: "30deg" },
+            { scale: 1.7 },
           ],
         }}
         resizeMode="cover"
       />
+      {Object.keys(teamData).map((section) => {
+        let numPlayers;
+        if (section === "Defenders") {
+          numPlayers = NUM_DEFENDERS;
+        } else if (section === "Midfielders") {
+          numPlayers = NUM_MIDFIELDERS;
+        } else if (section === "Forwards") {
+          numPlayers = NUM_FORWARDS;
+        } else {
+          numPlayers = 1; // Goalkeepers
+        }
 
-      {/* Main formation */}
-      {Object.entries(teamData).map(([section, players]) =>
-        renderPlaceholders(section, players)
-      )}
-
-      {/* Substitutes bench */}
-      {renderSubstitutes(Object.values(teamData).flat())}
+        const positions = calculateFixedPositions(section, numPlayers);
+        return (
+          <View
+            key={section}
+            style={{
+              width: "100%",
+              height: "25%", // Each section takes 25% of the container height
+              position: "absolute",
+              top: positions[0].y + "%", // Position each section absolutely based on first player's y position
+            }}
+          >
+            {positions.map((position, index) => {
+              const player = teamData[section][index];
+              return player ? (
+                <PlayerCard
+                  key={player.id}
+                  player={player}
+                  isPitch={true}
+                  onPlayerPress={handlePlayerPress}
+                  position={{
+                    x: position.x,
+                    y: 0, // Since parent View is absolutely positioned, y should be 0
+                  }}
+                />
+              ) : (
+                <TouchableOpacity
+                  key={`${section}-${index}`}
+                  style={{
+                    position: "absolute",
+                    left: position.x,
+                    transform: [{ translateX: -32 }], // Center horizontally
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                  onPress={() => handleOpenPlayerSelection(section)}
+                >
+                  <View
+                    style={{
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      borderRadius: 50,
+                      shadowColor: "#000",
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 3.84,
+                      elevation: 5,
+                      width: 64,
+                      height: 64,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <FontAwesome5 name="plus" size={24} color="blue" />
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        );
+      })}
     </View>
   );
 };

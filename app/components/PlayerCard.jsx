@@ -13,12 +13,12 @@ const PlayerCard = ({ player, isPitch, onPlayerPress, position }) => {
     }).start();
   }, [fadeAnim]);
 
+  // Only modify the positioning logic
   const cardStyle = position
     ? {
         position: "absolute",
-        top: `${position.y}%`,
-        left: `${position.x}%`,
-        transform: [{ translateX: -25 }, { translateY: -25 }],
+        left: position.x,
+        transform: [{ translateX: -32 }], // Center horizontally only
       }
     : {};
 
@@ -27,7 +27,7 @@ const PlayerCard = ({ player, isPitch, onPlayerPress, position }) => {
       style={[cardStyle, { opacity: fadeAnim }]}
       className={`${
         isPitch
-          ? "bg-white/90 rounded-full shadow-lg m-2 w-16 h-16"
+          ? "bg-white/90 rounded-full shadow-lg w-16 h-16"
           : "bg-white rounded-2xl shadow-lg p-4 mb-3"
       }`}
     >
@@ -47,7 +47,7 @@ const PlayerCard = ({ player, isPitch, onPlayerPress, position }) => {
           <Text
             className={`font-bold ${
               isPitch ? "text-xs" : "text-base"
-            } text-gray-800 ${isPitch ? "text-center" : ""}`}
+            } text-gray-400 ${isPitch ? "text-center" : ""}`}
             numberOfLines={1}
           >
             {player.name}

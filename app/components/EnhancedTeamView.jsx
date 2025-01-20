@@ -1,24 +1,50 @@
-import React, { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import { View, Text, SafeAreaView, Alert, Dimensions } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useRecoilState, useRecoilValue } from "recoil";
+import {
+  sportState,
+  teamDataState,
+  filterRoleState,
+  sortByState,
+  selectedPlayerState,
+  showPlayerStatsState,
+  showPlayerSelectionModalState,
+  selectedSectionState,
+  filteredAvailablePlayersState,
+  totalPlayersState,
+  teamValueState,
+  totalPointsState,
+} from "./atoms";
 import SportSelector from "./SportSelector";
 import PitchView from "./PitchView";
 import HighlightedPlayerInfo from "./HighlightedPlayerInfo";
 import ActionButtons from "./ActionButtons";
 import PlayerSelectionModal from "./PlayerSelectionModal";
-import { allPlayers, SPORT_CONFIGS } from "../utils/data";
+import { SPORT_CONFIGS } from "../utils/data";
 
 const EnhancedTeamView = () => {
   const navigation = useNavigation();
-  const [sport, setSport] = useState("cricket");
-  const [viewMode, setViewMode] = useState("pitch");
-  const [filterRole, setFilterRole] = useState("All");
-  const [sortBy, setSortBy] = useState("points");
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [showPlayerStats, setShowPlayerStats] = useState(false);
+  const [sport, setSport] = useRecoilState(sportState);
+  const [teamData, setTeamData] = useRecoilState(teamDataState);
+  const [filterRole, setFilterRole] = useRecoilState(filterRoleState);
+  const [sortBy, setSortBy] = useRecoilState(sortByState);
+  const [selectedPlayer, setSelectedPlayer] =
+    useRecoilState(selectedPlayerState);
+  const [showPlayerStats, setShowPlayerStats] =
+    useRecoilState(showPlayerStatsState);
   const [showPlayerSelectionModal, setShowPlayerSelectionModal] =
-    useState(false);
-  const [selectedSection, setSelectedSection] = useState(null);
+    useRecoilState(showPlayerSelectionModalState);
+  const [selectedSection, setSelectedSection] =
+    useRecoilState(selectedSectionState);
+
+  const filteredAvailablePlayers = useRecoilValue(
+    filteredAvailablePlayersState
+  );
+  const totalPlayers = useRecoilValue(totalPlayersState);
+  const teamValue = useRecoilValue(teamValueState);
+  const totalPoints = useRecoilValue(totalPointsState);
+  const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
   const createInitialTeamData = useCallback((sportType) => {
     const data = {};
@@ -28,45 +54,9 @@ const EnhancedTeamView = () => {
     return data;
   }, []);
 
-  const [teamData, setTeamData] = useState(() => createInitialTeamData(sport));
-
   useEffect(() => {
     setTeamData(createInitialTeamData(sport));
   }, [sport, createInitialTeamData]);
-
-  const totalPlayers = useMemo(() => {
-    return Object.values(teamData).flat().length;
-  }, [teamData]);
-
-  const teamValue = useMemo(() => {
-    return Object.values(teamData)
-      .flat()
-      .reduce((sum, player) => sum + player.price, 0)
-      .toFixed(1);
-  }, [teamData]);
-
-  const totalPoints = useMemo(() => {
-    return Object.values(teamData)
-      .flat()
-      .reduce((sum, player) => sum + player.points, 0);
-  }, [teamData]);
-
-  const filteredAvailablePlayers = useMemo(() => {
-    let players = allPlayers[sport]?.filter(
-      (player) =>
-        !Object.values(teamData)
-          .flat()
-          .some((p) => p.id === player.id)
-    );
-
-    if (!players) return [];
-
-    if (filterRole !== "All") {
-      players = players.filter((p) => p.role === filterRole);
-    }
-
-    return [...players].sort((a, b) => b[sortBy] - a[sortBy]);
-  }, [sport, filterRole, sortBy, teamData]);
 
   const validateTeam = useCallback(() => {
     const errors = [];
@@ -114,7 +104,6 @@ const EnhancedTeamView = () => {
     (player) => {
       const config = SPORT_CONFIGS[sport];
 
-      // Ensure selectedSection is valid before accessing its properties
       if (!selectedSection || !config.sections[selectedSection]) {
         Alert.alert(
           "Error",
@@ -199,87 +188,106 @@ const EnhancedTeamView = () => {
     ]);
   }, [validateTeam, navigation]);
 
-
-  const calculateDynamicPositions = (section, numPlayers) => {
-    const positions = {
-      Goalkeepers: [
-        { x: 50, y: 90 }
-      ],
-      Defenders: [
-        { x: 20, y: 70 },
-        { x: 40, y: 70 },
-        { x: 60, y: 70 },
-        { x: 80, y: 70 },
-        { x: 50, y: 75 }
-      ],
-      Midfielders: [
-        { x: 30, y: 50 },
-        { x: 50, y: 50 },
-        { x: 70, y: 50 },
-        { x: 40, y: 60 },
-        { x: 60, y: 60 }
-      ],
-      Forwards: [
-        { x: 35, y: 20 },
-        { x: 50, y: 20 },
-        { x: 65, y: 20 }
-      ]
-    };
-    return positions[section];
-  };
-  
-
   const handleOpenPlayerSelection = (section) => {
     setSelectedSection(section);
     setShowPlayerSelectionModal(true);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900">
-      <View className="flex-1">
-        <View className="flex-row justify-between items-center p-4">
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#1F2937" }}>
+      {/* Header Section */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
           <SportSelector
             currentSport={sport}
             onSportChange={handleSportChange}
           />
-          <View className="flex-col items-center">
-            <Text className="text-green-500 font-bold mr-1 text-2xl">
+          <View style={{ alignItems: "flex-end" }}>
+            <Text
+              style={{ color: "#10B981", fontWeight: "bold", fontSize: 24 }}
+            >
               ${teamValue}M
             </Text>
-            <Text className="text-gray-500">Team Value</Text>
+            <Text style={{ color: "#9CA3AF", fontSize: 12 }}>Team Value</Text>
+            <Text style={{ color: "#3B82F6", fontSize: 12, marginTop: 4 }}>
+              Players: {totalPlayers}/{SPORT_CONFIGS[sport].maxPlayers}
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Main Content */}
+      <View
+        style={{
+          flex: 1,
+          position: "relative",
+          height: screenHeight * 0.75,
+          paddingBottom: 80, // Add padding bottom to account for the tab bar
+        }}
+      >
+        {/* Pitch View Container */}
+        <View style={{ flex: 1, paddingTop: 8, paddingBottom: 64 }}>
+          <PitchView
+            teamData={teamData}
+            handlePlayerPress={handlePlayerPress}
+            handleOpenPlayerSelection={handleOpenPlayerSelection}
+          />
+        </View>
+
+        {/* Stats and Points Section */}
+        <View
+          style={{
+            position: "absolute",
+            bottom: 80,
+            left: 0,
+            right: 0,
+            paddingHorizontal: 16,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+            backgroundColor: "rgba(31, 41, 55, 0.8)",
+            paddingVertical: 8,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, marginRight: 16 }}>
+              Total Points: {totalPoints}
+            </Text>
           </View>
         </View>
 
-        <PitchView
-          sport="football"
-          teamData={teamData}
-          handlePlayerPress={handlePlayerPress}
-          calculatePositions={calculateDynamicPositions}
-          handleOpenPlayerSelection={handleOpenPlayerSelection}
-        />
-
-        <HighlightedPlayerInfo
-          player={selectedPlayer}
-          visible={showPlayerStats}
-          onClose={() => {
-            setShowPlayerStats(false);
-            setSelectedPlayer(null);
-          }}
-        />
-
-        <ActionButtons
-          handleNext={handleNext}
-          setShowPlayerSelectionModal={handleOpenPlayerSelection} // Pass the section to open
-        />
-
-        <PlayerSelectionModal
-          visible={showPlayerSelectionModal}
-          onClose={() => setShowPlayerSelectionModal(false)}
-          onSelectPlayer={addPlayer}
-          availablePlayers={filteredAvailablePlayers}
-          section={selectedSection}
-        />
+        {/* Action Buttons Container */}
+        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+          <ActionButtons
+            handleNext={handleNext}
+            setShowPlayerSelectionModal={handleOpenPlayerSelection}
+          />
+        </View>
       </View>
+
+      {/* Modals */}
+      <HighlightedPlayerInfo
+        player={selectedPlayer}
+        visible={showPlayerStats}
+        onClose={() => {
+          setShowPlayerStats(false);
+          setSelectedPlayer(null);
+        }}
+      />
+
+      <PlayerSelectionModal
+        visible={showPlayerSelectionModal}
+        onClose={() => setShowPlayerSelectionModal(false)}
+        onSelectPlayer={addPlayer}
+        availablePlayers={filteredAvailablePlayers}
+        section={selectedSection}
+      />
     </SafeAreaView>
   );
 };

@@ -1,5 +1,6 @@
 import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RecoilRoot } from "recoil";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur"; // Import BlurView for blur effect
@@ -10,9 +11,11 @@ const MainPage = () => {
   const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-slate-900 pb-12">
+    // <SafeAreaView className="flex-1 bg-slate-900 pb-12">
+    <RecoilRoot>
       <EnhancedTeamView />
-    </SafeAreaView>
+    </RecoilRoot>
+    // </SafeAreaView>
   );
 };
 

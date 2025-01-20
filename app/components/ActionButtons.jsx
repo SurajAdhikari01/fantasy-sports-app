@@ -3,23 +3,19 @@ import { View, TouchableOpacity, Text } from "react-native";
 
 const ActionButtons = ({ handleNext, setShowPlayerSelectionModal }) => {
   return (
-    <View className="px-4 pt-4 pb-2 absolute bottom-4 w-screen z-50">
-      <View className="flex-row justify-between">
-        <TouchableOpacity
-          onPress={() => setShowPlayerSelectionModal(true)}
-          className="flex-1 bg-blue-700 py-4 px-2 rounded-xl mr-2 shadow-sm active:bg-blue-900"
-        >
-          <Text className="text-white text-center font-bold">
-            + Add Players
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={handleNext}
-          className="flex-1 bg-green-500 py-4 px-2 rounded-xl ml-2 shadow-sm active:bg-green-600"
-        >
-          <Text className="text-white text-center font-bold">Next</Text>
-        </TouchableOpacity>
-      </View>
+    <View className="flex-row justify-between items-center px-4 py-3 bg-gray-800/90">
+      <TouchableOpacity
+        onPress={() => setShowPlayerSelectionModal("Forwards")}
+        className="bg-blue-600 px-6 py-2 rounded-full flex-1 mr-2"
+      >
+        <Text className="text-white text-center font-semibold">Add Player</Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={handleNext}
+        className="bg-green-600 px-6 py-2 rounded-full flex-1 ml-2"
+      >
+        <Text className="text-white text-center font-semibold">Next</Text>
+      </TouchableOpacity>
     </View>
   );
 };
