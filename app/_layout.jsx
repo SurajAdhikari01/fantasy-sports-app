@@ -1,50 +1,46 @@
 // app/_layout.js
-import { useEffect, useState } from "react";
-import { Slot, useRouter } from "expo-router";
+import { useEffect } from "react";
+import { Slot, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import { styled } from "nativewind";
-import * as SecureStore from "expo-secure-store";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 
 const Container = styled(View, "flex-1 bg-gray-900");
 
-export default function RootLayout() {
+// Protected route component
+function AuthGuard() {
+  const { isLoading, isAuthenticated, userData } = useAuth();
+  const segments = useSegments();
   const router = useRouter();
-  const [isReady, setIsReady] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   useEffect(() => {
-    const checkAuthentication = async () => {
-      try {
-        const userData = await SecureStore.getItemAsync("userData");
-        if (userData) {
-          const parsedUserData = JSON.parse(userData);
-          setIsAuthenticated(!!parsedUserData.token);
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === "(auth)";
+    const inAdminGroup = segments[0] === "(admin)";
+
+    if (isAuthenticated) {
+      // Redirect authenticated users away from auth pages
+      if (inAuthGroup) {
+        if (userData?.role === "admin") {
+          router.replace("/(admin)/adminDashboard");
         } else {
-          setIsAuthenticated(false);
+          router.replace("/(tabs)/home");
         }
-      } catch (error) {
-        console.error("Failed to check authentication:", error);
-        setIsAuthenticated(false);
-      } finally {
-        setIsReady(true);
       }
-    };
-
-    checkAuthentication();
-  }, []);
-
-  useEffect(() => {
-    if (isReady) {
-      if (!isAuthenticated) {
-        // router.replace("/(admin)/adminDashboard");
+      // Protect admin routes
+      if (inAdminGroup && userData?.role !== "admin") {
         router.replace("/(tabs)/home");
-        //router.replace("/(auth)/signin");
-      } else {
+      }
+    } else {
+      // Redirect unauthenticated users to sign in
+      if (!inAuthGroup) {
+        router.replace("/(auth)/signin");
       }
     }
-  }, [isReady, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, segments, userData]);
 
-  if (!isReady) {
+  if (isLoading) {
     return (
       <Container>
         <ActivityIndicator size="large" color="#F97316" />
@@ -52,9 +48,16 @@ export default function RootLayout() {
     );
   }
 
+  return <Slot />;
+}
+
+// Root layout component
+export default function RootLayout() {
   return (
-    <Container>
-      <Slot />
-    </Container>
+    <AuthProvider>
+      <Container>
+        <AuthGuard />
+      </Container>
+    </AuthProvider>
   );
 }
