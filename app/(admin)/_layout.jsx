@@ -19,8 +19,8 @@ export default function AdminTabsLayout() {
               bottom: 0,
               left: 0,
               right: 0,
-              height: 80, // Adjust for padding
-              borderRadius: 30, // Rounded edges for the bar
+              // height: 80, // Adjust for padding
+              // borderRadius: 30, // Rounded edges for the bar
               backgroundColor: "rgba(0,0,0,0.5)", // Slightly transparent background
               borderTopWidth: 0, // Remove the top border
               elevation: 5, // Add elevation for Android shadow
@@ -31,7 +31,7 @@ export default function AdminTabsLayout() {
             headerShown: false,
             tabBarBackground: () => (
               <BlurView
-                style={{ height: 80 }} // Match the height of the tab bar
+                style={{ height: 55 }} // Match the height of the tab bar
                 intensity={100} // Adjust as needed
                 tint="dark"
                 borderRadius={30} // Rounded edges for the BlurView

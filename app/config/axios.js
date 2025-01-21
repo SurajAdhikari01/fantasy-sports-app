@@ -2,10 +2,13 @@
 
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 const api = axios.create({
-    baseURL: 'http://localhost:9005/api',
-    withCredentials: true,
+    baseURL: Platform.select({
+        android: 'http://10.0.2.2:9005/api',
+        ios: 'http://localhost:9005/api',
+    }),
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',

@@ -105,7 +105,7 @@ const AdminDashboard = () => {
                 }}
               />
               <StyledText className="text-black text-lg font-extrabold">
-                Create New Team
+                Create New Tournament
               </StyledText>
             </LinearGradient>
           </StyledTouchableOpacity>

@@ -6,9 +6,9 @@ import footballPitch from "../../assets/football-field.jpg";
 
 
 // Define constants for number of players
-const NUM_DEFENDERS = 5;
-const NUM_MIDFIELDERS = 5;
-const NUM_FORWARDS = 3;
+const NUM_DEFENDERS = 4;
+const NUM_MIDFIELDERS = 4;
+const NUM_FORWARDS = 2;
 
 // Get the width and height of the screen
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");

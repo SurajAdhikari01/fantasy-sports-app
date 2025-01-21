@@ -201,7 +201,7 @@ const HomeScreen = () => {
           <Text className="text-gray-400 text-sm">Welcome back</Text>
         </View>
 
-        <StatisticsCard scoreEarned="15,000" gamesPlayed="130" />
+        <StatisticsCard scoreEarned="150" gamesPlayed="3" />
 
         {/* Games Played and Stats */}
         <View className="flex-row justify-between items-center p-6 mt-4">

@@ -196,7 +196,7 @@ const EnhancedTeamView = () => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#1F2937" }}>
       {/* Header Section */}
-      <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 4 }}>
+      <View style={{ paddingHorizontal: 16 }}>
         <View
           style={{
             flexDirection: "row",
@@ -232,7 +232,7 @@ const EnhancedTeamView = () => {
         }}
       >
         {/* Pitch View Container */}
-        <View style={{ flex: 1, paddingTop: 8, paddingBottom: 64 }}>
+        <View style={{ flex: 1, paddingTop: 8, paddingBottom: 4 }}>
           <PitchView
             teamData={teamData}
             handlePlayerPress={handlePlayerPress}
@@ -241,7 +241,7 @@ const EnhancedTeamView = () => {
         </View>
 
         {/* Stats and Points Section */}
-        <View
+        {/* <View
           style={{
             position: "absolute",
             bottom: 80,
@@ -260,10 +260,10 @@ const EnhancedTeamView = () => {
               Total Points: {totalPoints}
             </Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Action Buttons Container */}
-        <View style={{ position: "absolute", bottom: 0, left: 0, right: 0 }}>
+        <View style={{  left: 0, right: 0 }}>
           <ActionButtons
             handleNext={handleNext}
             setShowPlayerSelectionModal={handleOpenPlayerSelection}

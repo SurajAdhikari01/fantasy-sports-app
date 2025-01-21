@@ -19,9 +19,9 @@ export default function TabsLayout() {
               bottom: 0,
               left: 0,
               right: 0,
-              height: 80, // Adjust for padding
-              borderRadius: 30, // Rounded edges for the bar
-              backgroundColor: "rgba(0,0,0,0.5)", // Slightly transparent background
+              height: 55, // Adjust for padding
+              // borderRadius: 30, // Rounded edges for the bar
+              // backgroundColor: "rgba(0,0,0,0.5)", // Slightly transparent background
               borderTopWidth: 0, // Remove the top border
               elevation: 5, // Add elevation for Android shadow
               zIndex: 2, // Ensure the tab bar is above the BlurView
