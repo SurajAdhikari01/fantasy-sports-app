@@ -1,21 +1,31 @@
-import { View, Text, TouchableOpacity, ScrollView, Image } from "react-native";
+// MainPage.js
+import React, { useState } from 'react';
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RecoilRoot } from "recoil";
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { BlurView } from "expo-blur"; // Import BlurView for blur effect
-import TeamView from "../components/TeamView";
 import EnhancedTeamView from "../components/EnhancedTeamView";
+import TournamentSelector from "../components/TournamentSelector";
 
 const MainPage = () => {
-  const router = useRouter();
+  // const [selectedTournament, setSelectedTournament] = useState("");
+
+  // const handleTournamentSelect = (tournament) => {
+  //   setSelectedTournament(tournament);
+  // };
+
 
   return (
-    // <SafeAreaView className="flex-1 bg-slate-900 pb-12">
-    <RecoilRoot>
-      <EnhancedTeamView />
-    </RecoilRoot>
-    // </SafeAreaView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#1F2937' }}>
+      
+      <RecoilRoot>
+        {/* {!selectedTournament ? (
+          <TournamentSelector onTournamentSelect={handleTournamentSelect} />
+        ) : (
+          <EnhancedTeamView tournament={selectedTournament} />
+        )} */}
+        <EnhancedTeamView  />
+
+      </RecoilRoot>
+    </SafeAreaView>
   );
 };
 

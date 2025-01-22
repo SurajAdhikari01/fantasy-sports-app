@@ -1,23 +1,19 @@
 import React from "react";
-import { View, TouchableOpacity, Dimensions,Image } from "react-native";
+import { View, TouchableOpacity, Dimensions, Image } from "react-native";
 import PlayerCard from "./PlayerCard";
 import { FontAwesome5 } from "@expo/vector-icons";
 import footballPitch from "../../assets/football-field.jpg";
-
-
-// Define constants for number of players
-const NUM_DEFENDERS = 4;
-const NUM_MIDFIELDERS = 4;
-const NUM_FORWARDS = 2;
+import { useRecoilValue } from "recoil";
+import { sportState } from "./atoms";
+import { SPORT_CONFIGS } from "../utils/data";
 
 // Get the width and height of the screen
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-const calculateFixedPositions = (section, numPlayers) => {
+const calculatePositions = (section, numPlayers) => {
   const positions = [];
   const spacing = screenWidth / (numPlayers + 1);
 
-  // Adjust these percentages to better fit the screen
   const yPositions = {
     Forwards: 15,
     Midfielders: 40,
@@ -40,6 +36,8 @@ const PitchView = ({
   handlePlayerPress,
   handleOpenPlayerSelection,
 }) => {
+  const sport = useRecoilValue(sportState);
+
   return (
     <View
       style={{
@@ -66,18 +64,9 @@ const PitchView = ({
         resizeMode="cover"
       />
       {Object.keys(teamData).map((section) => {
-        let numPlayers;
-        if (section === "Defenders") {
-          numPlayers = NUM_DEFENDERS;
-        } else if (section === "Midfielders") {
-          numPlayers = NUM_MIDFIELDERS;
-        } else if (section === "Forwards") {
-          numPlayers = NUM_FORWARDS;
-        } else {
-          numPlayers = 1; // Goalkeepers
-        }
+        const numPlayers = SPORT_CONFIGS[sport].sections[section]?.max || 1;
+        const positions = calculatePositions(section, numPlayers);
 
-        const positions = calculateFixedPositions(section, numPlayers);
         return (
           <View
             key={section}
