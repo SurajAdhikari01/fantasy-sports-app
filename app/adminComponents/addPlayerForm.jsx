@@ -70,7 +70,10 @@ const AddPlayerForm = () => {
   }, []);
 
   const handleInputChange = (name, value) => {
-    setPlayerData({ ...playerData, [name]: value });
+    setPlayerData({
+      ...playerData,
+      [name]: name === "price" ? parseInt(value) || 0 : value,
+    });
   };
 
   const pickImage = async () => {
