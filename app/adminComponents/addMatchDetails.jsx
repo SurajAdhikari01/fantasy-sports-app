@@ -48,6 +48,7 @@ export default function AddMatchDetail() {
 
   const fetchPlayers = async (tournamentId, franchiseId) => {
     try {
+      console.log("Fetching players...", tournamentId, franchiseId);
       const response = await api.get(
         `/players/${tournamentId}/franchises/${franchiseId}/players`
       );
@@ -62,6 +63,7 @@ export default function AddMatchDetail() {
 
   const handleFranchiseSelect = (franchiseId) => {
     setSelectedFranchise(franchiseId);
+    console.log(tournament);
     fetchPlayers(tournament._id, franchiseId);
     setShowForm(true);
   };
@@ -94,28 +96,30 @@ export default function AddMatchDetail() {
       </StyledView>
       <ScrollView className="mt-6">
         {!showForm ? (
-          <StyledView
-            className="mb-4 p-6 bg-gray-800 rounded-lg"
-            style={{ marginHorizontal: 16 }}
-          >
-            <StyledText className="text-white text-lg font-bold mb-2">
-              {tournament.name}
-            </StyledText>
-            <Picker
-              selectedValue={selectedFranchise}
-              style={{ height: 50, color: "white" }}
-              onValueChange={(itemValue) => handleFranchiseSelect(itemValue)}
-            >
-              <Picker.Item label="Select a franchise..." value="" />
-              {tournament.franchises.map((franchise) => (
+          <StyledView className="w-full mb-4">
+            <StyledText className="text-white mb-2">Franchise</StyledText>
+            <StyledView className="bg-gray-800 rounded-lg">
+              <Picker
+                selectedValue={selectedFranchise}
+                onValueChange={(itemValue) => handleFranchiseSelect(itemValue)}
+                style={{ color: "white" }}
+                itemStyle={{ color: "white" }}
+              >
                 <Picker.Item
                   style={styles.pickerItem}
-                  key={franchise._id}
-                  label={franchise.name}
-                  value={franchise._id}
+                  label="Select a franchise..."
+                  value=""
                 />
-              ))}
-            </Picker>
+                {tournament?.franchises?.map((franchise) => (
+                  <Picker.Item
+                    style={styles.pickerItem}
+                    key={franchise._id}
+                    label={franchise.name}
+                    value={franchise._id}
+                  />
+                ))}
+              </Picker>
+            </StyledView>
           </StyledView>
         ) : (
           <StyledView
@@ -163,6 +167,7 @@ export default function AddMatchDetail() {
     </StyledSafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   pickerItem: {
     color: "white",
