@@ -18,7 +18,7 @@ api.interceptors.request.use(
         const token = await SecureStore.getItemAsync('accessToken');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
-            console.log('Token added to headers:', token);
+            //console.log('Token added to headers:', token);
 
         }
         return config;

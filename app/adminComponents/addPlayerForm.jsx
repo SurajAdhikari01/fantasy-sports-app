@@ -34,8 +34,9 @@ const StyledImage = styled(Image);
 const AddPlayerForm = () => {
   const playerPositions = [
     { label: "Goalkeeper (GK)", value: "goalkeeper" },
-    { label: "Centre Back (CB)", value: "centre-back" },
-    // add other positions...
+    { label: "Defender", value: "defender" },
+    { label: "Midfielder", value: "midfielder" },
+    { label: "Forward", value: "forward" },
   ];
 
   const { tournament: tournamentParam } = useLocalSearchParams();
@@ -44,7 +45,7 @@ const AddPlayerForm = () => {
 
   const [playerData, setPlayerData] = useState({
     name: "",
-    price: "",
+    price: 0,
     photo: "",
     matches: [],
     playerType: "", // Start with an empty value
@@ -122,28 +123,30 @@ const AddPlayerForm = () => {
 
   const handleSubmit = async () => {
     try {
-      console.log("Player Data:", playerData);
-      if (!playerData.name || !playerData.price || !playerData.photo) {
+      console.log("Submitting player data:", playerData);
+
+      if (!playerData.name || playerData.price <= 0 || !playerData.photo) {
         Alert.alert("Error", "Please fill in all required fields");
         return;
       }
 
       const formData = new FormData();
-
       Object.keys(playerData).forEach((key) => {
         formData.append(key, playerData[key]);
       });
 
-      const response = await api.post("/players", formData, {
+      const response = await api.post("/players/addNewPlayer", formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       });
 
-      if (response.data && response.data.success) {
-        Alert.alert("Success", "Player added successfully!");
+      if (response.status === 201) {
+        Alert.alert("Success", "Player added successfully.");
+
         router.back();
       } else {
+        console.error("Failed to add player:", response);
         Alert.alert("Error", "Failed to add player. Please try again.");
       }
     } catch (error) {
