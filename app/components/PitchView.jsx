@@ -5,7 +5,7 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import footballPitch from "../../assets/football-field.jpg";
 import { useRecoilValue } from "recoil";
 import { sportState } from "./atoms";
-import { SPORT_CONFIGS } from "./sportConfigs"; 
+import { SPORT_CONFIGS } from "./sportConfigs";
 
 // Get the width and height of the screen
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -33,11 +33,7 @@ const calculatePositions = (section, numPlayers) => {
   return positions;
 };
 
-const PitchView = ({
-  teamData,
-  handlePlayerPress,
-  handleOpenPlayerSelection,
-}) => {
+const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, handleRemovePlayer }) => {
   const sport = useRecoilValue(sportState);
 
   return (
@@ -45,7 +41,7 @@ const PitchView = ({
       style={{
         flex: 1,
         width: "100%",
-        height: screenHeight * 0.8, // Use 80% of screen height
+        height: screenHeight * 0.9, // Use 90% of screen height
         backgroundColor: "transparent",
         position: "relative",
       }}
@@ -83,17 +79,18 @@ const PitchView = ({
               const player = teamData[section][index];
               return player ? (
                 <PlayerCard
-                  key={player._id} // Corrected player id
+                  key={player._id}
                   player={player}
                   isPitch={true}
                   onPlayerPress={handlePlayerPress}
+                  onRemovePlayer={() => handleRemovePlayer(player)}
                   position={{
                     x: position.x,
                     y: 0, // Since parent View is absolutely positioned, y should be 0
                   }}
                 />
               ) : (
-<TouchableOpacity
+                <TouchableOpacity
                   key={`${section}-${index}`}
                   style={{
                     position: "absolute",

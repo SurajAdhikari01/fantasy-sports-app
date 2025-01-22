@@ -173,19 +173,7 @@ const EnhancedTeamView = () => {
     setShowPlayerStats(true);
   }, [setSelectedPlayer, setShowPlayerStats]);
 
-  // Function to remove a player from the team
-  const removePlayer = useCallback((playerToRemove) => {
-    setTeamData((prev) => {
-      const newData = { ...prev };
-      Object.keys(newData).forEach((section) => {
-        newData[section] = newData[section].filter(
-          (p) => p._id !== playerToRemove._id
-        );
-      });
-      return newData;
-    });
-  }, [setTeamData]);
-
+  
   // Function to add a player to the team
   const addPlayer = useCallback(
     (player) => {
@@ -239,20 +227,48 @@ const EnhancedTeamView = () => {
     [selectedSection, sport, setTeamData, setShowPlayerSelectionModal, setSelectedSection]
   );
 
+  const removePlayer = useCallback((playerToRemove) => {
+    console.log("Removing player:", playerToRemove);
+    setTeamData((prev) => {
+      const newData = { ...prev };
+      Object.keys(newData).forEach((section) => {
+        newData[section] = newData[section].filter(
+          (p) => p._id !== playerToRemove._id
+        );
+      });
+      console.log("Updated team data:", newData);
+      return newData;
+    });
+  }, [setTeamData]);
+
+  // Function to handle player removal with confirmation
+  const handleRemovePlayer = useCallback((player) => {
+    console.log("Handle remove player:", player);
+    Alert.alert(
+      "Remove Player",
+      "Are you sure you want to remove this player?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Remove", onPress: () => removePlayer(player) }
+      ]
+    );
+  }, [removePlayer]);
+
   // Function to handle the next action (e.g., saving the team)
   const handleNext = useCallback(async () => {
     // const errors = validateTeam();
-    if (errors.length > 0) {
-      Alert.alert("Invalid Team", errors.join("\n"), [{ text: "OK" }]);
-      return;
-    }
+    console.log('next clicked');
+    // if (errors.length > 0) {
+    //   Alert.alert("Invalid Team", errors.join("\n"), [{ text: "OK" }]);
+    //   return;
+    // }
 
     try {
       const players = Object.values(teamData).flat().map(player => player._id);
       const teamName = "Sulav";  // Use the user's name or another appropriate value
       const budget = parseFloat(teamValue);
       const tournamentId = "67908e4177daf7d0fef42b85";  // hardcoded for dev
-      console.log('Team creation :', players, teamName, budget, tournamentId);
+      console.log('Team creation :', players, teamName);
 
       const response = await api.post('/teams/create', {
         name: teamName,
@@ -261,7 +277,7 @@ const EnhancedTeamView = () => {
         tournamentId
       });
       console.log('Team creation response:', response.data);
-      
+
       if (response.data.success) {
         Alert.alert("Success", "Team created successfully!", [
           {
@@ -364,7 +380,7 @@ const EnhancedTeamView = () => {
       <View style={{ flex: 1, position: "relative", height: screenHeight * 0.75, paddingBottom: 80 }}>
         {/* Pitch View Container */}
         <View style={{ flex: 1, paddingTop: 8, paddingBottom: 4 }}>
-          <PitchView teamData={teamData} handlePlayerPress={handlePlayerPress} handleOpenPlayerSelection={handleOpenPlayerSelection} />
+          <PitchView teamData={teamData} handlePlayerPress={handlePlayerPress} handleOpenPlayerSelection={handleOpenPlayerSelection} handleRemovePlayer={handleRemovePlayer} />
         </View>
 
         {/* Action Buttons Container */}
