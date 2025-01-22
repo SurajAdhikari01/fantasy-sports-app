@@ -46,7 +46,7 @@ export default function AdminTabsLayout() {
 
   const filteredTournaments = tournaments.filter(
     (tournament) =>
-      isCurrentDate(tournament.knockoutStart) ||
+      !isCurrentDate(tournament.knockoutStart) ||
       isCurrentDate(tournament.semifinalStart) ||
       isCurrentDate(tournament.finalStart)
   );

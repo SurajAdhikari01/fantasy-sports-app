@@ -737,7 +737,7 @@ export default function AddMatchDetail() {
 
 const styles = StyleSheet.create({
   pickerItem: {
-    color: "white",
+    // color: "white",
   },
   modalOverlay: {
     flex: 1,

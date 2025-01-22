@@ -75,7 +75,7 @@ const EnhancedTeamView = () => {
 
     const fetchFranchises = async () => {
       try {
-        const tournamentId = "67908e4177daf7d0fef42b85"; //hardcoded for dev
+        const tournamentId = "67911c81135565f13979288b"; //hardcoded for dev
 
         if (!isMounted) return;
 
@@ -113,7 +113,7 @@ const EnhancedTeamView = () => {
   const fetchPlayers = useCallback(async (franchiseId) => {
     try {
       setIsFetchingPlayers(true);
-      const tournamentId = "67908e4177daf7d0fef42b85";
+      const tournamentId = "67911c81135565f13979288b";
       let url;
 
       if (franchiseId === 'all') {
@@ -267,7 +267,7 @@ const EnhancedTeamView = () => {
       const players = Object.values(teamData).flat().map(player => player._id);
       const teamName = "Sulav";  // Use the user's name or another appropriate value
       const budget = parseFloat(teamValue);
-      const tournamentId = "67908e4177daf7d0fef42b85";  // hardcoded for dev
+      const tournamentId = "67911c81135565f13979288b";  // hardcoded for dev
       console.log('Team creation :', players, teamName);
 
       const response = await api.post('/teams/create', {
