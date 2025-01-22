@@ -17,6 +17,13 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import api from "../config/axios";
 import Icon from "react-native-vector-icons/FontAwesome";
 
+/*
+  This updated version:
+  1. Keeps track of players actually selected for the match (so they aren't shown again in selection).
+  2. Maintains separate "in-game" arrays for each team to exclude red-carded players from future events.
+  3. Filters the player pickers to exclude already-selected players or players who have been sent off.
+*/
+
 // Styling container with NativeWind
 const StyledSafeAreaView = styled(SafeAreaView);
 const StyledView = styled(View);
@@ -33,7 +40,7 @@ const PlayerCard = ({ playerName }) => (
 
 // Helper function to get player name by ID
 const getPlayerNameById = (playerId, players) => {
-  const player = players.find((player) => player._id === playerId);
+  const player = players.find((p) => p._id === playerId);
   return player ? player.name : "";
 };
 
@@ -68,12 +75,6 @@ const Event = ({ event, players, team }) => (
           ? "yellow"
           : event.type === "redCard"
           ? "red"
-          : event.type === "penaltyMissed"
-          ? "white"
-          : event.type === "ownGoal"
-          ? "white"
-          : event.type === "penaltySave"
-          ? "white"
           : "white"
       }
       style={{ marginRight: 10 }}
@@ -82,7 +83,7 @@ const Event = ({ event, players, team }) => (
       {event.type === "goal" &&
         `Goal by ${getPlayerNameById(event.player, players)}` +
           (event.assist
-            ? ` (Assist by ${getPlayerNameById(event.assist, players)})`
+            ? ` (Assist: ${getPlayerNameById(event.assist, players)})`
             : "")}
       {event.type === "yellowCard" &&
         `Yellow Card for ${getPlayerNameById(event.player, players)}`}
@@ -103,16 +104,29 @@ export default function AddMatchDetail() {
   const tournament = JSON.parse(tournamentParam || "{}");
   const router = useRouter();
 
+  // Franchise picks
   const [selectedFranchise1, setSelectedFranchise1] = useState("");
   const [selectedFranchise2, setSelectedFranchise2] = useState("");
+
+  // Players from each franchise (all possible players)
   const [playersFranchise1, setPlayersFranchise1] = useState([]);
   const [playersFranchise2, setPlayersFranchise2] = useState([]);
+
+  // For showing/hiding steps
   const [showForm, setShowForm] = useState(false);
+
+  // Modal and event management
   const [showModal, setShowModal] = useState(false);
   const [modalStep, setModalStep] = useState(1);
   const [modalEventType, setModalEventType] = useState("");
   const [selectedTeam, setSelectedTeam] = useState(null);
   const [selectedGoalScorer, setSelectedGoalScorer] = useState(null);
+
+  /*
+    matchDetails: 
+      - playersPlayedTeam1, playersPlayedTeam2: who is on each team's roster
+      - events: contains event objects with {type, player, (assist), team}
+  */
   const [matchDetails, setMatchDetails] = useState({
     matchNumber: "",
     matchName: "",
@@ -125,12 +139,20 @@ export default function AddMatchDetail() {
       red: [],
     },
     penaltiesMissed: [],
-    tournament_id: tournament._id,
     ownGoals: [],
     penaltySaves: [],
     events: [],
+    tournament_id: tournament._id,
   });
 
+  /*
+    Keep track of who is currently in the game. After a red card, remove that player 
+    from this in-game tracker so they're excluded from further events.
+  */
+  const [inGameTeam1, setInGameTeam1] = useState([]);
+  const [inGameTeam2, setInGameTeam2] = useState([]);
+
+  // Fetch players whenever a franchise is chosen
   useEffect(() => {
     if (selectedFranchise1) {
       fetchPlayers(selectedFranchise1, setPlayersFranchise1);
@@ -143,6 +165,7 @@ export default function AddMatchDetail() {
     }
   }, [selectedFranchise2]);
 
+  // Load players from the server
   const fetchPlayers = async (franchiseId, setPlayers) => {
     try {
       const response = await api.get(
@@ -157,52 +180,82 @@ export default function AddMatchDetail() {
     }
   };
 
+  // Move to the main form once both franchises are selected
   const handleFranchiseSelect = () => {
     if (selectedFranchise1 && selectedFranchise2) {
       setShowForm(true);
+    } else {
+      Alert.alert("Error", "Please select both franchises first.");
     }
   };
 
+  // General input handling
   const handleInputChange = (name, value) => {
     setMatchDetails((prevDetails) => ({
       ...prevDetails,
-      [name]: name === "matchNumber" ? parseInt(value) : value,
+      [name]: name === "matchNumber" ? parseInt(value) || "" : value,
     }));
   };
 
+  // Open modal to select players or events
   const handleModalOpen = (field, team) => {
     setModalEventType(field);
     setSelectedTeam(team);
-    setModalStep(field.startsWith("playersPlayed") ? 3 : 1);
+    /*
+      If we're adding to the "playersPlayedTeamX" array, 
+      jump directly to picking from the 3rd step (player list).
+    */
+    if (field.startsWith("playersPlayed")) {
+      setModalStep(3);
+    } else {
+      // Otherwise, event selection starts at step 1
+      setModalStep(1);
+    }
     setShowModal(true);
   };
 
+  // Step 1: user picks event type
   const handleEventSelect = (eventType) => {
     setModalEventType(eventType);
-    setModalStep(2);
+    setModalStep(2); // Next step: pick the team
   };
 
+  // Step 2: pick which team triggers the event
   const handleTeamSelect = (team) => {
     setSelectedTeam(team);
-    setModalStep(3);
+    setModalStep(3); // Next step: pick the player(s)
   };
 
+  /*
+    Step 3/4: user picks the player or an assister for certain events.
+    We'll do different logic depending on the event type and step.
+  */
   const handlePlayerSelect = (playerId) => {
     if (modalEventType.startsWith("playersPlayed")) {
+      // Add selected player to the chosen team's "playersPlayedTeamX" array
       setMatchDetails((prevDetails) => ({
         ...prevDetails,
         [modalEventType]: [...prevDetails[modalEventType], playerId],
       }));
+      // Also add them to the in-game list for that team
+      if (selectedTeam === 1) {
+        setInGameTeam1((prev) => [...prev, playerId]);
+      } else {
+        setInGameTeam2((prev) => [...prev, playerId]);
+      }
+      setShowModal(false);
     } else if (modalEventType === "goal") {
+      // If step is 3, user is choosing the scorer
       if (modalStep === 3) {
         setSelectedGoalScorer(playerId);
-        setModalStep(4);
+        setModalStep(4); // Next step: pick assister
       } else if (modalStep === 4) {
+        // Now we have the scorer & assister
         const event = {
           type: modalEventType,
           player: selectedGoalScorer,
-          team: selectedTeam,
           assist: playerId,
+          team: selectedTeam,
         };
         setMatchDetails((prevDetails) => ({
           ...prevDetails,
@@ -211,64 +264,91 @@ export default function AddMatchDetail() {
         setShowModal(false);
       }
     } else {
+      // For any other event types (yellowCard, redCard, etc.)
       const event = {
         type: modalEventType,
         player: playerId,
         team: selectedTeam,
       };
+
       setMatchDetails((prevDetails) => ({
         ...prevDetails,
         events: [...prevDetails.events, event],
       }));
+
+      // If it's a red card, remove the player from the in-game list
+      if (modalEventType === "redCard") {
+        if (selectedTeam === 1) {
+          setInGameTeam1((prev) => prev.filter((id) => id !== playerId));
+        } else {
+          setInGameTeam2((prev) => prev.filter((id) => id !== playerId));
+        }
+      }
+
       setShowModal(false);
     }
   };
 
+  /*
+    Compute the match score from events. 
+    Goal for team 1 counts to team1Goals, own goal for team 1 also benefits team1's score, etc.
+    Adjusted so that "ownGoal" increments the opposing team's total.
+  */
   const calculateScore = () => {
     const team1Goals = matchDetails.events.filter(
-      (event) => event.type === "goal" && event.team === 1
+      (e) => e.type === "goal" && e.team === 1
     ).length;
     const team2Goals = matchDetails.events.filter(
-      (event) => event.type === "goal" && event.team === 2
+      (e) => e.type === "goal" && e.team === 2
     ).length;
+
     const team1OwnGoals = matchDetails.events.filter(
-      (event) => event.type === "ownGoal" && event.team === 1
+      (e) => e.type === "ownGoal" && e.team === 1
     ).length;
     const team2OwnGoals = matchDetails.events.filter(
-      (event) => event.type === "ownGoal" && event.team === 2
+      (e) => e.type === "ownGoal" && e.team === 2
     ).length;
-    return `${team1Goals + team2OwnGoals}-${team2Goals + team1OwnGoals}`;
+
+    // For own goals, the "team" is the team of the player who made the error,
+    // but the score is awarded to the opposing team.
+    // So team1's real score is team1Goals + team2OwnGoals (the own goals from the other team).
+    // team2's real score is team2Goals + team1OwnGoals.
+    return `${team1Goals + team2OwnGoals} - ${team2Goals + team1OwnGoals}`;
   };
 
+  /*
+    Save match details to the server. We also compute arrays like
+    goalsScoredBy, cardsObtained, etc. from the event list.
+  */
   const handleSave = async () => {
     try {
       const updatedMatchDetails = {
         ...matchDetails,
         score: calculateScore(),
         goalsScoredBy: matchDetails.events
-          .filter((event) => event.type === "goal")
-          .map((event) => ({
-            player: event.player,
+          .filter((e) => e.type === "goal")
+          .map((e) => ({
+            player: e.player,
             goals: 1,
-            assists: event.assist ? [event.assist] : [],
+            assists: e.assist ? [e.assist] : [],
           })),
         cardsObtained: {
           yellow: matchDetails.events
-            .filter((event) => event.type === "yellowCard")
-            .map((event) => event.player),
+            .filter((e) => e.type === "yellowCard")
+            .map((e) => e.player),
           red: matchDetails.events
-            .filter((event) => event.type === "redCard")
-            .map((event) => event.player),
+            .filter((e) => e.type === "redCard")
+            .map((e) => e.player),
         },
         penaltiesMissed: matchDetails.events
-          .filter((event) => event.type === "penaltyMissed")
-          .map((event) => event.player),
+          .filter((e) => e.type === "penaltyMissed")
+          .map((e) => e.player),
         ownGoals: matchDetails.events
-          .filter((event) => event.type === "ownGoal")
-          .map((event) => event.player),
+          .filter((e) => e.type === "ownGoal")
+          .map((e) => e.player),
         penaltySaves: matchDetails.events
-          .filter((event) => event.type === "penaltySave")
-          .map((event) => event.player),
+          .filter((e) => e.type === "penaltySave")
+          .map((e) => e.player),
       };
 
       console.log(
@@ -290,6 +370,32 @@ export default function AddMatchDetail() {
     }
   };
 
+  /*
+    Filter out already selected players from the display list for adding to the team's roster.
+    Filter out already rostered players with red cards from the event pickers, etc.
+  */
+  const getAvailablePlayersForTeam = (team) => {
+    // For the "add player to team" step, we skip players already chosen.
+    // For team 1:
+    if (team === 1) {
+      return playersFranchise1.filter(
+        (p) => !matchDetails.playersPlayedTeam1.includes(p._id)
+      );
+    }
+    // For team 2:
+    return playersFranchise2.filter(
+      (p) => !matchDetails.playersPlayedTeam2.includes(p._id)
+    );
+  };
+
+  // For events, we only want players who are currently "in game" for that team:
+  const getInGamePlayersForTeam = (team) => {
+    if (team === 1) {
+      return playersFranchise1.filter((p) => inGameTeam1.includes(p._id));
+    }
+    return playersFranchise2.filter((p) => inGameTeam2.includes(p._id));
+  };
+
   return (
     <StyledSafeAreaView className="flex-1 bg-gray-900 p-4">
       <StyledView className="w-full flex-row justify-between items-center mb-6">
@@ -298,6 +404,7 @@ export default function AddMatchDetail() {
         </StyledText>
       </StyledView>
       <ScrollView className="mt-6">
+        {/* Franchise selection step */}
         {!showForm ? (
           <StyledView>
             <StyledView className="w-full mb-4">
@@ -364,6 +471,7 @@ export default function AddMatchDetail() {
             </StyledTouchableOpacity>
           </StyledView>
         ) : (
+          /* Once both franchises are selected, show the match form */
           <StyledView
             className="mb-4 p-6 bg-gray-800 rounded-lg"
             style={{ marginHorizontal: 16 }}
@@ -375,6 +483,7 @@ export default function AddMatchDetail() {
               className="bg-gray-700 text-white p-2 rounded-lg mb-4"
               placeholder="Match Number"
               placeholderTextColor="#888"
+              keyboardType="numeric"
               onChangeText={(text) => handleInputChange("matchNumber", text)}
               value={matchDetails.matchNumber.toString()}
             />
@@ -385,20 +494,21 @@ export default function AddMatchDetail() {
               onChangeText={(text) => handleInputChange("matchName", text)}
               value={matchDetails.matchName}
             />
+
             <StyledText className="text-white mb-2">Score</StyledText>
             <StyledText className="bg-gray-700 text-white p-2 rounded-lg mb-4">
               {calculateScore()}
             </StyledText>
 
+            {/* Team 1 roster */}
             <StyledText className="text-white mb-2">
-              Players Played Team 1
+              Players Played (Team 1)
             </StyledText>
-            {matchDetails.playersPlayedTeam1.map((playerId, index) => (
-              <StyledView key={index} className="mb-4">
-                <PlayerCard
-                  playerName={getPlayerNameById(playerId, playersFranchise1)}
-                />
-              </StyledView>
+            {matchDetails.playersPlayedTeam1.map((playerId) => (
+              <PlayerCard
+                key={playerId}
+                playerName={getPlayerNameById(playerId, playersFranchise1)}
+              />
             ))}
             <StyledTouchableOpacity
               className="bg-blue-500 p-2 rounded-lg mb-4"
@@ -409,15 +519,15 @@ export default function AddMatchDetail() {
               </StyledText>
             </StyledTouchableOpacity>
 
+            {/* Team 2 roster */}
             <StyledText className="text-white mb-2">
-              Players Played Team 2
+              Players Played (Team 2)
             </StyledText>
-            {matchDetails.playersPlayedTeam2.map((playerId, index) => (
-              <StyledView key={index} className="mb-4">
-                <PlayerCard
-                  playerName={getPlayerNameById(playerId, playersFranchise2)}
-                />
-              </StyledView>
+            {matchDetails.playersPlayedTeam2.map((playerId) => (
+              <PlayerCard
+                key={playerId}
+                playerName={getPlayerNameById(playerId, playersFranchise2)}
+              />
             ))}
             <StyledTouchableOpacity
               className="bg-blue-500 p-2 rounded-lg mb-4"
@@ -428,6 +538,7 @@ export default function AddMatchDetail() {
               </StyledText>
             </StyledTouchableOpacity>
 
+            {/* Events Section */}
             <StyledText className="text-white mb-2">Match Events</StyledText>
             <StyledTouchableOpacity
               className="bg-blue-500 p-2 rounded-lg mb-4"
@@ -438,17 +549,21 @@ export default function AddMatchDetail() {
               </StyledText>
             </StyledTouchableOpacity>
 
+            {/* Timeline display */}
             <StyledText className="text-white mb-2">Timeline</StyledText>
             {matchDetails.events.map((event, index) => (
               <Event
                 key={index}
                 event={event}
+                // For display, we decide which team's array to use
                 players={
                   event.team === 1 ? playersFranchise1 : playersFranchise2
                 }
                 team={event.team}
               />
             ))}
+
+            {/* Save */}
             <StyledTouchableOpacity
               className="mt-4 bg-green-500 p-3 rounded-lg"
               onPress={handleSave}
@@ -461,6 +576,7 @@ export default function AddMatchDetail() {
         )}
       </ScrollView>
 
+      {/* Modal for selecting events, teams, players */}
       <Modal
         visible={showModal}
         transparent={true}
@@ -472,99 +588,140 @@ export default function AddMatchDetail() {
             {modalStep === 1 && (
               <>
                 <Text style={styles.modalTitle}>Select Event Type</Text>
-                <StyledTouchableOpacity
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("goal")}
                 >
                   <Text style={styles.modalItemText}>Goal</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("yellowCard")}
                 >
                   <Text style={styles.modalItemText}>Yellow Card</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("redCard")}
                 >
                   <Text style={styles.modalItemText}>Red Card</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("penaltyMissed")}
                 >
                   <Text style={styles.modalItemText}>Penalty Missed</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("ownGoal")}
                 >
                   <Text style={styles.modalItemText}>Own Goal</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleEventSelect("penaltySave")}
                 >
                   <Text style={styles.modalItemText}>Penalty Save</Text>
-                </StyledTouchableOpacity>
+                </TouchableOpacity>
               </>
             )}
+
             {modalStep === 2 && (
               <>
                 <Text style={styles.modalTitle}>Select Team</Text>
-                <StyledTouchableOpacity
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleTeamSelect(1)}
                 >
                   <Text style={styles.modalItemText}>Team 1</Text>
-                </StyledTouchableOpacity>
-                <StyledTouchableOpacity
+                </TouchableOpacity>
+                <TouchableOpacity
                   style={styles.modalItem}
                   onPress={() => handleTeamSelect(2)}
                 >
                   <Text style={styles.modalItemText}>Team 2</Text>
-                </StyledTouchableOpacity>
+                </TouchableOpacity>
               </>
             )}
-            {modalStep === 3 && (
+
+            {/* Step 3 or 4: choose player(s) */}
+            {(modalStep === 3 || modalStep === 4) && (
               <>
-                <Text style={styles.modalTitle}>Select Goal Scorer</Text>
-                <FlatList
-                  data={
-                    selectedTeam === 1 ? playersFranchise1 : playersFranchise2
-                  }
-                  keyExtractor={(item) => item._id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.modalItem}
-                      onPress={() => handlePlayerSelect(item._id)}
-                    >
-                      <Text style={styles.modalItemText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  )}
-                />
+                {modalEventType.startsWith("playersPlayed") ? (
+                  // Step to add roster (show unattached players)
+                  <>
+                    <Text style={styles.modalTitle}>
+                      Select Player for Team {selectedTeam}
+                    </Text>
+                    <FlatList
+                      data={getAvailablePlayersForTeam(selectedTeam)}
+                      keyExtractor={(item) => item._id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.modalItem}
+                          onPress={() => handlePlayerSelect(item._id)}
+                        >
+                          <Text style={styles.modalItemText}>{item.name}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </>
+                ) : modalEventType === "goal" && modalStep === 3 ? (
+                  // If picking the goal scorer (in-game players only)
+                  <>
+                    <Text style={styles.modalTitle}>Select Goal Scorer</Text>
+                    <FlatList
+                      data={getInGamePlayersForTeam(selectedTeam)}
+                      keyExtractor={(item) => item._id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.modalItem}
+                          onPress={() => handlePlayerSelect(item._id)}
+                        >
+                          <Text style={styles.modalItemText}>{item.name}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </>
+                ) : modalEventType === "goal" && modalStep === 4 ? (
+                  // If picking the assisting player (in-game players only)
+                  <>
+                    <Text style={styles.modalTitle}>Select Assister</Text>
+                    <FlatList
+                      data={getInGamePlayersForTeam(selectedTeam)}
+                      keyExtractor={(item) => item._id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.modalItem}
+                          onPress={() => handlePlayerSelect(item._id)}
+                        >
+                          <Text style={styles.modalItemText}>{item.name}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </>
+                ) : (
+                  // Other event types (yellowCard, redCard, penaltyMissed, etc.) => in-game players
+                  <>
+                    <Text style={styles.modalTitle}>Select Player</Text>
+                    <FlatList
+                      data={getInGamePlayersForTeam(selectedTeam)}
+                      keyExtractor={(item) => item._id}
+                      renderItem={({ item }) => (
+                        <TouchableOpacity
+                          style={styles.modalItem}
+                          onPress={() => handlePlayerSelect(item._id)}
+                        >
+                          <Text style={styles.modalItemText}>{item.name}</Text>
+                        </TouchableOpacity>
+                      )}
+                    />
+                  </>
+                )}
               </>
             )}
-            {modalStep === 4 && (
-              <>
-                <Text style={styles.modalTitle}>Select Assister</Text>
-                <FlatList
-                  data={
-                    selectedTeam === 1 ? playersFranchise1 : playersFranchise2
-                  }
-                  keyExtractor={(item) => item._id}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.modalItem}
-                      onPress={() => handlePlayerSelect(item._id)}
-                    >
-                      <Text style={styles.modalItemText}>{item.name}</Text>
-                    </TouchableOpacity>
-                  )}
-                />
-              </>
-            )}
+
             <TouchableOpacity
               style={styles.modalCloseButton}
               onPress={() => setShowModal(false)}
@@ -593,6 +750,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 10,
     padding: 20,
+    maxHeight: "80%",
   },
   modalTitle: {
     fontSize: 18,
