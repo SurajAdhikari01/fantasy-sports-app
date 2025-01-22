@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   FlatList,
   Modal,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
 const PlayerSelectionModal = ({
   visible,
@@ -17,15 +17,19 @@ const PlayerSelectionModal = ({
   availablePlayers,
   section,
 }) => {
-  // State for managing search query
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Memoized filtered list of players based on the search query
+  useEffect(() => {
+    if (!visible) {
+      setSearchQuery("");
+    }
+  }, [visible]);
+
   const filteredPlayers = useMemo(() => {
     return availablePlayers.filter(
       (player) =>
         player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        player.team.toLowerCase().includes(searchQuery.toLowerCase())
+        player.franchise.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [availablePlayers, searchQuery]);
 
@@ -33,16 +37,14 @@ const PlayerSelectionModal = ({
     <Modal visible={visible} animationType="slide" transparent>
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "rgba(0, 0, 0, 0.5)" }}>
         <View style={{ backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 20 }}>
-
-          {/* Modal header */}
           <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 16 }}>
-            <Text style={{ fontSize: 24, fontWeight: "bold" }}>Select {section}</Text>
+            <Text style={{ fontSize: 24, fontWeight: "bold" }}>
+              {section ? `Select ${section}` : 'Select Player'}
+            </Text>
             <TouchableOpacity onPress={onClose} style={{ marginLeft: "auto" }}>
               <Ionicons name="close" size={24} color="black" />
             </TouchableOpacity>
           </View>
-
-          {/* Search input */}
           <View style={{ backgroundColor: "#E5E7EB", borderRadius: 10, flexDirection: "row", alignItems: "center", paddingHorizontal: 16, marginBottom: 16 }}>
             <Ionicons name="search" size={20} color="gray" />
             <TextInput
@@ -58,28 +60,29 @@ const PlayerSelectionModal = ({
             )}
           </View>
 
-          {/* Player list */}
           <FlatList
             data={filteredPlayers}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item, index) => item._id || `fallback-${index}`}
             renderItem={({ item }) => (
               <TouchableOpacity
                 onPress={() => onSelectPlayer(item)}
                 style={{ backgroundColor: "#E5E7EB", borderRadius: 10, padding: 16, marginBottom: 12, flexDirection: "row", alignItems: "center" }}
               >
                 <Image
-                  source={{ uri: item.image }}
+                  source={{ uri: item.photo }}
                   style={{ width: 64, height: 64, borderRadius: 32 }}
                 />
                 <View style={{ marginLeft: 16, flex: 1 }}>
                   <Text style={{ fontSize: 18, fontWeight: "bold" }}>{item.name}</Text>
-                  <Text style={{ color: "#6B7280" }}>{item.team}</Text>
+                  <Text style={{ color: "#6B7280" }}>
+                    {item.franchise?.name || "No Franchise"}
+                  </Text>
                   <View style={{ flexDirection: "row", marginTop: 8 }}>
                     <View style={{ backgroundColor: "#BFDBFE", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, marginRight: 8 }}>
                       <Text style={{ color: "#3B82F6" }}>${item.price}M</Text>
                     </View>
                     <View style={{ backgroundColor: "#D1FAE5", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 }}>
-                      <Text style={{ color: "#10B981" }}>{item.points} pts</Text>
+                      <Text style={{ color: "#10B981" }}>{item.playerType}</Text>
                     </View>
                   </View>
                 </View>

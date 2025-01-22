@@ -5,20 +5,22 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import footballPitch from "../../assets/football-field.jpg";
 import { useRecoilValue } from "recoil";
 import { sportState } from "./atoms";
-import { SPORT_CONFIGS } from "../utils/data";
+import { SPORT_CONFIGS } from "./sportConfigs"; 
 
 // Get the width and height of the screen
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+// Calculate positions of players on the pitch
 const calculatePositions = (section, numPlayers) => {
   const positions = [];
   const spacing = screenWidth / (numPlayers + 1);
 
+  // Define y-positions for different sections
   const yPositions = {
-    Forwards: 15,
-    Midfielders: 40,
-    Defenders: 65,
-    Goalkeepers: 85,
+    forwards: 15,
+    midfielders: 40,
+    defenders: 65,
+    goalkeepers: 85,
   };
 
   for (let i = 0; i < numPlayers; i++) {
@@ -51,8 +53,8 @@ const PitchView = ({
       <Image
         source={footballPitch}
         style={{
-          width: Dimensions.get("window").width,
-          height: Dimensions.get("window").height,
+          width: screenWidth,
+          height: screenHeight,
           position: "absolute",
           borderRadius: 8,
           transform: [
@@ -81,7 +83,7 @@ const PitchView = ({
               const player = teamData[section][index];
               return player ? (
                 <PlayerCard
-                  key={player.id}
+                  key={player._id} // Corrected player id
                   player={player}
                   isPitch={true}
                   onPlayerPress={handlePlayerPress}
@@ -91,7 +93,7 @@ const PitchView = ({
                   }}
                 />
               ) : (
-                <TouchableOpacity
+<TouchableOpacity
                   key={`${section}-${index}`}
                   style={{
                     position: "absolute",

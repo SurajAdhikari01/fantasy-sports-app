@@ -1,109 +1,112 @@
-// atoms.js
 import { atom, atomFamily, selector } from "recoil";
-import { allPlayers, SPORT_CONFIGS } from "../utils/data";
 
-const atoms = {};
+// Default sport is set to football
+export const sportState = atom({
+  key: "sportState",
+  default: "football",
+});
 
-export const getAtom = (key, defaultValue) => {
-  if (!atoms[key]) {
-    atoms[key] = atom({
-      key,
-      default: defaultValue,
-    });
-  }
-  return atoms[key];
-};
+export const selectedTournamentState = atom({
+  key: "selectedTournamentState",
+  default: null,
+});
 
-// Sport State
-export const sportState = getAtom("sportState", "football");
+export const teamDataState = atom({
+  key: "teamDataState",
+  default: {},
+});
 
-// Selected Tournament
-export const selectedTournamentState = getAtom("selectedTournamentState", null);
+export const franchisesState = atom({
+  key: "franchisesState",
+  default: [],
+});
 
-// Team Data
-export const teamDataState = getAtom("teamDataState", {});
+export const filterRoleState = atom({
+  key: "filterRoleState",
+  default: "All",
+});
 
-// Franchises
-export const franchisesState = getAtom("franchisesState", []);
-
-// Filter Role
-export const filterRoleState = getAtom("filterRoleState", "All");
-
-// Sort By (atom family)
 export const sortByState = atomFamily({
   key: "sortByState",
   default: "points",
 });
 
-// Selected Player (atom family)
 export const selectedPlayerState = atomFamily({
   key: "selectedPlayerState",
   default: null,
 });
 
-// Show Player Stats (atom family)
 export const showPlayerStatsState = atomFamily({
   key: "showPlayerStatsState",
   default: false,
 });
 
-// Show Player Selection Modal (atom family)
 export const showPlayerSelectionModalState = atomFamily({
   key: "showPlayerSelectionModalState",
   default: false,
 });
 
-// Selected Section (atom family)
 export const selectedSectionState = atomFamily({
   key: "selectedSectionState",
   default: null,
 });
 
-// Selectors
+export const fetchedPlayersState = atom({
+  key: "fetchedPlayersState",
+  default: [],
+});
+
+export const selectedFranchiseState = atom({
+  key: "selectedFranchiseState",
+  default: null,
+});
+
 export const filteredAvailablePlayersState = selector({
   key: "filteredAvailablePlayersState",
   get: ({ get }) => {
-    const sport = get(sportState);
     const filterRole = get(filterRoleState);
     const sortBy = get(sortByState("default"));
     const teamData = get(teamDataState);
+    const fetchedPlayers = get(fetchedPlayersState);
 
-    let players = allPlayers[sport]?.filter(
-      (player) =>
-        !Object.values(teamData)
-          .flat()
-          .some((p) => p.id === player.id)
+    const teamPlayers = Object.values(teamData).flat();
+    let players = fetchedPlayers.filter(
+      (player) => !teamPlayers.some((p) => p._id === player._id)
     );
 
-    if (!players) return [];
-    if (filterRole !== "All")
+    if (filterRole !== "All") {
       players = players.filter((p) => p.role === filterRole);
+    }
 
     return [...players].sort((a, b) => b[sortBy] - a[sortBy]);
   },
 });
 
-// Total Players Selector
 export const totalPlayersState = selector({
   key: "totalPlayersState",
-  get: ({ get }) => Object.values(get(teamDataState)).flat().length,
+  get: ({ get }) => {
+    const teamData = get(teamDataState);
+    return Object.values(teamData).flat().length;
+  },
 });
 
-// Team Value Selector
 export const teamValueState = selector({
   key: "teamValueState",
-  get: ({ get }) =>
-    Object.values(get(teamDataState))
+  get: ({ get }) => {
+    const teamData = get(teamDataState);
+    const value = Object.values(teamData)
       .flat()
-      .reduce((sum, player) => sum + player.price, 0)
-      .toFixed(1),
+      .reduce((sum, player) => sum + player.price, 0);
+    return Number(value.toFixed(1)); // Return as number
+  },
 });
 
-// Total Points Selector
 export const totalPointsState = selector({
   key: "totalPointsState",
-  get: ({ get }) =>
-    Object.values(get(teamDataState))
+  get: ({ get }) => {
+    const teamData = get(teamDataState);
+    return Object.values(teamData)
       .flat()
-      .reduce((sum, player) => sum + player.points, 0),
+      .reduce((sum, player) => sum + player.points, 0);
+  },
 });

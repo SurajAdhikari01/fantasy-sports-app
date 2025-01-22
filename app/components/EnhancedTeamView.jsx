@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, SafeAreaView, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import { useNavigation } from '@react-navigation/native';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
@@ -14,17 +15,18 @@ import {
   filteredAvailablePlayersState,
   totalPlayersState,
   teamValueState,
-  totalPointsState,
   franchisesState,
   selectedTournamentState,
+  fetchedPlayersState,
+  selectedFranchiseState,
 } from './atoms';
 import api from '../config/axios';
-import SportSelector from './SportSelector';
 import PitchView from './PitchView';
 import HighlightedPlayerInfo from './HighlightedPlayerInfo';
 import ActionButtons from './ActionButtons';
 import PlayerSelectionModal from './PlayerSelectionModal';
-import { SPORT_CONFIGS } from '../utils/data';
+import FilterModal from './FilterModal';
+import { SPORT_CONFIGS } from './sportConfigs';
 
 const EnhancedTeamView = () => {
   const navigation = useNavigation();
@@ -36,18 +38,22 @@ const EnhancedTeamView = () => {
   const [showPlayerStats, setShowPlayerStats] = useRecoilState(showPlayerStatsState('default'));
   const [showPlayerSelectionModal, setShowPlayerSelectionModal] = useRecoilState(showPlayerSelectionModalState('default'));
   const [selectedSection, setSelectedSection] = useRecoilState(selectedSectionState('default'));
-  const [franchises, setFranchises] = useRecoilState(franchisesState); // Ensure franchisesState is an atom/selector
-  const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState); // Ensure selectedTournamentState is an atom/selector
+  const [franchises, setFranchises] = useRecoilState(franchisesState);
+  const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
+  const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
+  const [selectedFranchise, setSelectedFranchise] = useRecoilState(selectedFranchiseState);
 
   const filteredAvailablePlayers = useRecoilValue(filteredAvailablePlayersState);
   const totalPlayers = useRecoilValue(totalPlayersState);
   const teamValue = useRecoilValue(teamValueState);
-  const totalPoints = useRecoilValue(totalPointsState);
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-  const [selectedFranchise, setSelectedFranchise] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingPlayers, setIsFetchingPlayers] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filters, setFilters] = useState({ position: '', price: '', franchise: '' });
 
+  // Function to create initial team data based on the sport type
   const createInitialTeamData = useCallback((sportType) => {
     const data = {};
     Object.keys(SPORT_CONFIGS[sportType].sections).forEach((sectionKey) => {
@@ -56,17 +62,20 @@ const EnhancedTeamView = () => {
     return data;
   }, []);
 
+  // Effect to update team data when the sport changes
   useEffect(() => {
+    console.log(`Sport changed: ${sport}`);
     setTeamData(createInitialTeamData(sport));
-  }, [sport, createInitialTeamData]);
+  }, [sport, createInitialTeamData, setTeamData]);
 
+  // Effect to fetch franchises when the component mounts
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
 
     const fetchFranchises = async () => {
       try {
-        const tournamentId = "67908e4177daf7d0fef42b85"; 
+        const tournamentId = "67908e4177daf7d0fef42b85"; //hardcoded for dev
 
         if (!isMounted) return;
 
@@ -97,12 +106,42 @@ const EnhancedTeamView = () => {
     return () => {
       isMounted = false;
       abortController.abort();
-      setSelectedPlayer(null);
-      setShowPlayerStats(false);
-      setShowPlayerSelectionModal(false);
     };
-  }, []);
+  }, [setFranchises, selectedTournament]);
 
+  // Update the fetchPlayers function to handle 'all'
+  const fetchPlayers = useCallback(async (franchiseId) => {
+    try {
+      setIsFetchingPlayers(true);
+      const tournamentId = "67908e4177daf7d0fef42b85";
+      let url;
+
+      if (franchiseId === 'all') {
+        url = `/players/${tournamentId}/players`;
+
+      } else {
+        url = `/players/${tournamentId}/franchises/${franchiseId}/players`;
+      }
+
+      const response = await api.get(url);
+
+      if (response.data.success) {
+        // Ensure franchise data is properly populated
+        const playersWithFranchises = response.data.data.map(player => ({
+          ...player,
+          franchise: player.franchise || { name: "Free Agent" }
+        }));
+
+        setFetchedPlayers(playersWithFranchises);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch players');
+    } finally {
+      setIsFetchingPlayers(false);
+    }
+  }, [setFetchedPlayers, selectedTournament]);
+
+  // Function to validate the team configuration
   const validateTeam = useCallback(() => {
     const errors = [];
     const config = SPORT_CONFIGS[sport];
@@ -128,163 +167,194 @@ const EnhancedTeamView = () => {
     return errors;
   }, [sport, teamData, totalPlayers, teamValue]);
 
+  // Function to handle player selection
   const handlePlayerPress = useCallback((player) => {
     setSelectedPlayer(player);
     setShowPlayerStats(true);
-  }, []);
+  }, [setSelectedPlayer, setShowPlayerStats]);
 
+  // Function to remove a player from the team
   const removePlayer = useCallback((playerToRemove) => {
     setTeamData((prev) => {
       const newData = { ...prev };
       Object.keys(newData).forEach((section) => {
         newData[section] = newData[section].filter(
-          (p) => p.id !== playerToRemove.id
+          (p) => p._id !== playerToRemove._id
         );
       });
       return newData;
     });
-  }, []);
+  }, [setTeamData]);
 
+  // Function to add a player to the team
   const addPlayer = useCallback(
     (player) => {
       const config = SPORT_CONFIGS[sport];
+      let targetSection = selectedSection;
 
-      if (!selectedSection || !config.sections[selectedSection]) {
-        Alert.alert(
-          "Error",
-          "Please select a valid section to add the player."
+      // If no section selected, determine from playerType
+      if (!targetSection) {
+        targetSection = Object.keys(config.sections).find(section =>
+          config.sections[section].playerTypes.includes(player.playerType.toLowerCase())
         );
+      }
+
+      if (!targetSection || !config.sections[targetSection]) {
+        Alert.alert("Error", `No valid section found for ${player.playerType}`);
         return;
       }
 
-      if (totalPlayers >= config.maxPlayers) {
-        Alert.alert(
-          "Team Full",
-          `You can only have ${config.maxPlayers} players in your team.`
-        );
-        return;
-      }
+      setTeamData((prevTeamData) => {
+        const currentSectionPlayers = prevTeamData[targetSection] || [];
+        const currentTotalPlayers = Object.values(prevTeamData).flat().length;
+        const currentTeamValue = Object.values(prevTeamData)
+          .flat()
+          .reduce((sum, p) => sum + p.price, 0);
 
-      if (
-        teamData[selectedSection]?.length >=
-        config.sections[selectedSection].max
-      ) {
-        Alert.alert(
-          "Section Full",
-          `You can only have ${config.sections[selectedSection].max} ${selectedSection}`
-        );
-        return;
-      }
+        // Existing validation checks
+        if (currentTotalPlayers >= config.maxPlayers) {
+          Alert.alert("Team Full", `Maximum ${config.maxPlayers} players allowed.`);
+          return prevTeamData;
+        }
 
-      if (parseFloat(teamValue) + player.price > config.maxTeamValue) {
-        Alert.alert(
-          "Budget Exceeded",
-          `Adding this player would exceed the maximum team value of $${config.maxTeamValue}M`
-        );
-        return;
-      }
+        if (currentSectionPlayers.length >= config.sections[targetSection].max) {
+          Alert.alert("Section Full", `Maximum ${config.sections[targetSection].max} in ${targetSection}`);
+          return prevTeamData;
+        }
 
-      setTeamData((prev) => ({
-        ...prev,
-        [selectedSection]: [...prev[selectedSection], player],
-      }));
+        if (currentTeamValue + player.price > config.maxTeamValue) {
+          Alert.alert("Budget Exceeded", `Exceeds $${config.maxTeamValue}M`);
+          return prevTeamData;
+        }
+
+        return {
+          ...prevTeamData,
+          [targetSection]: [...currentSectionPlayers, player],
+        };
+      });
+
+      setSelectedSection(null);
       setShowPlayerSelectionModal(false);
     },
-    [selectedSection, sport, teamData, teamValue, totalPlayers]
+    [selectedSection, sport, setTeamData, setShowPlayerSelectionModal, setSelectedSection]
   );
 
-  const handleSportChange = useCallback(
-    (newSport) => {
-      if (totalPlayers > 0) {
-        Alert.alert(
-          "Change Sport",
-          "Changing sports will clear your current team. Are you sure?",
-          [
-            { text: "Cancel", style: "cancel" },
-            {
-              text: "Continue",
-              onPress: () => {
-                setSport(newSport);
-                setTeamData(createInitialTeamData(newSport));
-              },
-            },
-          ]
-        );
-      } else {
-        setSport(newSport);
-        setTeamData(createInitialTeamData(newSport));
-      }
-    },
-    [totalPlayers, createInitialTeamData]
-  );
-
-  const handleNext = useCallback(() => {
-    const errors = validateTeam();
+  // Function to handle the next action (e.g., saving the team)
+  const handleNext = useCallback(async () => {
+    // const errors = validateTeam();
     if (errors.length > 0) {
       Alert.alert("Invalid Team", errors.join("\n"), [{ text: "OK" }]);
       return;
     }
 
-    Alert.alert("Success", "Team saved successfully!", [
-      {
-        text: "OK",
-        onPress: () => navigation.goBack(),
-      },
-    ]);
-  }, [validateTeam, navigation]);
+    try {
+      const players = Object.values(teamData).flat().map(player => player._id);
+      const teamName = "Sulav";  // Use the user's name or another appropriate value
+      const budget = parseFloat(teamValue);
+      const tournamentId = "67908e4177daf7d0fef42b85";  // hardcoded for dev
+      console.log('Team creation :', players, teamName, budget, tournamentId);
 
-  const handleOpenPlayerSelection = (section) => {
-    setSelectedSection(section);
+      const response = await api.post('/teams/create', {
+        name: teamName,
+        players,
+        budget,
+        tournamentId
+      });
+      console.log('Team creation response:', response.data);
+      
+      if (response.data.success) {
+        Alert.alert("Success", "Team created successfully!", [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        Alert.alert("Error", "Failed to create team. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error creating team:", error);
+      Alert.alert("Error", "An error occurred while creating the team. Please try again.");
+    }
+  }, [validateTeam, teamData, teamValue, navigation]);
+
+  // Function to open the player selection modal
+  const handleOpenPlayerSelection = useCallback((section) => {
+    // console.log('Selected section:', section);
+    if (SPORT_CONFIGS[sport].sections[section]) {
+      setSelectedSection(section);
+      setShowPlayerSelectionModal(true);
+    } else {
+      console.error('Invalid section selected:', section);
+    }
+  }, [sport, setSelectedSection, setShowPlayerSelectionModal]);
+
+  // Function to apply filters
+  const handleApplyFilters = (filters) => {
+    setFilters(filters);
     setShowPlayerSelectionModal(true);
   };
 
-  if (isLoading) {
+  if (isLoading || isFetchingPlayers) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#1F2937", justifyContent: "center", alignItems: "center" }}>
-        <Text style={{ color: "white" }}>Loading franchises...</Text>
+        <Text style={{ color: "white" }}>Loading data...</Text>
       </SafeAreaView>
     );
   }
 
+  // Component to select a franchise
+  // In EnhancedTeamView component
+
+  // Update the FranchiseSelector component
   const FranchiseSelector = () => (
     <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
       <Text style={{ color: "#9CA3AF", fontSize: 16, marginBottom: 8 }}>Select Franchise</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+      <Picker
+        selectedValue={selectedFranchise?._id || 'all'}
+        style={{ height: 50, width: screenWidth - 32, color: "#FFFFFF" }}
+        onValueChange={(itemValue) => {
+          if (itemValue === 'all') {
+            setSelectedFranchise(null);
+            fetchPlayers('all'); // Fetch all players
+          } else {
+            const selected = franchises.find(f => f._id === itemValue);
+            setSelectedFranchise(selected);
+            fetchPlayers(itemValue);
+          }
+        }}
+      >
+        <Picker.Item label="All Franchises" value="all" />
         {franchises.map((franchise) => (
-          <TouchableOpacity
-            key={franchise._id}
-            style={{
-              paddingHorizontal: 16,
-              paddingVertical: 8,
-              borderRadius: 16,
-              borderWidth: 1,
-              borderColor: selectedFranchise?._id === franchise._id ? "#10B981" : "#9CA3AF",
-              backgroundColor: selectedFranchise?._id === franchise._id ? "#10B981" : "#1F2937",
-            }}
-            onPress={() => setSelectedFranchise(franchise)}
-          >
-            <Text style={{ color: selectedFranchise?._id === franchise._id ? "#FFFFFF" : "#9CA3AF" }}>
-              {franchise.name}
-            </Text>
-          </TouchableOpacity>
+          <Picker.Item key={franchise._id} label={franchise.name} value={franchise._id} />
         ))}
-      </View>
+      </Picker>
     </View>
   );
+
+  // Dummy data for header box
+  const deadline = "Sat 25 Jan 19:15";
+  const playersSelected = `${totalPlayers} / ${SPORT_CONFIGS[sport].maxPlayers}`;
+  const budget = `$${SPORT_CONFIGS[sport].maxTeamValue}M`;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#1F2937" }}>
       {/* Header Section */}
-      <View style={{ paddingHorizontal: 16 }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-          <SportSelector currentSport={sport} onSportChange={handleSportChange} />
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={{ color: "#10B981", fontWeight: "bold", fontSize: 24 }}>${teamValue}M</Text>
-            <Text style={{ color: "#9CA3AF", fontSize: 12 }}>Team Value</Text>
-            <Text style={{ color: "#3B82F6", fontSize: 12, marginTop: 4 }}>
-              Players: {totalPlayers}/{SPORT_CONFIGS[sport].maxPlayers}
-            </Text>
-          </View>
+      <View style={{ padding: 12, backgroundColor: "#111827", borderRadius: 8, margin: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View>
+          <Text style={{ color: "#10B981", fontSize: 18, fontWeight: "bold" }}>KO matches</Text>
+          <Text style={{ color: "#9CA3AF", fontSize: 14 }}>Deadline: <Text style={{ color: "#FFFFFF" }}>{deadline}</Text></Text>
+        </View>
+        <View>
+          <Text style={{ color: parseFloat(teamValue) > 100 ? "#EF4444" : "#10B981", fontSize: 20, fontWeight: "bold", textAlign: 'right' }}>
+            ${parseFloat(teamValue) > 100 ? `-${(parseFloat(teamValue) - 100).toFixed(2)}` : teamValue}M
+          </Text>
+          <Text style={{ color: "#9CA3AF", fontSize: 12, textAlign: 'right' }}>
+            Team Value ({totalPlayers}/{SPORT_CONFIGS[sport].maxPlayers})
+          </Text>
+          {parseFloat(teamValue) > 100 && (
+            <Text style={{ color: "#EF4444", fontSize: 10, textAlign: 'right' }}>Exceeds budget</Text>
+          )}
         </View>
       </View>
 
@@ -299,11 +369,18 @@ const EnhancedTeamView = () => {
 
         {/* Action Buttons Container */}
         <View style={{ left: 0, right: 0 }}>
-          <ActionButtons handleNext={handleNext} setShowPlayerSelectionModal={handleOpenPlayerSelection} />
+          <ActionButtons handleNext={handleNext} setShowPlayerSelectionModal={() => setFilterModalVisible(true)} />
         </View>
       </View>
 
       {/* Modals */}
+      <FilterModal
+        visible={filterModalVisible}
+        onClose={() => setFilterModalVisible(false)}
+        onApplyFilters={handleApplyFilters}
+        franchises={franchises}
+      />
+
       <HighlightedPlayerInfo
         player={selectedPlayer}
         visible={showPlayerStats}
@@ -319,6 +396,7 @@ const EnhancedTeamView = () => {
         onSelectPlayer={addPlayer}
         availablePlayers={filteredAvailablePlayers}
         section={selectedSection}
+        franchiseName={selectedFranchise?.name || "All Franchises"}
       />
     </SafeAreaView>
   );
