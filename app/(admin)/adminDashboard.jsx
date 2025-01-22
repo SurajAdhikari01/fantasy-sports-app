@@ -142,13 +142,15 @@ const AdminDashboard = () => {
             <StyledTouchableOpacity
               className="mt-2 bg-blue-500 p-2 rounded-lg"
               onPress={() =>
-                router.push({
-                  pathname: "../adminComponents/addPlayerForm",
-                  params: {
-                    tournamentId: tournament._id,
-                    franchiseId: tournament.franchises._id,
+                router.push(
+                  {
+                    pathname: "../adminComponents/addPlayerForm",
+                    params: {
+                      tournament: JSON.stringify(tournament),
+                    },
                   },
-                })
+                  console.log("Add Player clicked", tournament)
+                )
               }
             >
               <StyledText className="text-white text-center">
