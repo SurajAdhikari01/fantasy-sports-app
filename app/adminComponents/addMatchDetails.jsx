@@ -357,12 +357,19 @@ export default function AddMatchDetail() {
       );
 
       const response = await api.post("/matchDetails/add", updatedMatchDetails);
-
-      if (response.data && response.data.success) {
-        Alert.alert("Success", "Match details added successfully!");
+      if (response.status === 201) {
+        Alert.alert(
+          "Success",
+          response.data.statusCode || "Match details added successfully!"
+        );
         router.back();
       } else {
-        Alert.alert("Error", "Failed to add match details. Please try again.");
+        console.log(response);
+        Alert.alert(
+          "Error",
+          response.data.message ||
+            "Failed to add match details. Please try again."
+        );
       }
     } catch (error) {
       console.error("Error adding match details:", error);
