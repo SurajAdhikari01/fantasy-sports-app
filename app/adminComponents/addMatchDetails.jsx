@@ -159,6 +159,7 @@ export default function AddMatchDetail() {
     }
   }, [selectedFranchise1]);
 
+  
   useEffect(() => {
     if (selectedFranchise2) {
       fetchPlayers(selectedFranchise2, setPlayersFranchise2);

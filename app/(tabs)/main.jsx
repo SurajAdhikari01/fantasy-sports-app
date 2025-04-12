@@ -1,29 +1,36 @@
-// MainPage.js
-import React, { useState } from 'react';
+import React from 'react';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RecoilRoot } from "recoil";
+import { RecoilRoot, useRecoilValue, useRecoilState } from "recoil";
 import EnhancedTeamView from "../components/EnhancedTeamView";
-import TournamentSelector from "../components/TournamentSelector";
+import TournamentSelect from "../components/TournamentSelect";
+import TeamPlayersView from "../components/TeamPlayersView";
+import { selectedTournamentState, viewModeState } from "../components/atoms";
+
+// conditionally render based on Recoil state
+const MainContent = () => {
+  const selectedTournament = useRecoilValue(selectedTournamentState);
+  const [viewMode, setViewMode] = useRecoilState(viewModeState);
+
+  // If no tournament is selected, show tournament selection
+  if (!selectedTournament) {
+    return <TournamentSelect />;
+  }
+
+  // If tournament is selected, show either team management or team view based on viewMode
+  switch (viewMode) {
+    case 'VIEW_TEAM':
+      return <TeamPlayersView />;
+    case 'MANAGE_TEAM':
+    default:
+      return <EnhancedTeamView />;
+  }
+};
 
 const MainPage = () => {
-  // const [selectedTournament, setSelectedTournament] = useState("");
-
-  // const handleTournamentSelect = (tournament) => {
-  //   setSelectedTournament(tournament);
-  // };
-
-
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#1F2937' }}>
-      
       <RecoilRoot>
-        {/* {!selectedTournament ? (
-          <TournamentSelector onTournamentSelect={handleTournamentSelect} />
-        ) : (
-          <EnhancedTeamView tournament={selectedTournament} />
-        )} */}
-        <EnhancedTeamView  />
-
+        <MainContent />
       </RecoilRoot>
     </SafeAreaView>
   );

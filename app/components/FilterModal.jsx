@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { View, Modal, TouchableOpacity, Text } from 'react-native';
-import {Picker} from '@react-native-picker/picker';
+import { View, Modal, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 
-const FilterModal = ({ visible, onClose, onApplyFilters, franchises }) => {
+const FilterModal = ({ visible, onClose, onApplyFilters, franchises = [] }) => {
   const [selectedPosition, setSelectedPosition] = useState('');
   const [selectedPrice, setSelectedPrice] = useState('');
   const [selectedFranchise, setSelectedFranchise] = useState('');
 
   const applyFilters = () => {
-    onApplyFilters({ position: selectedPosition, price: selectedPrice, franchise: selectedFranchise });
+    onApplyFilters({
+      position: selectedPosition,
+      price: selectedPrice,
+      franchise: selectedFranchise,
+    });
     onClose();
   };
 
@@ -19,15 +23,15 @@ const FilterModal = ({ visible, onClose, onApplyFilters, franchises }) => {
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-        <View style={{ width: 300, padding: 20, backgroundColor: '#1F2937', borderRadius: 10 }}>
-          <Text style={{ color: '#FFFFFF', fontSize: 18, marginBottom: 10 }}>Filter Players</Text>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>Filter Players</Text>
 
           {/* Position Filter */}
-          <Text style={{ color: '#FFFFFF', marginBottom: 5 }}>Position</Text>
+          <Text style={styles.label}>Position</Text>
           <Picker
             selectedValue={selectedPosition}
-            style={{ height: 50, color: '#FFFFFF' }}
+            style={styles.picker}
             onValueChange={(itemValue) => setSelectedPosition(itemValue)}
           >
             <Picker.Item label="All" value="" />
@@ -38,10 +42,10 @@ const FilterModal = ({ visible, onClose, onApplyFilters, franchises }) => {
           </Picker>
 
           {/* Price Filter */}
-          <Text style={{ color: '#FFFFFF', marginTop: 10, marginBottom: 5 }}>Price</Text>
+          <Text style={styles.label}>Price</Text>
           <Picker
             selectedValue={selectedPrice}
-            style={{ height: 50, color: '#FFFFFF' }}
+            style={styles.picker}
             onValueChange={(itemValue) => setSelectedPrice(itemValue)}
           >
             <Picker.Item label="All" value="" />
@@ -54,29 +58,75 @@ const FilterModal = ({ visible, onClose, onApplyFilters, franchises }) => {
           </Picker>
 
           {/* Franchise Filter */}
-          <Text style={{ color: '#FFFFFF', marginTop: 10, marginBottom: 5 }}>Franchise</Text>
+          <Text style={styles.label}>Franchise</Text>
           <Picker
             selectedValue={selectedFranchise}
-            style={{ height: 50, color: '#FFFFFF' }}
+            style={styles.picker}
             onValueChange={(itemValue) => setSelectedFranchise(itemValue)}
           >
             <Picker.Item label="All" value="" />
-            {franchises.map((franchise) => (
-              <Picker.Item key={franchise._id} label={franchise.name} value={franchise._id} />
-            ))}
+            {Array.isArray(franchises) &&
+              franchises.map((franchise) => (
+                <Picker.Item
+                  key={franchise._id || franchise.name}
+                  label={franchise.name}
+                  value={franchise._id}
+                />
+              ))}
           </Picker>
 
           {/* Apply Filters Button */}
-          <TouchableOpacity
-            onPress={applyFilters}
-            style={{ backgroundColor: '#10B981', padding: 10, borderRadius: 5, marginTop: 20 }}
-          >
-            <Text style={{ color: '#FFFFFF', textAlign: 'center' }}>Apply Filters</Text>
+          <TouchableOpacity onPress={applyFilters} style={styles.applyButton}>
+            <Text style={styles.applyButtonText}>Apply Filters</Text>
           </TouchableOpacity>
         </View>
       </View>
     </Modal>
   );
 };
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalContainer: {
+    width: 300,
+    padding: 20,
+    backgroundColor: '#1F2937',
+    borderRadius: 10,
+  },
+  modalTitle: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    marginBottom: 10,
+    fontWeight: 'bold',
+  },
+  label: {
+    color: '#FFFFFF',
+    marginTop: 10,
+    marginBottom: 5,
+  },
+  picker: {
+    height: 50,
+    color: '#FFFFFF',
+    backgroundColor: '#374151',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  applyButton: {
+    backgroundColor: '#10B981',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 20,
+  },
+  applyButtonText: {
+    color: '#FFFFFF',
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+});
 
 export default FilterModal;

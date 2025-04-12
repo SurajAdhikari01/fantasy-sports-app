@@ -190,7 +190,7 @@ const HomeScreen = () => {
       >
         <View className="px-4">
           <View className="flex-row justify-between items-center ">
-            <Text className="text-white font-semibold text-xl">Hi Lucifer</Text>
+            <Text className="text-white font-semibold text-xl">Hi Sulav2060</Text>
             <Image
               source={{
                 uri: "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",

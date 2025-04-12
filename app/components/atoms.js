@@ -11,6 +11,16 @@ export const selectedTournamentState = atom({
   default: null,
 });
 
+export const viewModeState = atom({
+  key: "viewModeState",
+  default: "MANAGE_TEAM",
+});
+
+export const playerLimitState = atom({
+  key: "playerLimitState",
+  default: 0,
+});
+
 export const teamDataState = atom({
   key: "teamDataState",
   default: {},
