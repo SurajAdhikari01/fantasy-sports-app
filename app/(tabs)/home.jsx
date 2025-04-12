@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useRef } from "react"; // Import useRef
 import {
   View,
   Text,
@@ -8,20 +8,23 @@ import {
   SafeAreaView,
   FlatList,
   ScrollView,
+  Modal,
+  StyleSheet,
+  Pressable,
 } from "react-native";
 import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
-import { useNavigation } from "@react-navigation/native";
+// import { useNavigation } from "@react-navigation/native"; // Keep if needed
 import MatchCard from "../components/MatchCard";
 import { router } from "expo-router";
 import UpcomingMatchCard from "../components/UpcomingMatchCard";
 import { useAuth } from "../context/AuthContext";
+import { Alert } from "react-native";
 
-// Get device screen width and height
+// --- (Keep existing code for Dimensions, matches, MatchesList, upcomingMatches, StatisticsCard) ---
 const { width, height } = Dimensions.get("window");
-
-// Adjusted width and height for padding and proportions
-const adjustedWidth = width * 0.9; // 90% of the screen width
-const adjustedHeight = height * 0.23; // Adjusted height proportional to width
+const adjustedWidth = width * 0.9;
+const adjustedHeight = height * 0.23;
+// ... (matches, MatchesList, upcomingMatches, StatisticsCard definitions remain the same) ...
 const matches = [
   {
     id: "1",
@@ -57,7 +60,7 @@ const matches = [
   },
 ];
 const MatchesList = () => {
-  const navigation = useNavigation();
+  // const navigation = useNavigation(); // Can remove if only using router
 
   const renderItem = ({ item }) => (
     <View className="mx-2">
@@ -69,7 +72,8 @@ const MatchesList = () => {
             item.sport === "football" ? "FootballDetail" : "CricketDetail";
 
           router.push({
-            pathname: `/components/${routeName}/[id]`, // Route to the correct detail page with dynamic id
+            // Make sure your route structure matches this
+            pathname: `/components/${routeName}/[id]`,
             params: { id: item.id }, // Pass the match id as a parameter
           });
         }}
@@ -184,13 +188,65 @@ const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
 
 const HomeScreen = () => {
   const { signOut, userData } = useAuth();
-  console.log("User Data:", userData);
+  const [optionsModalVisible, setOptionsModalVisible] = useState(false);
+  const [logoutConfirmModalVisible, setLogoutConfirmModalVisible] =
+    useState(false);
+  const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 }); // State for position
+  const profileImageRef = useRef(null); // Ref for the touchable opacity
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await signOut();
+              // AuthGuard should handle redirect
+            } catch (error) {
+              console.error("Logout error:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const handleProfileNavigation = () => {
+    setOptionsModalVisible(false);
+    router.push("/profile"); // Ensure '/profile' route exists
+  };
+
+  // Function to measure the image position and show the modal
+  const showOptionsMenu = () => {
+    profileImageRef.current?.measure((fx, fy, w, h, px, py) => {
+      // fx, fy: position relative to parent
+      // w, h: width/height of element
+      // px, py: position relative to screen
+      const topOffset = py + h + 5; // Position below the image + 5px margin
+      const rightOffset = width - (px + w); // Position aligned to the right edge
+
+      setModalPosition({ top: topOffset, right: rightOffset });
+      setOptionsModalVisible(true);
+    });
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-gray-900 gap-12">
       <ScrollView
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
+        {/* Header Section */}
         <View className="px-4">
           <View className="flex-row justify-between items-center ">
             <Text className="text-white font-semibold text-xl">
@@ -199,34 +255,48 @@ const HomeScreen = () => {
                 ? `${
                     userData.username.charAt(0).toUpperCase() +
                     userData.username.slice(1).toLowerCase()
-                  }` // Format the username
+                  }`
                 : "User"}
             </Text>
 
-            <Image
-              source={{
-                uri: "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
-              }}
-              className="h-10 w-10 rounded-full"
-            />
+            {/* Attach ref and onPress handler to the TouchableOpacity */}
+            <TouchableOpacity ref={profileImageRef} onPress={showOptionsMenu}>
+              <Image
+                source={{
+                  uri:
+                    userData?.profileUrl ||
+                    "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
+                }}
+                className="h-10 w-10 rounded-full"
+              />
+            </TouchableOpacity>
           </View>
           <Text className="text-gray-400 text-sm">Welcome back</Text>
         </View>
 
-        <StatisticsCard scoreEarned="150" gamesPlayed="3" />
+        {/* Statistics Card */}
+        <StatisticsCard
+          scoreEarned={userData?.scoreEarned || "150"}
+          gamesPlayed={userData?.gamesPlayed || "3"}
+        />
 
         {/* Games Played and Stats */}
         <View className="flex-row justify-between items-center p-6 mt-4">
           <View className="bg-gray-800 p-4 rounded-lg flex-1 mr-2">
-            <Text className="text-white text-lg">42</Text>
+            <Text className="text-white text-lg">
+              {userData?.ranking || "42"}
+            </Text>
             <Text className="text-gray-400 text-sm">Ranking</Text>
           </View>
           <View className="bg-gray-800 p-4 rounded-lg flex-1 ml-2">
-            <Text className="text-white text-lg">134</Text>
+            <Text className="text-white text-lg">
+              {userData?.matchesPlayed || "134"}
+            </Text>
             <Text className="text-gray-400 text-sm">Matches</Text>
           </View>
         </View>
 
+        {/* Ongoing Matches */}
         <View>
           <Text className="text-white text-lg font-semibold p-6">
             Ongoing Matches
@@ -234,6 +304,7 @@ const HomeScreen = () => {
           <MatchesList />
         </View>
 
+        {/* Upcoming Matches */}
         <View>
           <Text className="text-white text-lg font-semibold p-6">
             Upcomings
@@ -244,15 +315,152 @@ const HomeScreen = () => {
                 key={match.id}
                 match={match}
                 onPress={() => {
-                  console.log(`Clicked on match ${match.id}`);
+                  const routeName =
+                    match.sport === "football"
+                      ? "FootballDetail"
+                      : "CricketDetail";
+                  router.push({
+                    pathname: `/components/${routeName}/[id]`,
+                    params: { id: match.id },
+                  });
                 }}
               />
             ))}
           </View>
         </View>
       </ScrollView>
+
+      {/* Options Modal (Profile/Logout) - Positioned using state */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={optionsModalVisible}
+        onRequestClose={() => setOptionsModalVisible(false)}
+      >
+        {/* Pressable overlay to close modal */}
+        <Pressable
+          style={styles.modalOverlay} // Make overlay fill screen but allow touches through if needed, or handle close here
+          onPress={() => setOptionsModalVisible(false)}
+        >
+          {/* Position the modal content absolutely */}
+          <View
+            style={[
+              styles.optionsModalView,
+              { top: modalPosition.top, right: modalPosition.right }, // Apply calculated position
+            ]}
+            // Prevent closing when tapping inside the modal itself
+            onStartShouldSetResponder={() => true}
+          >
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={handleProfileNavigation}
+            >
+              <Text style={styles.optionButtonText}>View Profile</Text>
+            </TouchableOpacity>
+            <View style={styles.separator} />
+            <TouchableOpacity
+              style={styles.optionButton}
+              onPress={handleLogout}
+            >
+              <Text style={[styles.optionButtonText, styles.logoutText]}>
+                Logout
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+// Updated Styles
+const styles = StyleSheet.create({
+  // Overlay for the options modal (covers screen, allows absolute positioning)
+  modalOverlay: {
+    flex: 1,
+    // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Optional: dim background slightly
+  },
+  // Styles for Options Modal (now positioned absolutely)
+  optionsModalView: {
+    position: "absolute", // Key change for positioning
+    backgroundColor: "#2d2d2d",
+    borderRadius: 10, // Smaller radius for dropdown feel
+    overflow: "hidden",
+    width: 150, // Adjust width as needed
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 6,
+  },
+  optionButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+  },
+  optionButtonText: {
+    color: "white",
+    fontSize: 15,
+  },
+  logoutText: {
+    color: "#ff4b2b",
+  },
+  separator: {
+    height: StyleSheet.hairlineWidth, // Thinner separator
+    backgroundColor: "#555",
+  },
+
+  // Styles for Confirmation Modal (Centered)
+  confirmModalOverlay: {
+    // Separate overlay style for centered modal
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+  },
+  confirmModalView: {
+    margin: 20,
+    backgroundColor: "#2d2d2d",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "80%",
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    marginTop: 20,
+  },
+  button: {
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    elevation: 2,
+    marginHorizontal: 10,
+    minWidth: 90,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonCancel: {
+    backgroundColor: "#555",
+  },
+  buttonLogout: {
+    backgroundColor: "#ff4b2b",
+  },
+  textStyle: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  modalText: {
+    marginBottom: 20,
+    textAlign: "center",
+    color: "white",
+    fontSize: 17,
+  },
+});
 
 export default HomeScreen;
