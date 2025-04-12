@@ -25,27 +25,35 @@ const PlayerSelectionModal = ({
   onSelectPlayer,
   availablePlayers = [],
   section,
-  franchises = [],
+  franchises,
+  onFranchiseChange,
 }) => {
+
   const [searchQuery, setSearchQuery] = useState("")
   const [isFilterExpanded, setIsFilterExpanded] = useState(false)
   const [selectedPosition, setSelectedPosition] = useState("")
   const [selectedPrice, setSelectedPrice] = useState("")
-  const [selectedFranchise, setSelectedFranchise] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [selectedFranchise, setSelectedFranchise] = useState('all');
+  const [isLoading, setIsLoading] = useState(false);
 
   const filterHeight = useMemo(() => new Animated.Value(0), [])
   const filterOpacity = useMemo(() => new Animated.Value(0), [])
   const modalSlide = useMemo(() => new Animated.Value(20), [])
   const modalOpacity = useMemo(() => new Animated.Value(0), [])
 
+  const handleFranchiseSelect = (franchiseId) => {
+    setIsLoading(true);
+    setSelectedFranchise(franchiseId);
+    onFranchiseChange(franchiseId || 'all');
+  };
+  
   useEffect(() => {
     if (!visible) {
       setSearchQuery("")
       setIsFilterExpanded(false)
       setSelectedPosition("")
       setSelectedPrice("")
-      setSelectedFranchise("")
+      setSelectedFranchise("");
     } else {
       Animated.parallel([
         Animated.timing(modalSlide, {

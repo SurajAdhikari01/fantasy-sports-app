@@ -32,10 +32,10 @@ import {
 } from './atoms';
 import api from '../config/axios';
 import PitchView from './PitchView';
-import HighlightedPlayerInfo from './HighlightedPlayerInfo';
+// import HighlightedPlayerInfo from './HighlightedPlayerInfo';
 import ActionButtons from './ActionButtons';
 import PlayerSelectionModal from './PlayerSelectionModal';
-import FilterModal from './FilterModal';
+// import FilterModal from './FilterModal';
 import { SPORT_CONFIGS } from './sportConfigs';
 import { AntDesign, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -46,10 +46,10 @@ const EnhancedTeamView = () => {
   const navigation = useNavigation();
   const [sport, setSport] = useRecoilState(sportState);
   const [teamData, setTeamData] = useRecoilState(teamDataState);
-  const [filterRole, setFilterRole] = useRecoilState(filterRoleState);
+  // const [filterRole, setFilterRole] = useRecoilState(filterRoleState);
   const [sortBy, setSortBy] = useRecoilState(sortByState('default'));
   const [selectedPlayer, setSelectedPlayer] = useRecoilState(selectedPlayerState('default'));
-  const [showPlayerStats, setShowPlayerStats] = useRecoilState(showPlayerStatsState('default'));
+  // const [showPlayerStats, setShowPlayerStats] = useRecoilState(showPlayerStatsState('default'));
   const [showPlayerSelectionModal, setShowPlayerSelectionModal] = useRecoilState(showPlayerSelectionModalState('default'));
   const [selectedSection, setSelectedSection] = useRecoilState(selectedSectionState('default'));
   const [franchises, setFranchises] = useRecoilState(franchisesState);
@@ -64,7 +64,7 @@ const EnhancedTeamView = () => {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isFetchingPlayers, setIsFetchingPlayers] = useState(false);
-  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  // const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filters, setFilters] = useState({ position: '', price: '', franchise: '' });
   const [selectedSlotId, setSelectedSlotId] = useState(null);
 
@@ -106,27 +106,71 @@ const EnhancedTeamView = () => {
 
   // Effect to update team data when the sport changes
   useEffect(() => {
-    console.log(`Sport changed: ${sport}`);
+    // console.log(`Sport changed: ${sport}`);
     setTeamData(createInitialTeamData(sport));
   }, [sport, createInitialTeamData, setTeamData]);
 
-  // Effect to fetch franchises when the component mounts
+  // Effect to fetch franchises and players when the component mounts
+  // Effect to fetch franchises and players when the component mounts
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
 
-    const fetchFranchises = async () => {
+    const fetchFranchisesAndPlayers = async () => {
       try {
         if (!isMounted) return;
+        setIsLoading(true);
 
-        const response = await api.get(`/tournaments/franchises/${tournamentId}`, {
+        // Fetch franchises
+        const franchisesResponse = await api.get(`/tournaments/franchises/${tournamentId}`, {
           signal: abortController.signal
         });
+        console.log("Franchises response:", franchisesResponse.data);
 
         if (!isMounted) return;
 
-        if (response.data.success && Array.isArray(response.data.message)) {
-          setFranchises(response.data.message);
+        // Check if data exists and handle the structure we can see in the logs
+        if (franchisesResponse.data && franchisesResponse.data.data) {
+          // If response has data property (could be the case in some APIs)
+          console.log("Raw franchises data (from data property):", franchisesResponse.data.data);
+          setFranchises(franchisesResponse.data.data);
+          console.log(`Set ${franchisesResponse.data.data.length} franchises from data property`);
+        }
+        else if (franchisesResponse.data && franchisesResponse.data.success && Array.isArray(franchisesResponse.data.message)) {
+          // This matches what we're seeing in the logs - data.success exists and data.message is an array
+          console.log("Raw franchises data (from message property):", franchisesResponse.data.message);
+          setFranchises(franchisesResponse.data.message);
+          console.log(`Set ${franchisesResponse.data.message.length} franchises from message property`);
+        }
+        else if (Array.isArray(franchisesResponse.data)) {
+          // Just in case the response is a direct array
+          console.log("Raw franchises data (direct array):", franchisesResponse.data);
+          setFranchises(franchisesResponse.data);
+          console.log(`Set ${franchisesResponse.data.length} franchises from direct array`);
+        }
+        else {
+          console.warn("Failed to find franchises data in expected format", franchisesResponse.data);
+          setFranchises([]); // Set empty array to avoid undefined issues
+        }
+
+        // Fetch all players
+        console.log(`Fetching all players for tournament: ${tournamentId}`);
+        setIsFetchingPlayers(true);
+        const playersResponse = await api.get(`/players/${tournamentId}/players`);
+
+        if (!isMounted) return;
+
+        if (playersResponse.data.success && Array.isArray(playersResponse.data.data)) {
+          const playersWithFranchises = playersResponse.data.data.map(player => ({
+            ...player,
+            franchise: player.franchise || { name: "Free Agent" }
+          }));
+
+          setFetchedPlayers(playersWithFranchises);
+          console.log(`Fetched ${playersWithFranchises.length} players`);
+        } else {
+          console.warn("Failed to fetch players or received invalid data format");
+          setFetchedPlayers([]);
         }
       } catch (err) {
         if (err.name === 'CanceledError') {
@@ -134,9 +178,11 @@ const EnhancedTeamView = () => {
           return;
         }
         console.error('Fetch Error:', err);
+        setFranchises([]); // Set empty array in case of error
       } finally {
         if (isMounted) {
           setIsLoading(false);
+          setIsFetchingPlayers(false);
 
           // Start animations when loading is complete
           Animated.parallel([
@@ -165,56 +211,81 @@ const EnhancedTeamView = () => {
       }
     };
 
-    fetchFranchises();
+    if (tournamentId) {
+      fetchFranchisesAndPlayers();
+    }
 
     return () => {
       isMounted = false;
       abortController.abort();
     };
-  }, [tournamentId, setFranchises, fadeAnim, slideAnim, headerSlideAnim, scaleAnim]);
+  }, [tournamentId, setFranchises, setFetchedPlayers, fadeAnim, slideAnim, headerSlideAnim, scaleAnim]);
 
-  // Update the fetchPlayers function to handle 'all'
-  const fetchPlayers = useCallback(async (franchiseId) => {
+  // Function to handle franchise selection in the modal
+  const handleFranchiseChange = useCallback(async (franchiseId) => {
     try {
       setIsFetchingPlayers(true);
 
-      // Construct the correct API endpoint
       let url;
-      if (franchiseId === 'all') {
+      if (!franchiseId || franchiseId === '' || franchiseId === 'all') {
+        // Fetch all tournament players
         url = `/players/${tournamentId}/players`;
       } else {
+        // Fetch franchise-specific players
         url = `/players/${tournamentId}/franchises/${franchiseId}/players`;
       }
 
-      console.log('[Player Fetch] Fetching players from URL:', url);
-
-      // Make the API call
-      const response = await api.get(url);
-
-      if (response.data.success) {
-        console.log('[Player Fetch] Players fetched successfully:', response.data.data);
-
-        // Ensure franchise data is properly populated
-        const playersWithFranchises = response.data.data.map(player => ({
-          ...player,
-          franchise: player.franchise || { name: "Free Agent" }
-        }));
-
-        setFetchedPlayers(playersWithFranchises);
-
-        // Log the fetched players with IDs for debugging
-        console.log('[Player Fetch] Fetched Players with IDs:', playersWithFranchises.map(p => p._id));
-      } else {
-        console.error('[Player Fetch] API responded with failure:', response.data);
-        Alert.alert('Error', 'Failed to fetch players');
-      }
+      // Rest of function remains the same...
     } catch (error) {
-      console.error('[Player Fetch] Network or API Error:', error);
-      Alert.alert('Error', 'Failed to fetch players');
+      console.error('Error fetching franchise players:', error);
+      Alert.alert('Error', 'Failed to fetch franchise players');
     } finally {
       setIsFetchingPlayers(false);
     }
-  }, [tournamentId, setFetchedPlayers]);
+  }, [tournamentId, teamData, selectedSection, setFetchedPlayers]);
+
+  // Update the fetchPlayers function to handle 'all'
+  // const fetchPlayers = useCallback(async (franchiseId) => {
+  //   try {
+  //     setIsFetchingPlayers(true);
+
+  //     // Construct the correct API endpoint
+  //     let url;
+  //     if (franchiseId === 'all') {
+  //       url = `/players/${tournamentId}/players`;
+  //     } else {
+  //       url = `/players/${tournamentId}/franchises/${franchiseId}/players`;
+  //     }
+
+  //     // console.log('[Player Fetch] Fetching players from URL:', url);
+
+  //     // Make the API call
+  //     const response = await api.get(url);
+
+  //     if (response.data.success) {
+  //       // console.log('[Player Fetch] Players fetched successfully:', response.data.data);
+
+  //       // Ensure franchise data is properly populated
+  //       const playersWithFranchises = response.data.data.map(player => ({
+  //         ...player,
+  //         franchise: player.franchise || { name: "Free Agent" }
+  //       }));
+
+  //       setFetchedPlayers(playersWithFranchises);
+
+  //       // Log the fetched players with IDs for debugging
+  //       // console.log('[Player Fetch] Fetched Players with IDs:', playersWithFranchises.map(p => p._id));
+  //     } else {
+  //       console.error('[Player Fetch] API responded with failure:', response.data);
+  //       Alert.alert('Error', 'Failed to fetch players');
+  //     }
+  //   } catch (error) {
+  //     console.error('[Player Fetch] Network or API Error:', error);
+  //     Alert.alert('Error', 'Failed to fetch players');
+  //   } finally {
+  //     setIsFetchingPlayers(false);
+  //   }
+  // }, [tournamentId, setFetchedPlayers]);
 
   // Function to validate the team configuration
   const validateTeam = useCallback(() => {
@@ -243,10 +314,10 @@ const EnhancedTeamView = () => {
   }, [sport, teamData, totalPlayers, teamValue]);
 
   // Function to handle player selection
-  const handlePlayerPress = useCallback((player) => {
-    setSelectedPlayer(player);
-    setShowPlayerStats(true);
-  }, [setSelectedPlayer, setShowPlayerStats]);
+  // const handlePlayerPress = useCallback((player) => {
+  //   setSelectedPlayer(player);
+  //   setShowPlayerStats(true);
+  // }, [setSelectedPlayer, setShowPlayerStats]);
 
 
   // Function to add a player to the team
@@ -291,10 +362,10 @@ const EnhancedTeamView = () => {
         }
 
         // Log the player being added
-        console.log('[Player Add] Adding player to teamData:', {
-          player,
-          targetSection
-        });
+        // console.log('[Player Add] Adding player to teamData:', {
+        //   player,
+        //   targetSection
+        // });
 
         const updatedTeamData = {
           ...prevTeamData,
@@ -302,7 +373,7 @@ const EnhancedTeamView = () => {
         };
 
         // Log updated team data
-        console.log('[Player Add] Updated teamData:', updatedTeamData);
+        // console.log('[Player Add] Updated teamData:', updatedTeamData);
 
         return updatedTeamData;
       });
@@ -314,7 +385,7 @@ const EnhancedTeamView = () => {
   );
 
   const removePlayer = useCallback((playerToRemove) => {
-    console.log("Removing player:", playerToRemove);
+    // console.log("Removing player:", playerToRemove);
     setTeamData((prev) => {
       const newData = { ...prev };
       Object.keys(newData).forEach((section) => {
@@ -328,64 +399,70 @@ const EnhancedTeamView = () => {
   }, [setTeamData]);
 
   // Function to handle player removal with confirmation
-  const handleRemovePlayer = useCallback((player) => {
+  const handleRemovePlayer = useCallback((player, skipAlert = false) => {
     console.log("Handle remove player:", player);
-    Alert.alert(
-      "Remove Player",
-      "Are you sure you want to remove this player?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Remove", onPress: () => removePlayer(player) }
-      ],
-      { cancelable: true }
-    );
+
+    if (skipAlert) {
+      // Skip the alert and remove player directly
+      removePlayer(player);
+    } else {
+      Alert.alert(
+        "Remove Player",
+        "Are you sure you want to remove this player?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Remove", onPress: () => removePlayer(player) }
+        ],
+        { cancelable: true }
+      );
+    }
   }, [removePlayer]);
 
   // Function to handle the next action (e.g., saving the team)
   const handleNext = useCallback(async () => {
     // Log initial data
-    console.log('[Team Creation] Initial Data:', {
-      teamData: JSON.parse(JSON.stringify(teamData)), // Deep clone for safety
-      teamValue,
-      tournamentId,
-      playerLimit,
-      sport
-    });
-  
+    // console.log('[Team Creation] Initial Data:', {
+    //   teamData: JSON.parse(JSON.stringify(teamData)), // Deep clone for safety
+    //   teamValue,
+    //   tournamentId,
+    //   playerLimit,
+    //   sport
+    // });
+
     // Validate the team
     const errors = validateTeam();
-    console.log('[Team Creation] Validation Errors:', errors);
-  
+    // console.log('[Team Creation] Validation Errors:', errors);
+
     if (errors.length > 0) {
       Alert.alert("Invalid Team", errors.join("\n"), [{ text: "OK" }]);
       return;
     }
-  
+
     if (!tournamentId) {
       console.error('[Team Creation] tournamentId is undefined. Ensure the selected tournament is set.');
       Alert.alert("Error", "Tournament ID is missing. Please select a valid tournament.");
       return;
     }
-  
+
     try {
       // Flatten the `teamData` structure and extract only player IDs
       const players = Object.values(teamData)
         .flat() // Flatten all position arrays (defenders, forwards, etc.)
         .map(player => player._id) // Extract just the player IDs
         .filter(id => id); // Ensure no undefined or null IDs exist
-  
+
       // Log extracted player IDs for debugging
-      console.log('[Team Creation] Extracted Player IDs:', players);
-  
+      // console.log('[Team Creation] Extracted Player IDs:', players);
+
       if (players.length === 0) {
         console.error('[Team Creation] No valid player IDs found in teamData.');
         Alert.alert("Error", "No valid players found in the team.");
         return;
       }
-  
+
       const teamName = "UserTeam"; // Replace with dynamic name if needed
       const budget = parseFloat(teamValue);
-  
+
       // Construct payload
       const payload = {
         name: teamName,
@@ -400,21 +477,21 @@ const EnhancedTeamView = () => {
           }, {})
         }
       };
-  
+
       // Log the payload
-      console.log('[Team Creation] Payload Being Sent:', JSON.stringify(payload, null, 2));
-  
+      // console.log('[Team Creation] Payload Being Sent:', JSON.stringify(payload, null, 2));
+
       // Make the API call
       setIsLoading(true);
       const headers = { 'Content-Type': 'application/json' };
       const response = await api.post(`/teams/create`, payload, { headers });
-  
-      console.log('[Team Creation] API Response:', {
-        status: response.status,
-        data: response.data,
-        headers: response.headers
-      });
-  
+
+      // console.log('[Team Creation] API Response:', {
+      //   status: response.status,
+      //   data: response.data,
+      //   headers: response.headers
+      // });
+
       if (response.data.success) {
         Alert.alert("Success", "Team created successfully!");
         navigation.navigate("Home");
@@ -424,12 +501,12 @@ const EnhancedTeamView = () => {
       }
     } catch (error) {
       console.error('[Team Creation] Network or Backend Error:', error);
-  
+
       // Check if the error is a response from the backend
       if (error.response) {
         const { status, data } = error.response;
         console.error('[Team Creation] Backend Error Response:', status, data);
-  
+
         // Show the backend error message
         Alert.alert(
           "Error",
@@ -447,7 +524,7 @@ const EnhancedTeamView = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateTeam, teamData, teamValue, tournamentId, navigation, playerLimit, sport]);  
+  }, [validateTeam, teamData, teamValue, tournamentId, navigation, playerLimit, sport]);
   // Function to open the player selection modal
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [modalData, setModalData] = useState(null);
@@ -488,32 +565,35 @@ const EnhancedTeamView = () => {
     // Store filtered players in state
     setFilteredPlayers(filteredPlayers);
 
+    // Set selected section for the modal
+    setSelectedSection(section);
+
     // Open the player selection modal
-    openPlayerSelectionModal(positionId, coordinates);
+    setShowPlayerSelectionModal(true);
   };
 
   // Function to apply filters
-  const handleApplyFilters = (filters) => {
-    const { position, price, franchise } = filters;
-  
-    const filtered = fetchedPlayers
-      .filter((player) => player) 
-      .filter((player) => {
-        if (position && player.playerType && !player.playerType.toLowerCase().includes(position.toLowerCase())) {
-          return false;
-        }
-        if (price && player.price && player.price > parseFloat(price)) {
-          return false;
-        }
-        if (franchise && player.franchise && player.franchise._id !== franchise) {
-          return false;
-        }
-        return true;
-      });
-  
-    setFilteredPlayers(filtered);
-    setShowPlayerSelectionModal(true);
-  };
+  // const handleApplyFilters = (filters) => {
+  //   const { position, price, franchise } = filters;
+
+  //   const filtered = fetchedPlayers
+  //     .filter((player) => player) 
+  //     .filter((player) => {
+  //       if (position && player.playerType && !player.playerType.toLowerCase().includes(position.toLowerCase())) {
+  //         return false;
+  //       }
+  //       if (price && player.price && player.price > parseFloat(price)) {
+  //         return false;
+  //       }
+  //       if (franchise && player.franchise && player.franchise._id !== franchise) {
+  //         return false;
+  //       }
+  //       return true;
+  //     });
+
+  //   setFilteredPlayers(filtered);
+  //   setShowPlayerSelectionModal(true);
+  // };
 
   if (isLoading) {
     return (
@@ -671,7 +751,7 @@ const EnhancedTeamView = () => {
         <View style={{ flex: 1, paddingTop: 8, paddingBottom: 4 }}>
           <PitchView
             teamData={teamData}
-            handlePlayerPress={handlePlayerPress}
+            // handlePlayerPress={handlePlayerPress}
             handleOpenPlayerSelection={handleOpenPlayerSelection}
             handleRemovePlayer={handleRemovePlayer}
           />
@@ -681,35 +761,51 @@ const EnhancedTeamView = () => {
         <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
           <ActionButtons
             handleNext={handleNext}
-            setShowPlayerSelectionModal={() => setFilterModalVisible(true)}
+            setShowPlayerSelectionModal={() => {
+              // Update filtered players to show all available players
+              const addedPlayerIds = Object.values(teamData)
+                .flat()
+                .map((player) => player._id);
+
+              // Filter out players that are already in the team
+              const availablePlayers = fetchedPlayers.filter(
+                player => player && !addedPlayerIds.includes(player._id)
+              );
+
+              setFilteredPlayers(availablePlayers);
+              setSelectedSection(null); // Clear section filter
+              setShowPlayerSelectionModal(true);
+            }}
             isFetchingPlayers={isFetchingPlayers}
           />
         </View>
       </Animated.View>
 
       {/* Modals */}
-      <FilterModal
+      {/* <FilterModal
         visible={filterModalVisible}
         onClose={() => setFilterModalVisible(false)}
         onApplyFilters={handleApplyFilters} 
         franchises={franchises}
-      />
+      /> */}
 
-      <HighlightedPlayerInfo
+      {/* <HighlightedPlayerInfo
         player={selectedPlayer}
         visible={showPlayerStats}
         onClose={() => {
           setShowPlayerStats(false);
           setSelectedPlayer(null);
         }}
-      />
+      /> */}
 
       <PlayerSelectionModal
         visible={showPlayerSelectionModal}
         onClose={() => setShowPlayerSelectionModal(false)}
         onSelectPlayer={addPlayer}
         availablePlayers={filteredPlayers}
-        modalData={modalData}
+        section={selectedSection}
+        franchises={franchises}
+        onFranchiseChange={handleFranchiseChange}
       />
     </SafeAreaView>
   );

@@ -1,142 +1,259 @@
-import { View, Text, Image, TouchableOpacity } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, TouchableOpacity, Modal, StyleSheet, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRecoilValue } from "recoil";
 import { viewModeState } from "./atoms";
 
-const PlayerCard = ({ player, isPitch, onPlayerPress, onRemovePlayer, position }) => {
+const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position, playerPoints }) => {
   const viewMode = useRecoilValue(viewModeState); // Get the current view mode
+  const [modalVisible, setModalVisible] = useState(false); // Modal state
+  const isViewTeam = viewMode === "VIEW_TEAM";
 
-  // Basic card for list views
-  if (!isPitch) {
-    return (
-      <TouchableOpacity
-        style={{
-          flexDirection: "row",
-          padding: 12,
-          backgroundColor: "white",
-          marginBottom: 8,
-          borderRadius: 8,
-          alignItems: "center",
-        }}
-        onPress={() => onPlayerPress(player)}
-      >
-        <Image source={{ uri: player.photo }} style={{ width: 50, height: 50, borderRadius: 25 }} />
-        <View style={{ marginLeft: 12, flex: 1 }}>
-          <Text style={{ fontWeight: "bold", fontSize: 16 }}>{player.name}</Text>
-          <Text style={{ color: "gray" }}>{player.playerType}</Text>
-        </View>
-        <Text style={{ fontWeight: "bold", color: "#3B82F6" }}>${player.price}M</Text>
-      </TouchableOpacity>
-    );
-  }
+  // Function to handle player press and open the modal
+  const handlePlayerPress = () => {
+    setModalVisible(true);
+  };
 
   // Default position if none is provided
   const defaultPosition = { x: 0, y: 0 };
   const safePosition = position || defaultPosition;
 
-  // Pitch view - players on the football field
   return (
-    <View
-      style={{
-        alignItems: "center",
-        justifyContent: "center",
-        width: 64,
-        height: 90, // Increased height to accommodate name below
-      }}
-    >
+    <>
       <View
         style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: "rgba(255, 255, 255, 0.9)",
-          borderWidth: 2,
-          borderColor: "#10B981",
           alignItems: "center",
           justifyContent: "center",
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.25,
-          shadowRadius: 3.84,
-          elevation: 5,
-          overflow: "hidden",
+          width: 64,
+          height: 90, // Increased height to accommodate name below
         }}
       >
-        <TouchableOpacity style={{ width: "100%", height: "100%" }} onPress={() => onPlayerPress(player)}>
-          {player.photo ? (
-            <Image source={{ uri: player.photo }} style={{ width: "100%", height: "100%", borderRadius: 30 }} />
-          ) : (
-            <View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
-              <Text style={{ fontWeight: "bold" }}>{player.name ? player.name.substring(0, 2).toUpperCase() : ""}</Text>
+        <View
+          style={{
+            width: 60,
+            height: 60,
+            borderRadius: 30,
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            borderWidth: 2,
+            borderColor: "#10B981",
+            alignItems: "center",
+            justifyContent: "center",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.25,
+            shadowRadius: 3.84,
+            elevation: 5,
+            overflow: "hidden",
+            position: "relative", // Added for absolute positioning of points badge
+          }}
+        >
+          <TouchableOpacity style={{ width: "100%", height: "100%" }} onPress={handlePlayerPress}>
+            {player.photo ? (
+              <Image source={{ uri: player.photo }} style={{ width: "100%", height: "100%", borderRadius: 30 }} />
+            ) : (
+              <View style={{ width: "100%", height: "100%", alignItems: "center", justifyContent: "center" }}>
+                <Text style={{ fontWeight: "bold" }}>{player.name ? player.name.substring(0, 2).toUpperCase() : ""}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          
+          {/* Points badge - only shown in VIEW_TEAM mode and when points exist */}
+          {isViewTeam && playerPoints !== undefined && (
+            <View style={styles.pointsBadge}>
+              <Text style={styles.pointsText}>{playerPoints}</Text>
             </View>
           )}
-        </TouchableOpacity>
+        </View>
 
-        {/* Conditionally render points or remove button */}
-        {viewMode === "VIEW_TEAM" ? (
-          // Display points in view mode
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              backgroundColor: "rgba(0,0,0,0.7)",
-              borderRadius: 10,
-              width: 24,
-              height: 24,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "white", fontSize: 12, fontWeight: "bold" }}>
-              {player.points !== undefined ? player.points : 0}
-            </Text>
-          </View>
-        ) : (
-          // Display remove button in manage mode
-          <TouchableOpacity
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              backgroundColor: "rgba(0,0,0,0.7)",
-              borderRadius: 10,
-              width: 20,
-              height: 20,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            onPress={(e) => {
-              e.stopPropagation(); // Prevent triggering parent touch
-              onRemovePlayer(player);
-            }}
-          >
-            <Ionicons name="close" size={12} color="white" />
-          </TouchableOpacity>
-        )}
+        {/* Player name under the circle */}
+        <Text
+          style={{
+            backgroundColor: "rgba(0,0,0,0.7)",
+            color: "white",
+            paddingHorizontal: 6,
+            paddingVertical: 2,
+            borderRadius: 4,
+            fontSize: 10,
+            marginTop: 4,
+            maxWidth: 70,
+            textAlign: "center",
+            overflow: "hidden",
+          }}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
+          {player.name}
+        </Text>
       </View>
 
-      {/* Player name under the circle */}
-      <Text
-        style={{
-          backgroundColor: "rgba(0,0,0,0.7)",
-          color: "white",
-          paddingHorizontal: 6,
-          paddingVertical: 2,
-          borderRadius: 4,
-          fontSize: 10,
-          marginTop: 4,
-          maxWidth: 70,
-          textAlign: "center",
-          overflow: "hidden",
-        }}
-        numberOfLines={1}
-        ellipsizeMode="tail"
+      {/* Modal for detailed player view */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
       >
-        {player.name}
-      </Text>
-    </View>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <ScrollView contentContainerStyle={styles.modalScroll}>
+              <Image source={{ uri: player.photo }} style={styles.modalImage} />
+              <Text style={styles.modalName}>{player.name}</Text>
+              <Text style={styles.modalType}>{player.playerType}</Text>
+              <Text style={styles.modalPrice}>Price: ${player.price}M</Text>
+              
+              {/* Display points in modal, prioritize calculated points in view mode */}
+              <Text style={styles.modalPoints}>
+                Points: {isViewTeam && playerPoints !== undefined ? playerPoints : (player.points || 0)}
+              </Text>
+              
+              <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10 }}>
+                <Text style={styles.franchiseLabel}>Franchise: </Text>
+                <Text style={styles.franchiseValue}>
+                  {player.franchise?.name || "Free Agent"}
+                </Text>
+              </View>
+
+              {viewMode === "MANAGE_TEAM" && (
+                <>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: "#F87171" }]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      onRemovePlayer(player);
+                    }}
+                  >
+                    <Ionicons name="trash" size={20} color="white" />
+                    <Text style={styles.actionButtonText}>Remove Player</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, { backgroundColor: "#3B82F6" }]}
+                    onPress={() => {
+                      setModalVisible(false);
+                      onReplacePlayer(player);
+                    }}
+                  >
+                    <Ionicons name="swap-horizontal" size={20} color="white" />
+                    <Text style={styles.actionButtonText}>Replace Player</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              <TouchableOpacity
+                style={[styles.closeButton, { marginTop: 20 }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Ionicons name="close" size={20} color="white" />
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 };
+
+const styles = StyleSheet.create({
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "90%",
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 16,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalScroll: {
+    alignItems: "center",
+  },
+  modalImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 16,
+  },
+  modalName: {
+    fontSize: 20,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  modalType: {
+    fontSize: 16,
+    color: "gray",
+    marginBottom: 8,
+  },
+  modalPrice: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 8,
+  },
+  modalPoints: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  actionButtonText: {
+    color: "white",
+    marginLeft: 8,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#10B981",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  closeButtonText: {
+    color: "white",
+    marginLeft: 8,
+    fontWeight: "bold",
+  },
+  pointsBadge: {
+    position: "absolute",
+    top: -8,
+    right: -8,
+    backgroundColor: "#3B82F6",
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "white",
+    zIndex: 10,
+  },
+  pointsText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  franchiseLabel: {
+    fontSize: 16,
+    marginRight: 5,
+  },
+  franchiseValue: {
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+});
 
 export default PlayerCard;

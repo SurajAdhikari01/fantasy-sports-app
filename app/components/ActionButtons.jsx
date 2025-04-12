@@ -1,10 +1,11 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
+
 const ActionButtons = ({ handleNext, setShowPlayerSelectionModal }) => {
   return (
     <View className="flex-row justify-between items-center px-4">
       <TouchableOpacity
-        onPress={() => setShowPlayerSelectionModal(true)}
+        onPress={() => setShowPlayerSelectionModal(true, true)} // Pass true to indicate show all players
         className="bg-blue-600 px-6 py-2 rounded-full flex-1 mr-2"
       >
         <Text className="text-white text-center font-semibold">Add Player</Text>

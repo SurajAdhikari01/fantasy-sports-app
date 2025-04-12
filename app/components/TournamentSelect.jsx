@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../config/axios";
 import { useRecoilState } from "recoil";
-import { fetchedPlayersState, selectedTournamentState, playerLimitState } from "./atoms";
+import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState } from "./atoms";
 import { viewModeState } from "./atoms";
 import { Ionicons } from '@expo/vector-icons';
 
@@ -18,6 +18,7 @@ const TournamentSelect = () => {
 
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
+  const [totalPoints, setTotalPoints] = useRecoilState(totalPointsState);
   const [playerLimit, setPlayerLimit] = useRecoilState(playerLimitState);
   const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState([]);
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
@@ -39,7 +40,8 @@ const TournamentSelect = () => {
       }
 
       // Fetch available tournaments
-      const availableResponse = await api.get("/tournaments/getTournamentsByUserId");
+      const availableResponse = await api.get("/tournaments/getAllTournaments");
+      console.log("Available tournaments response:", availableResponse.data);
       if (availableResponse.data.success) {
         setAvailableTournaments(availableResponse.data.data || []);
       } else {
@@ -99,7 +101,6 @@ const TournamentSelect = () => {
           <Ionicons name="calendar" size={16} color="#6b7280" />
           <Text className="text-gray-600 ml-2">Knockout: {new Date(item.tournamentId.knockoutStart).toLocaleDateString()}</Text>
         </View>
-        
         <View className="flex-row items-center mb-1">
           <Ionicons name="calendar" size={16} color="#6b7280" />
           <Text className="text-gray-600 ml-2">Semifinal: {new Date(item.tournamentId.semifinalStart).toLocaleDateString()}</Text>
@@ -109,12 +110,17 @@ const TournamentSelect = () => {
           <Ionicons name="calendar" size={16} color="#6b7280" />
           <Text className="text-gray-600 ml-2">Final: {new Date(item.tournamentId.finalStart).toLocaleDateString()}</Text>
         </View>
+        {/* <View className="flex-row items-center mb-1">
+          <Ionicons name="calendar" size={16} color="#6b7280" />
+          <Text className="text-gray-600 ml-2">Total Points: {item.totalPoints || 0}</Text>
+        </View> */}
       </View>
 
       <TouchableOpacity
         className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-blue-600 active:bg-blue-700"
         onPress={() => {
           setSelectedTournament(item.tournamentId._id);
+          setTotalPoints(item.totalPoints);
           setSelectedTournamentPlayers(item.players);
           setViewMode('VIEW_TEAM');
         }}

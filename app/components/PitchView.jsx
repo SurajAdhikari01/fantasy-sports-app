@@ -1,4 +1,3 @@
-"use client"
 import { useState, useEffect } from "react"
 import { View, TouchableOpacity, Dimensions, Image } from "react-native"
 import PlayerCard from "./PlayerCard"
@@ -206,7 +205,7 @@ const calculatePositions = (numPlayers, teamData) => {
   return positions
 }
 
-const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, handleRemovePlayer }) => {
+const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) => {
   const [containerDimensions, setContainerDimensions] = useState({ width: screenWidth, height: screenHeight * 0.6 })
   const handleLayout = (event) => {
     const { width, height } = event.nativeEvent.layout
@@ -219,6 +218,62 @@ const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, han
   // Determine if we're in view mode
   const isViewMode = viewMode === "VIEW_TEAM"
 
+  // Function to calculate player points from team data
+  const calculatePlayerPoints = (player) => {
+    // If not in view mode or player doesn't exist, return undefined
+    if (!isViewMode || !player || !player._id) return undefined;
+    
+    // Check if team data has points array
+    if (!teamData || !teamData.points || !Array.isArray(teamData.points)) {
+      return 0;
+    }
+    
+    // Sum up all points for this player across all matches
+    let totalPoints = 0;
+    
+    teamData.points.forEach(matchData => {
+      if (matchData?.players && Array.isArray(matchData.players)) {
+        const playerPointEntry = matchData.players.find(p => p?.playerId === player._id);
+        if (playerPointEntry && typeof playerPointEntry.points === 'number') {
+          totalPoints += playerPointEntry.points;
+        }
+      }
+    });
+    
+    return totalPoints;
+  };
+
+  const onReplacePlayer = (player) => {
+    // Determine player section based on player type
+    let section = "midfielders"; // Default section
+    if (player?.playerType) {
+      const type = player.playerType.toLowerCase();
+      if (type.includes("goalkeeper") || type.includes("goalie")) {
+        section = "goalkeepers";
+      } else if (type.includes("defender") || type.includes("defence")) {
+        section = "defenders";
+      } else if (type.includes("midfielder") || type.includes("midfield")) {
+        section = "midfielders";
+      } else if (type.includes("forward") || type.includes("striker") || type.includes("attack")) {
+        section = "forwards";
+      }
+    }
+
+    // Find position information for this player
+    const playerPos = positions.find(pos => pos.player && pos.player._id === player._id);
+    const positionId = playerPos?.positionId || `replace-${player._id || Date.now()}`;
+    const coordinates = playerPos ? {
+      x: (playerPos.x / 100) * containerDimensions.width,
+      y: (playerPos.y / 100) * containerDimensions.height
+    } : undefined;
+
+    // To handle max player limit, remove the player being replaced without alert
+    handleRemovePlayer(player, true); // Pass true to skip the alert
+
+    // Then open player selection for the same position
+    handleOpenPlayerSelection(section, positionId, coordinates);
+  }
+
   // Debug log
   useEffect(() => {
     if (teamData && teamData.all) {
@@ -228,6 +283,7 @@ const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, han
           name: p.name,
           type: p.playerType,
         })),
+        pointsData: teamData.points ? `${teamData.points.length} matches` : "No points data"
       })
     }
   }, [teamData])
@@ -267,6 +323,9 @@ const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, han
         // Calculate absolute positions based on percentages
         const posX = (position.x / 100) * containerDimensions.width
         const posY = (position.y / 100) * containerDimensions.height
+        
+        // Calculate player points if in view mode and player exists
+        const playerPoints = player ? calculatePlayerPoints(player) : undefined;
 
         return player ? (
           <View
@@ -283,9 +342,10 @@ const PitchView = ({ teamData, handlePlayerPress, handleOpenPlayerSelection, han
               key={`player-card-${player._id || index}`}
               player={player}
               isPitch={true}
-              onPlayerPress={handlePlayerPress}
               onRemovePlayer={() => handleRemovePlayer(player)}
+              onReplacePlayer={onReplacePlayer}
               position={{ x: posX, y: posY }}
+              playerPoints={playerPoints} // Pass player points to PlayerCard
             />
           </View>
         ) : (
