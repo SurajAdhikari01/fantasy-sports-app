@@ -7,26 +7,29 @@ import {
   RefreshControl,
   SafeAreaView,
   StatusBar,
-  StyleSheet, // Import StyleSheet for Picker styles
-  Platform, // Import Platform for OS-specific styles
+  StyleSheet,
+  Platform,
 } from "react-native";
 import { styled } from "nativewind";
 import api from "../config/axios";
 import RNPickerSelect from "react-native-picker-select";
-import { Ionicons } from "@expo/vector-icons"; // For dropdown icon
+import { Ionicons } from "@expo/vector-icons";
 
-// --- Styled Components (Keep previous theme adjustments) ---
+// --- Styled Components ---
 const SafeContainer = styled(SafeAreaView, "flex-1 bg-gray-900");
 const ContentContainer = styled(View, "flex-1 px-4");
-const Title = styled(Text, "text-3xl font-bold text-white text-center my-4");
+// --- MODIFIED TITLE ---
+const Title = styled(Text, "text-3xl font-bold text-white text-left my-4 mx-4"); // Changed text-center to text-left and added horizontal margin
+// --- END MODIFIED TITLE ---
 const LoadingContainer = styled(
   View,
   "flex-1 justify-center items-center bg-gray-900"
 );
 const ErrorText = styled(Text, "text-red-500 text-center mt-6 text-lg px-4");
-const PickerContainer = styled(View, "mb-4 mx-4"); // Container for the picker
+const InfoText = styled(Text, "text-gray-400 text-center mt-10 text-lg px-4"); // For non-error info messages
+const PickerContainer = styled(View, "mb-4 mx-4");
 
-// List Header/Item styles (keep from previous version)
+// List Header/Item styles
 const ListHeaderContainer = styled(
   View,
   "flex-row bg-gray-800 px-4 py-3 border-b border-gray-700"
@@ -56,60 +59,88 @@ export default function LeaderboardScreen() {
   const [selectedTournamentId, setSelectedTournamentId] = useState(null);
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [isLoadingTournaments, setIsLoadingTournaments] = useState(true);
-  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false); // Initially false
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [error, setError] = useState(null);
+  const [infoMessage, setInfoMessage] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
-  // 1. Fetch Tournaments on Mount
-  useEffect(() => {
-    const fetchTournaments = async () => {
+  // 1. Fetch Tournaments (associated with the user) on Mount
+  const fetchTournaments = useCallback(async (isRefreshing = false) => {
+    if (!isRefreshing) {
       setIsLoadingTournaments(true);
-      setError(null);
-      try {
-        const response = await api.get("/tournaments/getAllTournaments");
-        console.log("Fetched Tournaments:", response);
+    }
+    setError(null);
+    setInfoMessage(null);
+    setTournaments([]); // Reset tournaments before fetch
+    setSelectedTournamentId(null); // Reset selection
 
-        if (response.data && response.data.success) {
-          const fetchedTournaments = response.data.data || [];
-          setTournaments(fetchedTournaments);
-          // Automatically select the first tournament if available
-          if (fetchedTournaments.length > 0) {
-            setSelectedTournamentId(fetchedTournaments[0]._id);
-          } else {
-            // Handle case where user has no tournaments
-            setError("You are not part of any tournaments yet.");
-            setSelectedTournamentId(null); // Ensure no leaderboard fetch is attempted
-          }
+    try {
+      const response = await api.get("/tournaments/getTournamentsByUserId");
+      console.log("Fetched Tournaments Response Status:", response.status);
+
+      if (response.data && response.data.success) {
+        const fetchedTournaments = response.data.data || [];
+        setTournaments(fetchedTournaments);
+        if (fetchedTournaments.length > 0) {
+          setSelectedTournamentId(fetchedTournaments[0]._id); // Auto-select first
         } else {
-          setError(response.data.message || "Failed to fetch tournaments.");
+          setInfoMessage("You have not joined or created any tournaments yet.");
         }
-      } catch (err) {
-        console.error("Fetch Tournaments Error:", err);
-        setError("Could not fetch your tournaments. Please try again later.");
-      } finally {
+      } else {
+        setError(response.data?.message || "Failed to fetch tournaments.");
+      }
+    } catch (err) {
+      console.error("Fetch Tournaments Error:", err);
+      if (err.response) {
+        console.error("API Error Response Data:", err.response.data);
+        console.error("API Error Response Status:", err.response.status);
+
+        if (err.response.status === 404) {
+          setInfoMessage(
+            err.response.data?.message ||
+              "You have not joined or created any tournaments yet."
+          );
+        } else {
+          setError(
+            `Error ${err.response.status}: ${
+              err.response.data?.message || "Could not fetch tournaments."
+            }`
+          );
+        }
+      } else if (err.request) {
+        setError("Network Error: Could not connect to the server.");
+      } else {
+        setError("An unexpected error occurred while setting up the request.");
+      }
+      setTournaments([]);
+      setSelectedTournamentId(null);
+    } finally {
+      if (!isRefreshing) {
         setIsLoadingTournaments(false);
       }
-    };
+    }
+  }, []);
 
+  useEffect(() => {
     fetchTournaments();
-  }, []); // Run only once on mount
+  }, [fetchTournaments]);
 
-  // 2. Fetch Leaderboard when selectedTournamentId changes (and is not null)
+  // 2. Fetch Leaderboard
   const fetchLeaderboard = useCallback(
-    async (tournamentId) => {
+    async (tournamentId, isRefreshing = false) => {
       if (!tournamentId) {
-        setLeaderboardData([]); // Clear data if no tournament is selected
-        setIsLoadingLeaderboard(false);
+        setLeaderboardData([]);
+        if (!isRefreshing) setIsLoadingLeaderboard(false);
         setRefreshing(false);
-        return; // Don't fetch if no ID
+        return;
       }
 
-      // Set loading state only if not refreshing, or handle separately if needed
-      if (!refreshing) {
+      if (!isRefreshing) {
         setIsLoadingLeaderboard(true);
       }
-      setError(null); // Clear previous errors specific to leaderboard fetch
-      setLeaderboardData([]); // Clear previous data before fetching new
+      setError(null);
+      setInfoMessage(null);
+      setLeaderboardData([]);
 
       try {
         const response = await api.get(
@@ -121,47 +152,55 @@ export default function LeaderboardScreen() {
             (a, b) => b.totalPoints - a.totalPoints
           );
           setLeaderboardData(sortedData);
+          if (sortedData.length === 0) {
+            setInfoMessage("Leaderboard is empty for this tournament.");
+          }
         } else {
           setError(
-            response.data.message ||
-              "Failed to fetch leaderboard data for this tournament."
+            response.data?.message || "Failed to fetch leaderboard data."
           );
         }
       } catch (err) {
         console.error(`Fetch Leaderboard Error (ID: ${tournamentId}):`, err);
         if (err.response) {
           setError(
-            `Server Error: ${err.response.data?.message || err.response.status}`
+            `Leaderboard Error: ${
+              err.response.data?.message || err.response.status
+            }`
           );
         } else if (err.request) {
-          setError("Network Error: Could not connect to server.");
+          setError("Network Error fetching leaderboard.");
         } else {
-          setError(
-            "An unexpected error occurred while fetching the leaderboard."
-          );
+          setError("Unexpected error fetching leaderboard.");
         }
-        setLeaderboardData([]); // Clear data on error
+        setLeaderboardData([]);
       } finally {
-        setIsLoadingLeaderboard(false);
+        if (!isRefreshing) setIsLoadingLeaderboard(false);
         setRefreshing(false);
       }
     },
-    [refreshing]
-  ); // Depend on refreshing state if needed
+    []
+  );
 
-  // Trigger leaderboard fetch when selection changes
   useEffect(() => {
-    fetchLeaderboard(selectedTournamentId);
-  }, [selectedTournamentId, fetchLeaderboard]); // Run when selection changes or fetch function instance changes
+    if (selectedTournamentId) {
+      fetchLeaderboard(selectedTournamentId);
+    } else {
+      setLeaderboardData([]);
+      setIsLoadingLeaderboard(false);
+    }
+  }, [selectedTournamentId, fetchLeaderboard]);
 
   // 3. Refresh Handler
-  const onRefresh = useCallback(() => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Re-fetch leaderboard for the currently selected tournament
-    fetchLeaderboard(selectedTournamentId);
-    // Note: We are not re-fetching the tournament list on pull-to-refresh here,
-    // but you could add that if needed.
-  }, [selectedTournamentId, fetchLeaderboard]);
+    await fetchTournaments(true);
+    if (selectedTournamentId) {
+      await fetchLeaderboard(selectedTournamentId, true);
+    } else {
+      setRefreshing(false); // Ensure refreshing stops if no tournament is selected after fetch
+    }
+  }, [selectedTournamentId, fetchTournaments, fetchLeaderboard]);
 
   // 4. Render Helper Functions
   const renderListHeader = () => (
@@ -184,101 +223,92 @@ export default function LeaderboardScreen() {
 
   // 5. Picker Items Preparation
   const pickerItems = tournaments.map((tournament) => ({
-    label: tournament.name,
-    value: tournament._id,
-    key: tournament._id, // Add key for React Native Picker Select
+    label: String(tournament.name || ""),
+    value: String(tournament._id),
+    key: String(tournament._id),
   }));
 
   // --- Render Logic ---
 
-  // Initial Loading (Fetching Tournaments)
-  if (isLoadingTournaments) {
+  if (isLoadingTournaments && !refreshing) {
     return (
       <LoadingContainer>
         <StatusBar barStyle="light-content" />
         <ActivityIndicator size="large" color="#F97316" />
         <Text style={{ color: "#ccc", marginTop: 10 }}>
-          Loading Tournaments...
+          Loading Your Tournaments...
         </Text>
       </LoadingContainer>
     );
   }
 
-  // Error during Tournament Fetch (or no tournaments found)
-  // Use the error state set during tournament fetch
-  if (error && tournaments.length === 0) {
-    return (
-      <SafeContainer>
-        <StatusBar barStyle="light-content" />
-        <Title>Leaderboard</Title>
-        <ErrorText>{error}</ErrorText>
-        {/* You might want a button to retry fetching tournaments here */}
-      </SafeContainer>
-    );
-  }
-
-  // Main Render (Tournaments loaded, show Picker and Leaderboard)
   return (
     <SafeContainer>
       <StatusBar barStyle="light-content" />
+      {/* Use the modified Title component */}
       <Title>Leaderboard</Title>
 
-      {/* Tournament Selector Dropdown */}
-      <PickerContainer>
-        <RNPickerSelect
-          placeholder={{
-            label: "Select a tournament...",
-            value: undefined,
-            color: "#9EA0A4",
-          }}
-          items={pickerItems}
-          onValueChange={(value) => {
-            setSelectedTournamentId(value);
-          }}
-          style={pickerSelectStyles} // Apply custom styles
-          value={selectedTournamentId ?? undefined}
-          useNativeAndroidPickerStyle={false} // Use custom styles on Android
-          Icon={() => {
-            // Custom dropdown icon
-            return (
+      {/* Display general errors */}
+      {error && <ErrorText>{error}</ErrorText>}
+
+      {/* Display info message */}
+      {infoMessage && !error && <InfoText>{infoMessage}</InfoText>}
+
+      {/* Only show Picker if tournaments loaded and no initial error/info preventing it */}
+      {tournaments.length > 0 && (
+        <PickerContainer>
+          <RNPickerSelect
+            placeholder={{
+              label: "Select a tournament...",
+              value: undefined,
+              color: "#9CA3AF",
+            }}
+            items={pickerItems}
+            onValueChange={(value) => {
+              setSelectedTournamentId(value);
+            }}
+            style={pickerSelectStyles}
+            value={selectedTournamentId ?? undefined}
+            useNativeAndroidPickerStyle={false}
+            Icon={() => (
               <Ionicons
                 name="chevron-down"
                 size={24}
                 color="#9CA3AF"
                 style={{ paddingRight: 10 }}
               />
-            ); // Adjust styling as needed
-          }}
-          disabled={tournaments.length === 0} // Disable if no tournaments
-        />
-      </PickerContainer>
-
-      {/* Display Error specific to Leaderboard fetch */}
-      {error && tournaments.length > 0 && <ErrorText>{error}</ErrorText>}
+            )}
+            disabled={refreshing || isLoadingTournaments} // Disable while loading/refreshing
+          />
+        </PickerContainer>
+      )}
 
       {/* Leaderboard List or Loading Indicator */}
       <ContentContainer>
         {isLoadingLeaderboard ? (
           <View
-            style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 20,
+            }}
           >
             <ActivityIndicator size="large" color="#F97316" />
           </View>
-        ) : selectedTournamentId ? ( // Only show list if a tournament is selected
+        ) : selectedTournamentId ? (
           <FlatList
             data={leaderboardData}
-            keyExtractor={(item) => item._id}
+            keyExtractor={(item) => String(item._id)}
             renderItem={renderItem}
             ListHeaderComponent={renderListHeader}
             ListEmptyComponent={
-              // Show empty message only if not loading and no error preventing display
-              !isLoadingLeaderboard && !error ? (
+              !isLoadingLeaderboard && !error && !infoMessage ? (
                 <EmptyListText>
-                  Leaderboard is empty for this tournament.
+                  Leaderboard data is currently unavailable.
                 </EmptyListText>
               ) : null
             }
-            // stickyHeaderIndices={[0]} // Keep if desired
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -292,9 +322,10 @@ export default function LeaderboardScreen() {
             showsVerticalScrollIndicator={false}
           />
         ) : (
-          // Render something if no tournament is selected (e.g., placeholder text)
           !isLoadingTournaments &&
-          !error && (
+          !error &&
+          !infoMessage &&
+          tournaments.length > 0 && (
             <EmptyListText>Please select a tournament above.</EmptyListText>
           )
         )}
@@ -304,18 +335,17 @@ export default function LeaderboardScreen() {
 }
 
 // --- Styles for RNPickerSelect ---
-// Adapting styles to match the dark theme
 const pickerSelectStyles = StyleSheet.create({
   inputIOS: {
     fontSize: 16,
     paddingVertical: 12,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: "#4B5563", // gray-600
+    borderColor: "#4B5563",
     borderRadius: 8,
-    color: "white", // Text color
-    backgroundColor: "#374151", // gray-700
-    paddingRight: 30, // to ensure the text is never behind the icon
+    color: "white",
+    backgroundColor: "#374151",
+    paddingRight: 30,
     marginBottom: 10,
   },
   inputAndroid: {
@@ -323,20 +353,18 @@ const pickerSelectStyles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderWidth: 1,
-    borderColor: "#4B5563", // gray-600
+    borderColor: "#4B5563",
     borderRadius: 8,
-    color: "white", // Text color
-    backgroundColor: "#374151", // gray-700
-    paddingRight: 30, // to ensure the text is never behind the icon
+    color: "white",
+    backgroundColor: "#374151",
+    paddingRight: 30,
     marginBottom: 10,
   },
   placeholder: {
-    color: "#9CA3AF", // gray-400
+    color: "#9CA3AF",
   },
   iconContainer: {
-    // Style the container for the icon
     top: Platform.OS === "ios" ? 10 : 15,
     right: 12,
   },
-  // You might need to add styles for dropdown items if using a custom dropdown component
 });
