@@ -14,6 +14,7 @@ import { useNavigation } from "@react-navigation/native";
 import MatchCard from "../components/MatchCard";
 import { router } from "expo-router";
 import UpcomingMatchCard from "../components/UpcomingMatchCard";
+import { useAuth } from "../context/AuthContext";
 
 // Get device screen width and height
 const { width, height } = Dimensions.get("window");
@@ -182,6 +183,8 @@ const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
 );
 
 const HomeScreen = () => {
+  const { signOut, userData } = useAuth();
+  console.log("User Data:", userData);
   return (
     <SafeAreaView className="flex-1 bg-gray-900 gap-12">
       <ScrollView
@@ -190,7 +193,16 @@ const HomeScreen = () => {
       >
         <View className="px-4">
           <View className="flex-row justify-between items-center ">
-            <Text className="text-white font-semibold text-xl">Hi Lucifer</Text>
+            <Text className="text-white font-semibold text-xl">
+              Hi,{" "}
+              {userData?.username
+                ? `${
+                    userData.username.charAt(0).toUpperCase() +
+                    userData.username.slice(1).toLowerCase()
+                  }` // Format the username
+                : "User"}
+            </Text>
+
             <Image
               source={{
                 uri: "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
@@ -221,7 +233,7 @@ const HomeScreen = () => {
           </Text>
           <MatchesList />
         </View>
-        {/* Upcoming Matches Section */}
+
         <View>
           <Text className="text-white text-lg font-semibold p-6">
             Upcomings
