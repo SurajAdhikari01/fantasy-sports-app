@@ -159,6 +159,7 @@ export default function AddMatchDetail() {
     }
   }, [selectedFranchise1]);
 
+  
   useEffect(() => {
     if (selectedFranchise2) {
       fetchPlayers(selectedFranchise2, setPlayersFranchise2);
@@ -744,7 +745,7 @@ export default function AddMatchDetail() {
 
 const styles = StyleSheet.create({
   pickerItem: {
-    color: "white",
+    // color: "white",
   },
   modalOverlay: {
     flex: 1,

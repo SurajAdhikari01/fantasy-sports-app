@@ -11,6 +11,21 @@ export const selectedTournamentState = atom({
   default: null,
 });
 
+export const viewModeState = atom({
+  key: "viewModeState",
+  default: "MANAGE_TEAM",
+});
+
+export const totalPointsState = atom({
+  key: "totalPointsState",
+  default: 0, 
+});
+
+export const playerLimitState = atom({
+  key: "playerLimitState",
+  default: 0,
+});
+
 export const teamDataState = atom({
   key: "teamDataState",
   default: {},
@@ -98,15 +113,5 @@ export const teamValueState = selector({
       .flat()
       .reduce((sum, player) => sum + player.price, 0);
     return Number(value.toFixed(1)); // Return as number
-  },
-});
-
-export const totalPointsState = selector({
-  key: "totalPointsState",
-  get: ({ get }) => {
-    const teamData = get(teamDataState);
-    return Object.values(teamData)
-      .flat()
-      .reduce((sum, player) => sum + player.points, 0);
   },
 });
