@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRecoilValue } from "recoil";
 import TournamentSelect from "../components/TournamentSelect";
@@ -11,10 +11,10 @@ const MainPage = () => {
   const viewMode = useRecoilValue(viewModeState);
 
   return (
-    <SafeAreaView style={{ flex: 1, marginBottom: 55 }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#2a2a2a" }}>
       {!selectedTournament ? (
         <TournamentSelect />
-      ) : viewMode === 'VIEW_TEAM' ? (
+      ) : viewMode === "VIEW_TEAM" ? (
         <ViewTeam />
       ) : (
         <EnhancedTeamView />
