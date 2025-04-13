@@ -21,8 +21,9 @@ const AdminDashboard = () => {
     const fetchTournaments = async () => {
       try {
         const response = await api.get("tournaments/getTournamentsByUserId");
+        console.log("Fetched tournaments:", response.data);
         if (response.data && response.data.message) {
-          setTournaments(response.data.message);
+          setTournaments(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching tournaments:", error);

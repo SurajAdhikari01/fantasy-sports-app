@@ -27,7 +27,7 @@ export default function AdminTabsLayout() {
       try {
         const response = await api.get("tournaments/getTournamentsByUserId");
         if (response.data && response.data.message) {
-          setTournaments(response.data.message);
+          setTournaments(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching tournaments:", error);

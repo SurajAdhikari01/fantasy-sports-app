@@ -16,6 +16,7 @@ import { styled } from "nativewind";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import api from "../config/axios";
 import Icon from "react-native-vector-icons/FontAwesome";
+import { navigate } from "expo-router/build/global-state/routing";
 
 /*
   This updated version:
@@ -159,7 +160,6 @@ export default function AddMatchDetail() {
     }
   }, [selectedFranchise1]);
 
-  
   useEffect(() => {
     if (selectedFranchise2) {
       fetchPlayers(selectedFranchise2, setPlayersFranchise2);
@@ -358,23 +358,32 @@ export default function AddMatchDetail() {
       );
 
       const response = await api.post("/matchDetails/add", updatedMatchDetails);
-      if (response.status === 201) {
-        Alert.alert(
-          "Success",
-          response.data.statusCode || "Match details added successfully!"
-        );
-        router.back();
+      if (response.data && response.data.success) {
+        Alert.alert("Success", "Match details added successfully!", [
+          { text: "OK", onPress: () => router.back() },
+        ]);
       } else {
-        console.log(response);
+        console.error("API error response:", response.data);
         Alert.alert(
           "Error",
-          response.data.message ||
+          response.data?.message ||
             "Failed to add match details. Please try again."
         );
       }
     } catch (error) {
       console.error("Error adding match details:", error);
-      Alert.alert("Error", "Failed to add match details. Please try again.");
+      console.error("Error details:", error.response?.data || error.message);
+
+      // More descriptive error message
+      let errorMessage = "Failed to add match details. Please try again.";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message && error.message.includes("Network Error")) {
+        errorMessage =
+          "Network error. Please check your connection and try again.";
+      }
+
+      Alert.alert("Error", errorMessage);
     }
   };
 
