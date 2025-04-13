@@ -221,9 +221,9 @@ const HomeScreen = () => {
     );
   };
 
-  const handleProfileNavigation = () => {
+  const handleMoreNavigation = () => {
     setOptionsModalVisible(false);
-    router.push("/profile"); // Ensure '/profile' route exists
+    router.push("/more"); // Ensure '/profile' route exists
   };
 
   // Function to measure the image position and show the modal
@@ -241,7 +241,7 @@ const HomeScreen = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900 gap-12">
+    <SafeAreaView className="flex-1 bg-[#2a2a2a] gap-12">
       <ScrollView
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
@@ -282,13 +282,13 @@ const HomeScreen = () => {
 
         {/* Games Played and Stats */}
         <View className="flex-row justify-between items-center p-6 mt-4">
-          <View className="bg-gray-800 p-4 rounded-lg flex-1 mr-2">
+          <View className="bg-[#3a3a3a] p-4 rounded-lg flex-1 mr-2">
             <Text className="text-white text-lg">
               {userData?.ranking || "42"}
             </Text>
             <Text className="text-gray-400 text-sm">Ranking</Text>
           </View>
-          <View className="bg-gray-800 p-4 rounded-lg flex-1 ml-2">
+          <View className="bg-[#3a3a3a] p-4 rounded-lg flex-1 ml-2">
             <Text className="text-white text-lg">
               {userData?.matchesPlayed || "134"}
             </Text>
@@ -353,9 +353,9 @@ const HomeScreen = () => {
           >
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={handleProfileNavigation}
+              onPress={handleMoreNavigation}
             >
-              <Text style={styles.optionButtonText}>View Profile</Text>
+              <Text style={styles.optionButtonText}>View More</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
             <TouchableOpacity
