@@ -11,7 +11,7 @@ const Container = styled(View, "flex-1 bg-gray-900");
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const TAB_BAR_HEIGHT = 55;
-  
+
   return (
     <Container>
       {/* Main content of the application */}
@@ -33,7 +33,7 @@ export default function TabsLayout() {
             headerShown: false,
             tabBarBackground: () => (
               <BlurView
-                style={{ 
+                style={{
                   position: "absolute",
                   top: 0,
                   left: 0,
@@ -48,7 +48,7 @@ export default function TabsLayout() {
             // Add bottom padding to prevent content overlap with tab bar
             contentStyle: {
               paddingBottom: TAB_BAR_HEIGHT + insets.bottom,
-            }
+            },
           }}
         >
           {/* Home Tab */}
@@ -67,7 +67,7 @@ export default function TabsLayout() {
             options={{
               tabBarLabel: "Leaderboard",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="time" size={24} color={color} />
+                <Ionicons name="trophy" size={24} color={color} />
               ),
             }}
           />
@@ -139,18 +139,17 @@ export default function TabsLayout() {
             options={{
               tabBarLabel: "Results",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="trophy" size={24} color={color} />
+                <Ionicons name="receipt" size={24} color={color} />
               ),
             }}
           />
 
-          {/* Profile Tab */}
           <Tabs.Screen
-            name="profile"
+            name="more"
             options={{
-              tabBarLabel: "Profile",
+              tabBarLabel: "More",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="person" size={24} color={color} />
+                <Ionicons name="options" size={24} color={color} />
               ),
             }}
           />
