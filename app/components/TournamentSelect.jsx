@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Image, Dimensions } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import api from "../config/axios";
@@ -15,7 +15,7 @@ const TournamentSelect = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('joined');
-  const navigation = useNavigation();
+const router = useRouter();
 
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
@@ -72,7 +72,7 @@ const TournamentSelect = () => {
         setSelectedTournament(tournamentId);
         setPlayerLimit(playerLimitPerTeam);
         setFetchedPlayers(response.data.data || []);
-        navigation.navigate("MainPage");
+        router.push("main");
       } else {
         Alert.alert("Error", response.data.message || "Failed to fetch players");
       }

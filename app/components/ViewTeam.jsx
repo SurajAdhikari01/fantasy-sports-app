@@ -1,12 +1,10 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Dimensions } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
-import { useNavigation } from "@react-navigation/native"
 import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil"
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
+import { useRouter } from 'expo-router';
 import PitchView from "./PitchView"
 import {
   selectedTournamentState,
@@ -14,6 +12,7 @@ import {
   fetchedPlayersState,
   viewModeState,
   totalPointsState,
+  teamIdState,
 } from "./atoms"
 import api from "../config/axios"
 
@@ -21,13 +20,16 @@ import api from "../config/axios"
 const { height: screenHeight } = Dimensions.get("window")
 
 const ViewTeam = () => {
-  const navigation = useNavigation()
+
+  const router = useRouter()
+
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState([])
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState)
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
   const totalPoints = useRecoilValue(totalPointsState)
+  const [teamId, setTeamId] = useRecoilState(teamIdState)
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
@@ -50,6 +52,7 @@ const ViewTeam = () => {
         const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
 
         if (teamForTournament) {
+          setTeamId(teamForTournament)
           const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
             ...p,
             playerType: (p.playerType?.toLowerCase() || "").trim(),
@@ -70,12 +73,20 @@ const ViewTeam = () => {
     }
   }
 
+  const handleEdit = () => {
+    if (!teamId) {
+      Alert.alert("Error", "No team found to edit");
+      return;
+    }
+    router.push('components/EditTeam');
+  };
+
   const handleBack = () => {
     resetSelectedTournament()
     resetPlayerLimit()
     resetFetchedPlayers()
     resetViewMode()
-    navigation.navigate("TournamentSelect")
+    // router.back() //not needed as selectedTournament reset vayesi afai back janxa
   }
 
   const renderContent = () => {
@@ -156,6 +167,14 @@ const ViewTeam = () => {
           <Ionicons name="chevron-back" size={24} color="#374151" />
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-800 ml-3">Your Team</Text>
+        {teamId && (
+          <TouchableOpacity
+            onPress={handleEdit}
+            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+          >
+            <Ionicons name="create-outline" size={20} color="#3B82F6" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Stage Selection Tabs */}

@@ -4,6 +4,7 @@ import { View } from "react-native";
 import { styled } from "nativewind";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RecoilRoot } from "recoil";
 
 // Styling container with NativeWind
 const Container = styled(View, "flex-1 bg-gray-900");

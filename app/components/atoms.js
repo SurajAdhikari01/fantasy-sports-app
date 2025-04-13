@@ -115,3 +115,8 @@ export const teamValueState = selector({
     return Number(value.toFixed(1)); // Return as number
   },
 });
+
+export const teamIdState = atom({
+  key: "teamIdState",
+  default: null,
+});

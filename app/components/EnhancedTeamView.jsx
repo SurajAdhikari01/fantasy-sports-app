@@ -10,16 +10,13 @@ import {
   StatusBar,
   ActivityIndicator
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
-import { useNavigation } from '@react-navigation/native';
+import {useRouter} from 'expo-router';
 import { useRecoilState, useRecoilValue } from 'recoil';
 import {
   sportState,
   teamDataState,
-  filterRoleState,
   sortByState,
   selectedPlayerState,
-  showPlayerStatsState,
   showPlayerSelectionModalState,
   selectedSectionState,
   filteredAvailablePlayersState,
@@ -43,7 +40,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 const EnhancedTeamView = () => {
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
   const tournamentId = selectedTournament
-  const navigation = useNavigation();
+  const router = useRouter();
   const [sport, setSport] = useRecoilState(sportState);
   const [teamData, setTeamData] = useRecoilState(teamDataState);
   // const [filterRole, setFilterRole] = useRecoilState(filterRoleState);
@@ -494,7 +491,7 @@ const EnhancedTeamView = () => {
 
       if (response.data.success) {
         Alert.alert("Success", "Team created successfully!");
-        navigation.navigate("Home");
+        router.push("home"); 
       } else {
         console.error('[Team Creation] API Error:', response.data);
         Alert.alert("Error", response.data.message || "Failed to create team");
@@ -524,7 +521,7 @@ const EnhancedTeamView = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [validateTeam, teamData, teamValue, tournamentId, navigation, playerLimit, sport]);
+  }, [validateTeam, teamData, teamValue, tournamentId, playerLimit, sport]);
   // Function to open the player selection modal
   const [filteredPlayers, setFilteredPlayers] = useState([]);
   const [modalData, setModalData] = useState(null);

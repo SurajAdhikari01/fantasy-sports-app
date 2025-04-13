@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Slot, useRouter, useSegments } from "expo-router";
 import { View, ActivityIndicator } from "react-native";
 import { styled } from "nativewind";
+import { RecoilRoot } from "recoil";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 
 const Container = styled(View, "flex-1 bg-gray-900");
@@ -56,7 +57,9 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <Container>
-        <AuthGuard />
+        <RecoilRoot>
+          <AuthGuard />
+        </RecoilRoot>
       </Container>
     </AuthProvider>
   );
