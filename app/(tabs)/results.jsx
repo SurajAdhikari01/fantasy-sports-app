@@ -17,6 +17,7 @@ const ResultsScreen = () => {
   // --- State Variables ---
   const [isLoadingTournaments, setIsLoadingTournaments] = useState(true);
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
+  const [isLoadingPlayers, setIsLoadingPlayers] = useState(false);
   const [tournaments, setTournaments] = useState([]);
   const [matches, setMatches] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
@@ -27,32 +28,33 @@ const ResultsScreen = () => {
   const [players, setPlayers] = useState({}); // Cache for player data
 
   // --- Helper: Determine Player's Team Side ---
-  const getPlayerTeamSide = (playerName, match) => {
-    const team1PlayerNames = Array.isArray(match?.team1?.players)
+  const getPlayerTeamSide = (playerId, match) => {
+    const team1PlayerIds = Array.isArray(match?.team1?.players)
       ? match.team1.players
       : Array.isArray(match?.playersPlayedTeam1)
       ? match.playersPlayedTeam1
       : [];
-    const team2PlayerNames = Array.isArray(match?.team2?.players)
+    const team2PlayerIds = Array.isArray(match?.team2?.players)
       ? match.team2.players
       : Array.isArray(match?.playersPlayedTeam2)
       ? match.playersPlayedTeam2
       : [];
 
-    if (team1PlayerNames.includes(playerName)) {
+    if (team1PlayerIds.includes(playerId)) {
       return "left"; // Team 1
     }
-    if (team2PlayerNames.includes(playerName)) {
+    if (team2PlayerIds.includes(playerId)) {
       return "right"; // Team 2
     }
     console.warn(
-      `Player ${playerName} not found in team lists for match ${match?._id}`
+      `Player ${playerId} not found in team lists for match ${match?._id}`
     );
     return null;
   };
 
   // --- Helper to get player name by ID ---
-  const getPlayerNameById = (playerId, playersCache) => {
+  const getPlayerNameById = (playerId, playersCache = players) => {
+    if (!playerId) return "Unknown Player";
     return playersCache[playerId]?.name || playerId; // Return ID if name not found
   };
 
@@ -94,6 +96,36 @@ const ResultsScreen = () => {
     } finally {
       if (!isRefreshing) setIsLoadingTournaments(false);
       if (isRefreshing) setRefreshing(false);
+    }
+  }, []);
+
+  // Fetch players for a tournament
+  const fetchPlayers = useCallback(async (tournamentId) => {
+    if (!tournamentId) return;
+
+    setIsLoadingPlayers(true);
+    try {
+      const response = await axios.get(`/players/${tournamentId}/players`);
+
+      if (response.status === 200 && response.data?.data) {
+        // Create a dictionary/map of player IDs to player objects
+        const playersMap = {};
+        response.data.data.forEach((player) => {
+          if (player._id) {
+            playersMap[player._id] = player;
+          }
+        });
+
+        setPlayers(playersMap);
+      } else {
+        console.warn("Failed to fetch players or no players found");
+        setPlayers({});
+      }
+    } catch (err) {
+      console.error("Error fetching players:", err);
+      setPlayers({});
+    } finally {
+      setIsLoadingPlayers(false);
     }
   }, []);
 
@@ -162,16 +194,22 @@ const ResultsScreen = () => {
     setRefreshing(true);
     setError(null);
     setInfoMessage(null);
-    if (selectedTournament) await fetchMatches(selectedTournament._id, true);
-    else await fetchTournaments(true);
-  }, [selectedTournament, fetchTournaments, fetchMatches]);
+    if (selectedTournament) {
+      await fetchMatches(selectedTournament._id, true);
+      await fetchPlayers(selectedTournament._id);
+    } else {
+      await fetchTournaments(true);
+    }
+  }, [selectedTournament, fetchTournaments, fetchMatches, fetchPlayers]);
 
   const handleTournamentSelect = useCallback(
-    (tournament) => {
+    async (tournament) => {
       setSelectedTournament(tournament);
-      fetchMatches(tournament._id);
+      setPlayers({}); // Reset players cache
+      await fetchMatches(tournament._id);
+      await fetchPlayers(tournament._id); // Fetch players after selecting tournament
     },
-    [fetchMatches]
+    [fetchMatches, fetchPlayers]
   );
 
   const handleBackToTournaments = () => {
@@ -179,6 +217,7 @@ const ResultsScreen = () => {
     setMatches([]);
     setError(null);
     setInfoMessage(null);
+    setPlayers({}); // Clear players cache when returning to tournaments list
   };
 
   // --- Render Event Item Component ---
@@ -276,21 +315,29 @@ const ResultsScreen = () => {
     (match.goalsScoredBy || []).forEach((goal, index) => {
       const side = getPlayerTeamSide(goal.player, match);
       if (side) {
+        // Get player name from players cache
+        const playerName = getPlayerNameById(goal.player);
+
+        // Get assist names if available
+        const assistsText = goal.assists?.length
+          ? `(Assist: ${goal.assists
+              .map((id) => getPlayerNameById(id))
+              .join(", ")})`
+          : null;
+
         events.push({
           id: `goal-${match._id}-${index}`,
           type: "goal",
-          player: goal.player || "Unknown player",
+          player: playerName,
           side: side,
-          extra: goal.assists?.length
-            ? `(Assist: ${goal.assists.join(", ")})`
-            : null,
+          extra: assistsText,
         });
       }
     });
 
     // Process own goals
-    (match.ownGoals || []).forEach((ogPlayer, index) => {
-      const playerSide = getPlayerTeamSide(ogPlayer, match);
+    (match.ownGoals || []).forEach((ogPlayerId, index) => {
+      const playerSide = getPlayerTeamSide(ogPlayerId, match);
       const scoringSide =
         playerSide === "left"
           ? "right"
@@ -299,62 +346,67 @@ const ResultsScreen = () => {
           : null;
 
       if (scoringSide) {
+        const playerName = getPlayerNameById(ogPlayerId);
         events.push({
           id: `og-${match._id}-${index}`,
           type: "ownGoal",
-          player: ogPlayer || "Unknown player",
+          player: playerName,
           side: scoringSide,
         });
       }
     });
 
     // Process yellow cards
-    (match.cardsObtained?.yellow || []).forEach((player, index) => {
-      const side = getPlayerTeamSide(player, match);
+    (match.cardsObtained?.yellow || []).forEach((playerId, index) => {
+      const side = getPlayerTeamSide(playerId, match);
       if (side) {
+        const playerName = getPlayerNameById(playerId);
         events.push({
           id: `yellow-${match._id}-${index}`,
           type: "yellowCard",
-          player: player || "Unknown player",
+          player: playerName,
           side: side,
         });
       }
     });
 
     // Process red cards
-    (match.cardsObtained?.red || []).forEach((player, index) => {
-      const side = getPlayerTeamSide(player, match);
+    (match.cardsObtained?.red || []).forEach((playerId, index) => {
+      const side = getPlayerTeamSide(playerId, match);
       if (side) {
+        const playerName = getPlayerNameById(playerId);
         events.push({
           id: `red-${match._id}-${index}`,
           type: "redCard",
-          player: player || "Unknown player",
+          player: playerName,
           side: side,
         });
       }
     });
 
     // Process penalties missed
-    (match.penaltiesMissed || []).forEach((player, index) => {
-      const side = getPlayerTeamSide(player, match);
+    (match.penaltiesMissed || []).forEach((playerId, index) => {
+      const side = getPlayerTeamSide(playerId, match);
       if (side) {
+        const playerName = getPlayerNameById(playerId);
         events.push({
           id: `penalty-missed-${match._id}-${index}`,
           type: "penaltyMissed",
-          player: player || "Unknown player",
+          player: playerName,
           side: side,
         });
       }
     });
 
     // Process penalty saves
-    (match.penaltySaves || []).forEach((player, index) => {
-      const side = getPlayerTeamSide(player, match);
+    (match.penaltySaves || []).forEach((playerId, index) => {
+      const side = getPlayerTeamSide(playerId, match);
       if (side) {
+        const playerName = getPlayerNameById(playerId);
         events.push({
           id: `penalty-save-${match._id}-${index}`,
           type: "penaltySave",
-          player: player || "Unknown player",
+          player: playerName,
           side: side,
         });
       }
@@ -489,13 +541,13 @@ const ResultsScreen = () => {
               <View className="flex-row">
                 <View className="flex-1 pr-2">
                   <Text className="text-neutral-400 text-xs mb-1">Team 1:</Text>
-                  {match.playersPlayedTeam1?.map((player, idx) => (
+                  {match.playersPlayedTeam1?.map((playerId, idx) => (
                     <Text
                       key={`t1-${idx}`}
                       className="text-neutral-300 text-xs"
                       numberOfLines={1}
                     >
-                      • {player}
+                      • {getPlayerNameById(playerId)}
                     </Text>
                   ))}
                 </View>
@@ -503,13 +555,13 @@ const ResultsScreen = () => {
                   <Text className="text-neutral-400 text-xs mb-1 text-right">
                     Team 2:
                   </Text>
-                  {match.playersPlayedTeam2?.map((player, idx) => (
+                  {match.playersPlayedTeam2?.map((playerId, idx) => (
                     <Text
                       key={`t2-${idx}`}
                       className="text-neutral-300 text-xs text-right"
                       numberOfLines={1}
                     >
-                      {player} •
+                      {getPlayerNameById(playerId)} •
                     </Text>
                   ))}
                 </View>
@@ -629,11 +681,11 @@ const ResultsScreen = () => {
         {selectedTournament ? (
           // --- Matches View ---
           <>
-            {isLoadingMatches && !refreshing ? (
+            {(isLoadingMatches || isLoadingPlayers) && !refreshing ? (
               <View className="flex-1 justify-center items-center py-20">
                 <ActivityIndicator size="large" color="#A5B4FC" />
                 <Text className="text-neutral-400 mt-3">
-                  Loading Matches...
+                  Loading Match Data...
                 </Text>
               </View>
             ) : matches.length > 0 ? (
