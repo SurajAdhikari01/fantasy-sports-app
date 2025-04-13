@@ -1,39 +1,58 @@
 import React from "react";
-import { View, Text, TouchableOpacity, Alert, Linking } from "react-native"; // Added Linking
-import { LinearGradient } from "expo-linear-gradient";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Linking,
+  ScrollView,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { styled } from "nativewind";
-// import { router } from "expo-router"; // router is not used in this version
+// Removed styled import as we are using className directly
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../context/AuthContext"; // Assuming path is correct
+import { LinearGradient } from "expo-linear-gradient";
+import { useAuth } from "../context/AuthContext";
 
-const StyledSafeAreaView = styled(SafeAreaView);
-const StyledView = styled(View);
-const StyledText = styled(Text);
-const StyledTouchableOpacity = styled(TouchableOpacity);
+// --- Configuration ---
+const CONTACT_PHONE_NUMBER = "+9779856000000";
+const WEBSITE_URL = "https://yourfantasysite.com";
+const SHOP_URL = "https://yourfantasysite.com/shop";
+const LOCATION_INFO = "Pokhara, Nepal";
 
-// Placeholder Contact Number - Replace with your actual number
-const CONTACT_PHONE_NUMBER = "+977-9856000000"; // Use international format for Linking
+// --- Helper Function for Menu Items ---
+const MenuItem = ({ icon, label, onPress, isLast = false }) => (
+  <TouchableOpacity
+    onPress={onPress}
+    className={`flex-row items-center py-4 ${
+      !isLast ? "border-b border-gray-700" : ""
+    } active:bg-gray-700 rounded-md px-1`}
+  >
+    {/* Changed icon color to white */}
+    <Ionicons name={icon} size={22} className="text-white mr-4" />
+    <Text className="text-white px-2 text-base flex-1">{label}</Text>
+    {/* Changed chevron color to white */}
+    <Ionicons name="chevron-forward-outline" size={20} className="text-white" />
+  </TouchableOpacity>
+);
 
+// --- Main Screen Component ---
 const MoreScreen = () => {
-  const { signOut, userData } = useAuth(); // Get userData if needed, e.g., for username display
+  const { signOut, userData } = useAuth();
 
+  // --- Handlers ---
   const handleLogout = () => {
     Alert.alert(
       "Logout",
       "Are you sure you want to logout?",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Logout",
           style: "destructive",
           onPress: async () => {
             try {
               await signOut();
-              // AuthGuard should handle redirect
             } catch (error) {
               console.error("Logout error:", error);
               Alert.alert("Error", "Failed to logout. Please try again.");
@@ -45,76 +64,131 @@ const MoreScreen = () => {
     );
   };
 
-  // Function to handle calling the contact number
+  const handleUrlPress = async (url, errorMessage) => {
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      Alert.alert("Error", errorMessage || `Cannot open URL: ${url}`);
+    }
+  };
+
   const handleContactPress = () => {
-    const phoneNumberUrl = `tel:${CONTACT_PHONE_NUMBER}`;
-    Linking.canOpenURL(phoneNumberUrl)
-      .then((supported) => {
-        if (!supported) {
-          Alert.alert("Error", "Calling not supported on this device.");
-        } else {
-          return Linking.openURL(phoneNumberUrl);
-        }
-      })
-      .catch((err) => console.error("An error occurred", err));
+    handleUrlPress(
+      `tel:${CONTACT_PHONE_NUMBER}`,
+      "Calling not supported on this device."
+    );
+  };
+
+  // --- Navigation ---
+  const navigateToMyTournaments = () => {
+    router.push("/myTournaments"); // Assuming this route exists
+  };
+
+  const navigateToLocation = () => {
+    // For simplicity, showing an Alert. Could open a map URL.
+    Alert.alert("Location", LOCATION_INFO);
   };
 
   return (
-    // Use justify-between to push header to top and card to bottom
-    <StyledSafeAreaView className="flex-1 bg-gray-900 p-4 justify-between">
-      <StyledView className="w-full">
-        <StyledView className="flex-row justify-between items-center mb-6">
-          <StyledText className="text-white text-xl font-bold">
-            {userData?.username
-              ? `${
-                  userData.username.charAt(0).toUpperCase() +
-                  userData.username.slice(1).toLowerCase()
-                }'s Dashboard`
-              : "User Dashboard"}
-          </StyledText>
-          <StyledTouchableOpacity
-            onPress={handleLogout}
-            className="flex-row items-center bg-red-600 px-3 py-2 rounded-lg shadow-md" // Slightly darker red, added shadow
-          >
-            <Ionicons name="log-out-outline" size={20} color="white" />
-            <StyledText className="text-white font-semibold ml-1.5 text-sm">
-              Logout
-            </StyledText>
-          </StyledTouchableOpacity>
-        </StyledView>
-      </StyledView>
+    <SafeAreaView className="flex-1 bg-gray-900 pb-12">
+      <ScrollView
+        className="flex-1 px-5 pt-5"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
+      >
+        {/* Screen Title */}
+        <Text className="text-3xl font-bold text-white text-left mb-6">
+          Settings & More
+        </Text>
 
-      <StyledView className="mb-6">
-        <LinearGradient
-          colors={["#3b82f6", "#1e40af"]} // Example: Blue gradient
-          start={{ x: 0, y: 0 }} // Gradient direction
-          end={{ x: 1, y: 1 }}
-          className="rounded-xl p-5 shadow-lg" // Rounded corners, padding, shadow
+        {/* User Profile Card */}
+        <View className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg flex-row items-center">
+          <View className="w-14 h-14 rounded-full bg-blue-600 items-center justify-center mr-4">
+            <Ionicons name="person-outline" size={30} color="white" />
+          </View>
+          <View className="flex-1">
+            <Text className="text-white text-lg font-semibold">
+              {userData?.username || "Username"}
+            </Text>
+            <Text className="text-gray-400 text-sm">
+              {userData?.email || "user@example.com"}
+            </Text>
+          </View>
+        </View>
+
+        {/* Host Tournament Card */}
+        <View className="mb-6">
+          <LinearGradient
+            colors={["#3b82f6", "#1e40af"]} // Blue gradient
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            className="rounded-xl p-5 shadow-lg"
+          >
+            <View className="flex-row items-center mb-3">
+              {/* Changed trophy icon color to white */}
+              <Ionicons name="trophy-outline" size={24} color="white" />
+              <Text className="text-white text-xl font-bold ml-2">
+                Host Your Tournament!
+              </Text>
+            </View>
+
+            <Text className="text-indigo-100 text-base mb-4">
+              Bring your fantasy league to life on our platform. Easy setup,
+              powerful features.
+            </Text>
+
+            <TouchableOpacity
+              onPress={handleContactPress}
+              className="bg-white/20 p-3 rounded-lg flex-row items-center justify-center shadow-sm active:bg-white/30"
+            >
+              <Ionicons name="call-outline" size={20} color="white" />
+              <Text className="text-white font-semibold text-base ml-2">
+                Contact Us to Host
+              </Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+
+        {/* Information Section */}
+        <View className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg">
+          <Text className="text-gray-400 text-sm font-semibold mb-2 uppercase">
+            Information
+          </Text>
+          <MenuItem
+            icon="map-outline"
+            label={`Location: ${LOCATION_INFO}`}
+            onPress={navigateToLocation}
+          />
+          <MenuItem
+            icon="globe-outline"
+            label="Visit Our Website"
+            onPress={() =>
+              handleUrlPress(WEBSITE_URL, "Could not open website.")
+            }
+          />
+          {SHOP_URL && (
+            <MenuItem
+              icon="storefront-outline"
+              label="Visit Our Shop"
+              onPress={() => handleUrlPress(SHOP_URL, "Could not open shop.")}
+              isLast={true}
+            />
+          )}
+        </View>
+
+        {/* Logout Button */}
+        <TouchableOpacity
+          onPress={handleLogout}
+          className="flex-row items-center justify-center bg-red-600/90 px-4 py-3.5 rounded-lg shadow-md mt-4 active:bg-red-700"
         >
-          <StyledView className="flex-row items-center mb-3">
-            <Ionicons name="trophy-outline" size={24} color="#fad607" />
-            <StyledText className="text-white text-xl font-bold ml-2">
-              Host Your Tournament!
-            </StyledText>
-          </StyledView>
-
-          <StyledText className="text-indigo-100 text-base mb-4">
-            Bring your fantasy league to life on our platform. Easy setup,
-            powerful features.
-          </StyledText>
-
-          <StyledTouchableOpacity
-            onPress={handleContactPress}
-            className="bg-white/20 p-3 rounded-lg flex-row items-center justify-center shadow-sm" // Semi-transparent white button
-          >
-            <Ionicons name="call-outline" size={20} color="white" />
-            <StyledText className="text-white font-semibold text-base ml-2">
-              Contact Us: {CONTACT_PHONE_NUMBER.replace("+1", "")}
-            </StyledText>
-          </StyledTouchableOpacity>
-        </LinearGradient>
-      </StyledView>
-    </StyledSafeAreaView>
+          <Ionicons name="log-out-outline" size={22} color="white" />
+          <Text className="text-white font-semibold ml-2 text-base">
+            Logout
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

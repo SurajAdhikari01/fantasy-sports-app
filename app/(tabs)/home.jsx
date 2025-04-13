@@ -221,9 +221,9 @@ const HomeScreen = () => {
     );
   };
 
-  const handleProfileNavigation = () => {
+  const handleMoreNavigation = () => {
     setOptionsModalVisible(false);
-    router.push("/profile"); // Ensure '/profile' route exists
+    router.push("/more"); // Ensure '/profile' route exists
   };
 
   // Function to measure the image position and show the modal
@@ -353,9 +353,9 @@ const HomeScreen = () => {
           >
             <TouchableOpacity
               style={styles.optionButton}
-              onPress={handleProfileNavigation}
+              onPress={handleMoreNavigation}
             >
-              <Text style={styles.optionButtonText}>View Profile</Text>
+              <Text style={styles.optionButtonText}>View More</Text>
             </TouchableOpacity>
             <View style={styles.separator} />
             <TouchableOpacity
