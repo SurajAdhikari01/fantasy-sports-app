@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { RecoilRoot, useRecoilValue, useRecoilState } from "recoil";
 import EnhancedTeamView from "../components/EnhancedTeamView";
 import TournamentSelect from "../components/TournamentSelect";
-import TeamPlayersView from "../components/TeamPlayersView";
+import ViewTeam from "../components/ViewTeam";
 import { selectedTournamentState, viewModeState } from "../components/atoms";
 
 // conditionally render based on Recoil state
@@ -19,7 +19,7 @@ const MainContent = () => {
   // If tournament is selected, show either team management or team view based on viewMode
   switch (viewMode) {
     case 'VIEW_TEAM':
-      return <TeamPlayersView />;
+      return <ViewTeam />;
     case 'MANAGE_TEAM':
     default:
       return <EnhancedTeamView />;

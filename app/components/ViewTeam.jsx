@@ -20,7 +20,7 @@ import api from "../config/axios"
 // Get screen dimensions
 const { height: screenHeight } = Dimensions.get("window")
 
-const TeamPlayersView = () => {
+const ViewTeam = () => {
   const navigation = useNavigation()
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState([])
@@ -197,4 +197,4 @@ const TeamPlayersView = () => {
   )
 }
 
-export default TeamPlayersView
+export default ViewTeam
