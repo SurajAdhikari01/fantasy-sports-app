@@ -15,7 +15,7 @@ const StyledTouchableOpacity = styled(TouchableOpacity);
 // Placeholder Contact Number - Replace with your actual number
 const CONTACT_PHONE_NUMBER = "+977-9856000000"; // Use international format for Linking
 
-const ProfileScreen = () => {
+const About = () => {
   const { signOut, userData } = useAuth(); // Get userData if needed, e.g., for username display
 
   const handleLogout = () => {
@@ -118,4 +118,4 @@ const ProfileScreen = () => {
   );
 };
 
-export default ProfileScreen;
+export default About;

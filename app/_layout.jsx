@@ -35,7 +35,7 @@ function AuthGuard() {
     } else {
       // Redirect unauthenticated users to sign in
       if (!inAuthGroup) {
-        router.replace("/(auth)/signin");
+        router.replace("/(auth)/welcome");
       }
     }
   }, [isLoading, isAuthenticated, segments, userData]);
