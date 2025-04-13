@@ -92,7 +92,7 @@ const ProfileScreen = () => {
           className="rounded-xl p-5 shadow-lg" // Rounded corners, padding, shadow
         >
           <StyledView className="flex-row items-center mb-3">
-            <Ionicons name="trophy-outline" size={24} color="#a5b4fc" />
+            <Ionicons name="trophy-outline" size={24} color="#fad607" />
             <StyledText className="text-white text-xl font-bold ml-2">
               Host Your Tournament!
             </StyledText>
