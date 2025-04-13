@@ -25,14 +25,23 @@ const MenuItem = ({ icon, label, onPress, isLast = false }) => (
   <TouchableOpacity
     onPress={onPress}
     className={`flex-row items-center py-4 ${
-      !isLast ? "border-b border-gray-700" : ""
-    } active:bg-gray-700 rounded-md px-1`}
+      !isLast ? "border-b border-gray-700" : "" // Use a slightly lighter border for dark theme if needed, e.g., border-neutral-700
+    } active:bg-black/10 rounded-md px-1`} // Adjust active background for dark theme
   >
-    {/* Changed icon color to white */}
-    <Ionicons name={icon} size={22} className="text-white mr-4" />
+    {/* --- FIX: Use color prop directly --- */}
+    <Ionicons
+      name={icon}
+      size={22}
+      color="white" // Set color directly
+      className="mr-4" // Keep margin className if it works, or use style={{ marginRight: 16 }}
+    />
     <Text className="text-white px-2 text-base flex-1">{label}</Text>
-    {/* Changed chevron color to white */}
-    <Ionicons name="chevron-forward-outline" size={20} className="text-white" />
+    {/* --- FIX: Use color prop directly --- */}
+    <Ionicons
+      name="chevron-forward-outline"
+      size={20}
+      color="white" // Set color directly
+    />
   </TouchableOpacity>
 );
 
@@ -80,18 +89,14 @@ const MoreScreen = () => {
     );
   };
 
-  // --- Navigation ---
-  const navigateToMyTournaments = () => {
-    router.push("/myTournaments"); // Assuming this route exists
-  };
-
   const navigateToLocation = () => {
     // For simplicity, showing an Alert. Could open a map URL.
     Alert.alert("Location", LOCATION_INFO);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-900 pb-12">
+    // Use the dark background from the previous example
+    <SafeAreaView className="flex-1 bg-[#2a2a2a] pb-12">
       <ScrollView
         className="flex-1 px-5 pt-5"
         showsVerticalScrollIndicator={false}
@@ -102,8 +107,8 @@ const MoreScreen = () => {
           Settings & More
         </Text>
 
-        {/* User Profile Card */}
-        <View className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg flex-row items-center">
+        {/* User Profile Card - Use dark background */}
+        <View className="bg-[#3a3a3a] rounded-xl p-4 mb-6 shadow-lg flex-row items-center border border-neutral-700">
           <View className="w-14 h-14 rounded-full bg-blue-600 items-center justify-center mr-4">
             <Ionicons name="person-outline" size={30} color="white" />
           </View>
@@ -126,7 +131,6 @@ const MoreScreen = () => {
             className="rounded-xl p-5 shadow-lg"
           >
             <View className="flex-row items-center mb-3">
-              {/* Changed trophy icon color to white */}
               <Ionicons name="trophy-outline" size={24} color="white" />
               <Text className="text-white text-xl font-bold ml-2">
                 Host Your Tournament!
@@ -150,9 +154,9 @@ const MoreScreen = () => {
           </LinearGradient>
         </View>
 
-        {/* Information Section */}
-        <View className="bg-gray-800 rounded-xl p-4 mb-6 shadow-lg">
-          <Text className="text-gray-400 text-sm font-semibold mb-2 uppercase">
+        {/* Information Section - Use dark background */}
+        <View className="bg-[#3a3a3a] rounded-xl p-4 mb-6 shadow-lg border border-neutral-700">
+          <Text className="text-gray-400 text-sm font-semibold mb-2 uppercase px-1">
             Information
           </Text>
           <MenuItem
