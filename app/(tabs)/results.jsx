@@ -1,58 +1,59 @@
+import React, { useState, useEffect } from "react";
+import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router"; 
+import axios from "../config/axios";
 
-import React, { useState, useEffect } from "react"
-import { View, Text, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { Ionicons } from "@expo/vector-icons"
-import axios from "../config/axios"
-
-const ResultsScreen = ({ navigation }) => {
-  const [loading, setLoading] = useState(true)
-  const [tournaments, setTournaments] = useState([])
-  const [matches, setMatches] = useState([])
-  const [selectedTournament, setSelectedTournament] = useState(null)
+const ResultsScreen = () => {
+  const router = useRouter(); 
+  const [loading, setLoading] = useState(true);
+  const [tournaments, setTournaments] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [selectedTournament, setSelectedTournament] = useState(null);
 
   // Fetch all tournaments on mount
   useEffect(() => {
-    fetchTournaments()
-  }, [])
+    fetchTournaments();
+  }, []);
 
   const fetchTournaments = async () => {
     try {
-      const response = await axios.get("http://localhost:9005/api/tournaments/getAllTournaments")
+      const response = await axios.get("tournaments/getAllTournaments");
       if (response.status === 200) {
-        setTournaments(response.data.data)
+        setTournaments(response.data.data);
       } else {
-        Alert.alert("Error", "Failed to fetch tournaments")
+        Alert.alert("Error", "Failed to fetch tournaments");
       }
     } catch (error) {
-      console.error("Error fetching tournaments:", error)
-      Alert.alert("Error", "Failed to fetch tournaments")
+      console.error("Error fetching tournaments:", error);
+      Alert.alert("Error", "Failed to fetch tournaments");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const fetchMatches = async (tournamentId) => {
     try {
-      setLoading(true)
-      const response = await axios.get(`http://localhost:9005/api/tournaments/${tournamentId}/matches`)
+      setLoading(true);
+      const response = await axios.get(`tournaments/${tournamentId}/matches`);
       if (response.status === 200) {
-        setMatches(response.data.data.matches)
+        setMatches(response.data.data.matches);
       } else {
-        Alert.alert("Error", "Failed to fetch matches")
+        Alert.alert("Error", "Failed to fetch matches");
       }
     } catch (error) {
-      console.error("Error fetching matches:", error)
-      Alert.alert("Error", "Failed to fetch matches")
+      console.error("Error fetching matches:", error);
+      Alert.alert("Error", "Failed to fetch matches");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const handleTournamentSelect = (tournamentId) => {
-    setSelectedTournament(tournamentId)
-    fetchMatches(tournamentId)
-  }
+    setSelectedTournament(tournamentId);
+    fetchMatches(tournamentId);
+  };
 
   const renderTournaments = () => (
     <View>
@@ -67,7 +68,7 @@ const ResultsScreen = ({ navigation }) => {
         </TouchableOpacity>
       ))}
     </View>
-  )
+  );
 
   const renderMatches = () => (
     <View>
@@ -82,7 +83,8 @@ const ResultsScreen = ({ navigation }) => {
           <Text className="text-gray-600">
             Goals Scored:{" "}
             {match.goalsScoredBy.map(
-              (goal) => `${goal.player} scored ${goal.goals} goal(s) [Assists: ${goal.assists?.join(", ") || "N/A"}]`
+              (goal, index) =>
+                `${goal.player} scored ${goal.goals} goal(s) [Assists: ${goal.assists?.join(", ") || "N/A"}]`
             )}
           </Text>
           <Text className="text-gray-600">Yellow Cards: {match.cardsObtained?.yellow?.join(", ") || "None"}</Text>
@@ -90,14 +92,16 @@ const ResultsScreen = ({ navigation }) => {
         </View>
       ))}
     </View>
-  )
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white p-4">
       {/* Back Button */}
       <View className="flex-row items-center mb-4">
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            setSelectedTournament(null); // Clear the selected tournament state
+          }}
           className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
         >
           <Ionicons name="chevron-back" size={24} color="#374151" />
@@ -111,12 +115,10 @@ const ResultsScreen = ({ navigation }) => {
           <Text className="text-gray-500 mt-4 font-medium">Loading...</Text>
         </View>
       ) : (
-        <ScrollView>
-          {selectedTournament ? renderMatches() : renderTournaments()}
-        </ScrollView>
+        <ScrollView>{selectedTournament ? renderMatches() : renderTournaments()}</ScrollView>
       )}
     </SafeAreaView>
-  )
-}
+  );
+};
 
-export default ResultsScreen
+export default ResultsScreen;
