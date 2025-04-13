@@ -1,30 +1,24 @@
-// MainPage.js
-import React, { useState } from 'react';
+import React from 'react';
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RecoilRoot } from "recoil";
+import { useRecoilValue } from "recoil";
+import TournamentSelect from "../components/TournamentSelect";
+import ViewTeam from "../components/ViewTeam";
 import EnhancedTeamView from "../components/EnhancedTeamView";
-import TournamentSelector from "../components/TournamentSelector";
+import { selectedTournamentState, viewModeState } from "../components/atoms";
 
 const MainPage = () => {
-  // const [selectedTournament, setSelectedTournament] = useState("");
-
-  // const handleTournamentSelect = (tournament) => {
-  //   setSelectedTournament(tournament);
-  // };
-
+  const selectedTournament = useRecoilValue(selectedTournamentState);
+  const viewMode = useRecoilValue(viewModeState);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#1F2937' }}>
-      
-      <RecoilRoot>
-        {/* {!selectedTournament ? (
-          <TournamentSelector onTournamentSelect={handleTournamentSelect} />
-        ) : (
-          <EnhancedTeamView tournament={selectedTournament} />
-        )} */}
-        <EnhancedTeamView  />
-
-      </RecoilRoot>
+    <SafeAreaView style={{ flex: 1, marginBottom: 55 }}>
+      {!selectedTournament ? (
+        <TournamentSelect />
+      ) : viewMode === 'VIEW_TEAM' ? (
+        <ViewTeam />
+      ) : (
+        <EnhancedTeamView />
+      )}
     </SafeAreaView>
   );
 };

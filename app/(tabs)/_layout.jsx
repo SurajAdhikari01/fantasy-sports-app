@@ -2,12 +2,17 @@ import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { View } from "react-native";
 import { styled } from "nativewind";
-import { BlurView } from "expo-blur"; // Import BlurView
+import { BlurView } from "expo-blur";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { RecoilRoot } from "recoil";
 
 // Styling container with NativeWind
 const Container = styled(View, "flex-1 bg-gray-900");
 
 export default function TabsLayout() {
+  const insets = useSafeAreaInsets();
+  const TAB_BAR_HEIGHT = 55;
+
   return (
     <Container>
       {/* Main content of the application */}
@@ -19,24 +24,32 @@ export default function TabsLayout() {
               bottom: 0,
               left: 0,
               right: 0,
-              height: 55, // Adjust for padding
-              // borderRadius: 30, // Rounded edges for the bar
-              // backgroundColor: "rgba(0,0,0,0.5)", // Slightly transparent background
-              borderTopWidth: 0, // Remove the top border
-              elevation: 5, // Add elevation for Android shadow
-              zIndex: 2, // Ensure the tab bar is above the BlurView
+              height: TAB_BAR_HEIGHT + insets.bottom, // Account for safe area
+              borderTopWidth: 0,
+              elevation: 5,
+              zIndex: 2,
             },
-            tabBarActiveTintColor: "#F97316", // Orange color for active state
-            tabBarInactiveTintColor: "#9CA3AF", // Grey for inactive state
+            tabBarActiveTintColor: "#F97316",
+            tabBarInactiveTintColor: "#9CA3AF",
             headerShown: false,
             tabBarBackground: () => (
               <BlurView
-                style={{ height: 80 }} // Match the height of the tab bar
-                intensity={100} // Adjust as needed
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                }}
+                intensity={100}
                 tint="dark"
-                borderRadius={30} // Rounded edges for the BlurView
+                borderRadius={30}
               />
             ),
+            // Add bottom padding to prevent content overlap with tab bar
+            contentStyle: {
+              paddingBottom: TAB_BAR_HEIGHT + insets.bottom,
+            },
           }}
         >
           {/* Home Tab */}
@@ -50,18 +63,17 @@ export default function TabsLayout() {
             }}
           />
 
-          {/* History Tab */}
           <Tabs.Screen
-            name="history"
+            name="leaderboard"
             options={{
-              tabBarLabel: "History",
+              tabBarLabel: "Leaderboard",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="time" size={24} color={color} />
+                <Ionicons name="trophy" size={24} color={color} />
               ),
             }}
           />
 
-          {/* Custom Middle Tab */}
+          {/* Team select Tab */}
           <Tabs.Screen
             name="main"
             options={{
@@ -72,21 +84,20 @@ export default function TabsLayout() {
                     position: "relative",
                     justifyContent: "center",
                     alignItems: "center",
-                    marginBottom: 0, // Position the middle button above the tab bar
-                    zIndex: 3, // Higher zIndex for middle button
+                    marginBottom: 0,
+                    zIndex: 3,
                   }}
                 >
                   <View
                     style={{
                       width: 65,
                       height: 65,
-                      backgroundColor: "#F97316", // Custom background for middle button
+                      backgroundColor: "#F97316",
                       borderRadius: 25,
                       position: "absolute",
                       justifyContent: "center",
                       alignItems: "center",
                       shadowColor: "#000",
-
                       shadowOffset: { width: 0, height: 5 },
                       shadowOpacity: 0.3,
                       shadowRadius: 6.27,
@@ -98,10 +109,9 @@ export default function TabsLayout() {
                     style={{
                       width: 40,
                       height: 40,
-                      borderRadius: 20,
+                      borderRadius: 15,
                       position: "relative",
                       justifyContent: "center",
-                      borderRadius: 15,
                       alignItems: "center",
                       backgroundColor: "#D15F12",
                       transform: [{ rotate: "45deg" }],
@@ -130,18 +140,17 @@ export default function TabsLayout() {
             options={{
               tabBarLabel: "Results",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="trophy" size={24} color={color} />
+                <Ionicons name="receipt" size={24} color={color} />
               ),
             }}
           />
 
-          {/* Profile Tab */}
           <Tabs.Screen
-            name="profile"
+            name="more"
             options={{
-              tabBarLabel: "Profile",
+              tabBarLabel: "More",
               tabBarIcon: ({ color }) => (
-                <Ionicons name="person" size={24} color={color} />
+                <Ionicons name="options" size={24} color={color} />
               ),
             }}
           />
