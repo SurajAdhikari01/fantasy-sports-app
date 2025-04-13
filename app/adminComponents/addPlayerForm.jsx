@@ -36,7 +36,7 @@ const StyledImage = styled(Image);
 const AddPlayerForm = () => {
   // Define positions directly in the format needed for CustomDropdown
   const playerPositions = [
-    { label: "Goalkeeper (GK)", value: "goalkeeper" },
+    { label: "Goalkeeper", value: "goalkeeper" },
     { label: "Defender", value: "defender" },
     { label: "Midfielder", value: "midfielder" },
     { label: "Forward", value: "forward" },

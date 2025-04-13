@@ -11,7 +11,7 @@ const MainPage = () => {
   const viewMode = useRecoilValue(viewModeState);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#2a2a2a" }}>
+    <SafeAreaView style={{ flex: 1 }} className="bg-neutral-900">
       {!selectedTournament ? (
         <TournamentSelect />
       ) : viewMode === "VIEW_TEAM" ? (
