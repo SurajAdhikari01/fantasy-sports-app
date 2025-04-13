@@ -17,6 +17,8 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import api from "../config/axios";
 import Icon from "react-native-vector-icons/FontAwesome";
 import { navigate } from "expo-router/build/global-state/routing";
+import { Ionicons } from "@expo/vector-icons";
+import CustomDropdown from "./customDropdown";
 
 /*
   This updated version:
@@ -26,6 +28,7 @@ import { navigate } from "expo-router/build/global-state/routing";
 */
 
 // Styling container with NativeWind
+
 const StyledSafeAreaView = styled(SafeAreaView);
 const StyledView = styled(View);
 const StyledText = styled(Text);
@@ -413,76 +416,80 @@ export default function AddMatchDetail() {
     return playersFranchise2.filter((p) => inGameTeam2.includes(p._id));
   };
 
+  const handleBack = () => {
+    if (showForm) {
+      setShowForm(false);
+      setSelectedFranchise1("");
+      setSelectedFranchise2("");
+    } else {
+      router.back();
+    }
+  };
+
+  const franchiseOptions1 =
+    tournament?.franchises?.map((f) => ({
+      label: f.name,
+      value: f._id,
+    })) || []; // Ensure it's an array even if undefined
+
+  const franchiseOptions2 = franchiseOptions1.filter(
+    (option) => option.value !== selectedFranchise1
+  );
+
   return (
-    <StyledSafeAreaView className="flex-1 bg-gray-900 p-4">
-      <StyledView className="w-full flex-row justify-between items-center mb-6">
-        <StyledText className="text-white text-xl font-bold px-4 pt-4">
+    <StyledSafeAreaView className="flex-1 bg-[#2a2a2a] p-4">
+      <StyledView className="w-full flex-row mx-4 items-center mb-6 mt-2">
+        {/* Franchise selection step */}
+        <TouchableOpacity
+          onPress={handleBack}
+          className="w-10 h-10 rounded-full bg-[#3a3a3a] items-center justify-center active:bg-[#4a4a4a] border border-neutral-600 mr-3"
+        >
+          <Ionicons name="arrow-back" size={24} color="#E5E7EB" />
+        </TouchableOpacity>
+        <StyledText className="text-white text-2xl font-bold  ">
           Add Match Details
         </StyledText>
       </StyledView>
       <ScrollView className="mt-6">
-        {/* Franchise selection step */}
         {!showForm ? (
-          <StyledView>
-            <StyledView className="w-full mb-4">
-              <StyledText className="text-white mb-2">Franchise 1</StyledText>
-              <StyledView className="bg-gray-800 rounded-lg">
-                <Picker
-                  selectedValue={selectedFranchise1}
-                  onValueChange={(itemValue) =>
-                    setSelectedFranchise1(itemValue)
-                  }
-                  style={{ color: "white" }}
-                  itemStyle={{ color: "white" }}
-                >
-                  <Picker.Item
-                    style={styles.pickerItem}
-                    label="Select a franchise..."
-                    value=""
-                  />
-                  {tournament?.franchises?.map((franchise) => (
-                    <Picker.Item
-                      style={styles.pickerItem}
-                      key={franchise._id}
-                      label={franchise.name}
-                      value={franchise._id}
-                    />
-                  ))}
-                </Picker>
-              </StyledView>
-            </StyledView>
-            <StyledView className="w-full mb-4">
-              <StyledText className="text-white mb-2">Franchise 2</StyledText>
-              <StyledView className="bg-gray-800 rounded-lg">
-                <Picker
-                  selectedValue={selectedFranchise2}
-                  onValueChange={(itemValue) =>
-                    setSelectedFranchise2(itemValue)
-                  }
-                  style={{ color: "white" }}
-                  itemStyle={{ color: "white" }}
-                >
-                  <Picker.Item
-                    style={styles.pickerItem}
-                    label="Select a franchise..."
-                    value=""
-                  />
-                  {tournament?.franchises?.map((franchise) => (
-                    <Picker.Item
-                      style={styles.pickerItem}
-                      key={franchise._id}
-                      label={franchise.name}
-                      value={franchise._id}
-                    />
-                  ))}
-                </Picker>
-              </StyledView>
-            </StyledView>
+          <StyledView className="p-4">
+            {/* Franchise 1 Custom Dropdown */}
+            <CustomDropdown
+              label="Select Franchise 1"
+              options={franchiseOptions1}
+              selectedValue={selectedFranchise1}
+              onValueChange={(value) => {
+                // Optional: Add check if value is same as franchise 2?
+                setSelectedFranchise1(value);
+              }}
+              placeholder="-- Select Team 1 --"
+            />
+
+            {/* Franchise 2 Custom Dropdown */}
+            <CustomDropdown
+              label="Select Franchise 2"
+              // Filter options to exclude the one selected for Franchise 1
+              options={franchiseOptions2}
+              selectedValue={selectedFranchise2}
+              onValueChange={(value) => {
+                setSelectedFranchise2(value);
+              }}
+              placeholder="-- Select Team 2 --"
+              // Disable until Franchise 1 is selected
+              disabled={!selectedFranchise1}
+            />
+
+            {/* Continue Button */}
             <StyledTouchableOpacity
-              className="bg-blue-500 p-2 rounded-lg mb-4"
+              className={`p-3 rounded-lg mt-4 ${
+                selectedFranchise1 && selectedFranchise2
+                  ? "bg-blue-600"
+                  : "bg-gray-600"
+              }`}
               onPress={handleFranchiseSelect}
+              disabled={!selectedFranchise1 || !selectedFranchise2}
             >
-              <StyledText className="text-white text-center">
+              <StyledText className="text-white text-center font-bold text-lg">
                 Continue
               </StyledText>
             </StyledTouchableOpacity>
