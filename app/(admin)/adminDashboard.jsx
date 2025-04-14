@@ -34,7 +34,9 @@ const AdminDashboard = () => {
       setLoading(true);
       try {
         // Assuming this endpoint gets tournaments created by the logged-in admin user
-        const response = await api.get("tournaments/getTournamentsByUserId");
+        const response = await api.get(
+          "tournaments/getTournamentsByUserIdAdmin"
+        );
         if (response.data && Array.isArray(response.data.data)) {
           setTournaments(response.data.data);
         } else {

@@ -72,7 +72,7 @@ const ResultsScreen = () => {
     setError(null);
     setInfoMessage(null);
     try {
-      const response = await axios.get("/tournaments/getAllTournaments");
+      const response = await axios.get("/tournaments/getTournamentsByUserId");
       if (response.data?.success) {
         const fetchedTournaments = response.data.data || [];
         setTournaments(fetchedTournaments);

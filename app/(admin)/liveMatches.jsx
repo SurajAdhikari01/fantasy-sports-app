@@ -30,7 +30,9 @@ export default function AdminTabsLayout() {
       setLoading(true); // Start loading
       try {
         // Assuming the endpoint fetches tournaments relevant to the admin user
-        const response = await api.get("tournaments/getTournamentsByUserId");
+        const response = await api.get(
+          "tournaments/getTournamentsByUserIdAdmin"
+        );
         if (response.data && Array.isArray(response.data.data)) {
           // Check if data is an array
           setTournaments(response.data.data);
@@ -81,24 +83,6 @@ export default function AdminTabsLayout() {
       isCurrentDate(tournament.semifinalStart) ||
       isCurrentDate(tournament.finalStart)
   );
-
-  // Helper to format date string nicely
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    try {
-      // Use UTC date parts to construct the date for formatting
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        // Example format: Jan 1, 2024
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        timeZone: "UTC", // Specify UTC for consistent output
-      });
-    } catch (e) {
-      return "Invalid Date";
-    }
-  };
 
   return (
     // Use the consistent background color
