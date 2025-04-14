@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TabView, SceneMap, TabBar } from "react-native-tab-view";
 import api from "../config/axios";
 import { useRecoilState } from "recoil";
-import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState } from "./atoms";
+import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState, teamIdState } from "./atoms";
 import { viewModeState } from "./atoms";
 import { Ionicons } from '@expo/vector-icons';
 
@@ -15,7 +15,7 @@ const TournamentSelect = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('joined');
-const router = useRouter();
+  const router = useRouter();
 
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
@@ -23,6 +23,7 @@ const router = useRouter();
   const [playerLimit, setPlayerLimit] = useRecoilState(playerLimitState);
   const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState([]);
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
+  const [teamid, setTeamid] = useRecoilState(teamIdState);
 
   const [index, setIndex] = useState(0);
   const [routes] = useState([
@@ -124,6 +125,8 @@ const router = useRouter();
           setTotalPoints(item.totalPoints);
           setSelectedTournamentPlayers(item.players);
           setViewMode('VIEW_TEAM');
+          setTeamid(item._id);
+          console.log("Selected team ID: from tournament select", teamid);
         }}
       >
         <Ionicons name="people" size={18} color="white" />

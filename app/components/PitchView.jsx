@@ -351,6 +351,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
         ) : (
           // Only show empty slots in creation mode, not in view mode
           !isViewMode && (
+            console.log("current mode:", viewMode),
             <TouchableOpacity
               key={`slot-${position.positionId || index}`}
               style={{

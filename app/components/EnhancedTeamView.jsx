@@ -108,7 +108,6 @@ const EnhancedTeamView = () => {
   }, [sport, createInitialTeamData, setTeamData]);
 
   // Effect to fetch franchises and players when the component mounts
-  // Effect to fetch franchises and players when the component mounts
   useEffect(() => {
     let isMounted = true;
     const abortController = new AbortController();
@@ -309,13 +308,6 @@ const EnhancedTeamView = () => {
 
     return errors;
   }, [sport, teamData, totalPlayers, teamValue]);
-
-  // Function to handle player selection
-  // const handlePlayerPress = useCallback((player) => {
-  //   setSelectedPlayer(player);
-  //   setShowPlayerStats(true);
-  // }, [setSelectedPlayer, setShowPlayerStats]);
-
 
   // Function to add a player to the team
   const addPlayer = useCallback(
@@ -569,29 +561,6 @@ const EnhancedTeamView = () => {
     setShowPlayerSelectionModal(true);
   };
 
-  // Function to apply filters
-  // const handleApplyFilters = (filters) => {
-  //   const { position, price, franchise } = filters;
-
-  //   const filtered = fetchedPlayers
-  //     .filter((player) => player) 
-  //     .filter((player) => {
-  //       if (position && player.playerType && !player.playerType.toLowerCase().includes(position.toLowerCase())) {
-  //         return false;
-  //       }
-  //       if (price && player.price && player.price > parseFloat(price)) {
-  //         return false;
-  //       }
-  //       if (franchise && player.franchise && player.franchise._id !== franchise) {
-  //         return false;
-  //       }
-  //       return true;
-  //     });
-
-  //   setFilteredPlayers(filtered);
-  //   setShowPlayerSelectionModal(true);
-  // };
-
   if (isLoading) {
     return (
       <SafeAreaView style={{ flex: 1, backgroundColor: "#111827", justifyContent: "center", alignItems: "center" }}>
@@ -777,23 +746,6 @@ const EnhancedTeamView = () => {
           />
         </View>
       </Animated.View>
-
-      {/* Modals */}
-      {/* <FilterModal
-        visible={filterModalVisible}
-        onClose={() => setFilterModalVisible(false)}
-        onApplyFilters={handleApplyFilters} 
-        franchises={franchises}
-      /> */}
-
-      {/* <HighlightedPlayerInfo
-        player={selectedPlayer}
-        visible={showPlayerStats}
-        onClose={() => {
-          setShowPlayerStats(false);
-          setSelectedPlayer(null);
-        }}
-      /> */}
 
       <PlayerSelectionModal
         visible={showPlayerSelectionModal}

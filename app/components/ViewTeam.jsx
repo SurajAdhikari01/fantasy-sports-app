@@ -29,7 +29,7 @@ const ViewTeam = () => {
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
   const totalPoints = useRecoilValue(totalPointsState)
-  const [teamId, setTeamId] = useRecoilState(teamIdState)
+  const teamId = useRecoilValue(teamIdState)
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
@@ -77,7 +77,6 @@ const ViewTeam = () => {
       Alert.alert("Error", "No team found to edit");
       return;
     }
-    setTeamId(teamId)
     console.log("teamId", teamId)
     router.push('components/EditTeam');
   };
@@ -153,6 +152,7 @@ const ViewTeam = () => {
         </TouchableOpacity>
         <Text className="text-xl font-bold text-gray-800 ml-3">Your Team</Text>
         {teamId && (
+          // console.log("teamId", teamId),
           <TouchableOpacity
             onPress={handleEdit}
             className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
