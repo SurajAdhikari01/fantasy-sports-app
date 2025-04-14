@@ -48,7 +48,7 @@ const router = useRouter();
 
       // Fetch available tournaments
       const availableResponse = await api.get("/tournaments/getAllTournaments");
-      console.log("Available tournaments response:", availableResponse.data);
+      // console.log("Available tournaments response:", availableResponse.data);
       if (availableResponse.data.success) {
         setAvailableTournaments(availableResponse.data.data || []);
       } else {

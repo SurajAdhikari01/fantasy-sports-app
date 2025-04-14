@@ -64,14 +64,14 @@ const calculatePositions = (numPlayers, teamData) => {
     midfielders = [...midfielders, ...unknownPositions]
 
     // Debug log
-    console.log("Player distribution:", {
-      goalkeepers: goalkeepers.length,
-      defenders: defenders.length,
-      midfielders: midfielders.length,
-      forwards: forwards.length,
-      unknown: unknownPositions.length,
-      total: allPlayers.length,
-    })
+    // console.log("Player distribution:", {
+    //   goalkeepers: goalkeepers.length,
+    //   defenders: defenders.length,
+    //   midfielders: midfielders.length,
+    //   forwards: forwards.length,
+    //   unknown: unknownPositions.length,
+    //   total: allPlayers.length,
+    // })
   } else {
     // Original behavior for creation mode - extract from teamData object
     if (teamData && typeof teamData === "object") {

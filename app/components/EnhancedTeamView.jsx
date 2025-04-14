@@ -122,26 +122,26 @@ const EnhancedTeamView = () => {
         const franchisesResponse = await api.get(`/tournaments/franchises/${tournamentId}`, {
           signal: abortController.signal
         });
-        console.log("Franchises response:", franchisesResponse.data);
+        // console.log("Franchises response:", franchisesResponse.data);
 
         if (!isMounted) return;
 
         // Check if data exists and handle the structure we can see in the logs
         if (franchisesResponse.data && franchisesResponse.data.data) {
-          // If response has data property (could be the case in some APIs)
-          console.log("Raw franchises data (from data property):", franchisesResponse.data.data);
+          // If response has data property (could be the case in some APIs) //being used
+          // console.log("Raw franchises data (from data property):", franchisesResponse.data.data);
           setFranchises(franchisesResponse.data.data);
-          console.log(`Set ${franchisesResponse.data.data.length} franchises from data property`);
+          // console.log(`Set ${franchisesResponse.data.data.length} franchises from data property`);
         }
         else if (franchisesResponse.data && franchisesResponse.data.success && Array.isArray(franchisesResponse.data.message)) {
           // This matches what we're seeing in the logs - data.success exists and data.message is an array
-          console.log("Raw franchises data (from message property):", franchisesResponse.data.message);
+          // console.log("Raw franchises data (from message property):", franchisesResponse.data.message);
           setFranchises(franchisesResponse.data.message);
           console.log(`Set ${franchisesResponse.data.message.length} franchises from message property`);
         }
         else if (Array.isArray(franchisesResponse.data)) {
-          // Just in case the response is a direct array
-          console.log("Raw franchises data (direct array):", franchisesResponse.data);
+          // in case the response is a direct array
+          // console.log("Raw franchises data (direct array):", franchisesResponse.data);
           setFranchises(franchisesResponse.data);
           console.log(`Set ${franchisesResponse.data.length} franchises from direct array`);
         }

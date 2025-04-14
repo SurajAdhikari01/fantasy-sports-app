@@ -52,7 +52,6 @@ const ViewTeam = () => {
         const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
 
         if (teamForTournament) {
-          setTeamId(teamForTournament)
           const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
             ...p,
             playerType: (p.playerType?.toLowerCase() || "").trim(),
@@ -78,6 +77,8 @@ const ViewTeam = () => {
       Alert.alert("Error", "No team found to edit");
       return;
     }
+    setTeamId(teamId)
+    console.log("teamId", teamId)
     router.push('components/EditTeam');
   };
 
@@ -96,12 +97,6 @@ const ViewTeam = () => {
           <MaterialCommunityIcons name="account-group-outline" size={64} color="#CBD5E1" />
           <Text className="text-gray-500 text-lg font-medium text-center mt-4">No players found</Text>
           <Text className="text-gray-400 text-center mt-2">Stage has ended or not started yet</Text>
-          {/* <TouchableOpacity
-            className="mt-6 bg-blue-500 px-6 py-3 rounded-full"
-            onPress={() => Alert.alert("Stage has started yet")}
-          >
-            <Text className="text-white font-medium">Add Players</Text>
-          </TouchableOpacity> */}
         </View>
       )
     }
@@ -133,17 +128,7 @@ const ViewTeam = () => {
             end={{ x: 1, y: 0 }}
           >
             <View className="flex-row justify-between items-center">
-              {/* <View>
-                <TouchableOpacity
-                  onPress={() => Alert.alert("Edit Team", "Edit your team details")}
-                  className="bg-blue-500 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-white font-medium">Edit</Text>
-                </TouchableOpacity>
-              </View> */}
-
               <View className="items-end">
-                {/* <Text className="text-blue-900 text-xs font-medium uppercase tracking-wide">Points</Text> */}
                 <View className="flex-row items-center mt-1">
                   <MaterialCommunityIcons name="star" size={18} color="#1D4ED8" />
                   <Text className="font-bold text-blue-800 text-lg ml-1">{totalPoints} Points</Text>
