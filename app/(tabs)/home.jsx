@@ -20,15 +20,12 @@ import { useAuth } from "../context/AuthContext";
 import { Alert } from "react-native";
 import StatisticsCard from "../components/HomeSVGCard";
 import MatchCard from "../components/MatchCard"; // Used for upcoming matches
-import api from "../config/axios";
+import api from "../config/axios"; // Assuming this is your configured Axios instance
 import TournamentResult from "../components/TournamentResult"; // Import the updated card
-// useNavigation import removed as it's not used directly in this component's logic
-// import { useNavigation } from "@react-navigation/native";
 
 const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
-  // navigation constant removed
   const { signOut, userData } = useAuth();
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
   const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 });
@@ -39,15 +36,22 @@ const HomeScreen = () => {
   const [loadingUpcoming, setLoadingUpcoming] = useState(true);
   const [errorUpcoming, setErrorUpcoming] = useState(null);
 
-  const [tournaments, setTournaments] = useState([]); // State for the tournament list
+  const [tournaments, setTournaments] = useState([]);
   const [loadingTournaments, setLoadingTournaments] = useState(true);
   const [errorTournaments, setErrorTournaments] = useState(null);
+  const [tournamentJoinedCount, setTournamentJoinedCount] = useState(0);
 
-  const [refreshing, setRefreshing] = useState(false);
+  // --- State for User Teams Data (NEW) ---
+  const [userTeamsData, setUserTeamsData] = useState([]);
+  const [loadingUserTeams, setLoadingUserTeams] = useState(true);
+  const [errorUserTeams, setErrorUserTeams] = useState(null);
   // --- End State ---
 
-  // --- Data Fetching Functions (Unchanged) ---
+  const [refreshing, setRefreshing] = useState(false);
+
+  // --- Data Fetching Functions ---
   const fetchUpcomingMatches = useCallback(async (isRefreshing = false) => {
+    // ... (keep existing implementation)
     if (!isRefreshing) setLoadingUpcoming(true);
     setErrorUpcoming(null);
     try {
@@ -68,64 +72,127 @@ const HomeScreen = () => {
   }, []);
 
   const fetchTournaments = useCallback(async (isRefreshing = false) => {
+    // ... (keep existing implementation)
     if (!isRefreshing) setLoadingTournaments(true);
     setErrorTournaments(null);
     try {
       const response = await api.get("/tournaments/getTournamentsByUserId");
       if (response.data?.success && Array.isArray(response.data.data)) {
         setTournaments(response.data.data);
+        setTournamentJoinedCount(
+          response.data.data.filter((tournament) => tournament).length // Assuming non-null means joined
+        );
       } else {
         setTournaments([]);
+        setTournamentJoinedCount(0); // Reset count if no data
       }
     } catch (err) {
       setErrorTournaments(
         err.response?.data?.message || "Failed to load tournaments."
       );
       setTournaments([]);
+      setTournamentJoinedCount(0); // Reset count on error
     } finally {
       if (!isRefreshing) setLoadingTournaments(false);
     }
   }, []);
 
-  // --- Initial Data Load (Unchanged) ---
+  // --- Fetch User Teams Data (NEW) ---
+  // Assuming your endpoint is something like '/teams/getUserTeams'
+  // Adjust the endpoint ('/teams/getUserTeams') if necessary
+  const fetchUserTeams = useCallback(async (isRefreshing = false) => {
+    if (!isRefreshing) setLoadingUserTeams(true);
+    setErrorUserTeams(null);
+    try {
+      // IMPORTANT: Replace '/teams/getUserTeams' with your actual endpoint for fetching user-specific teams
+      const response = await api.get("/teams");
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setUserTeamsData(response.data.data);
+      } else {
+        setUserTeamsData([]); // Set empty array if response is not as expected
+      }
+    } catch (err) {
+      console.error("Error fetching user teams:", err); // Log the error
+      setErrorUserTeams(
+        err.response?.data?.message || "Failed to load your team points."
+      );
+      setUserTeamsData([]); // Clear data on error
+    } finally {
+      if (!isRefreshing) setLoadingUserTeams(false);
+    }
+  }, []); // Add dependencies if needed (e.g., user ID if required by API)
+
+  // --- Initial Data Load ---
   useEffect(() => {
     fetchUpcomingMatches();
     fetchTournaments();
-  }, [fetchUpcomingMatches, fetchTournaments]);
+    fetchUserTeams(); // Fetch user teams on initial load
+  }, [fetchUpcomingMatches, fetchTournaments, fetchUserTeams]); // Add fetchUserTeams dependency
 
-  // --- Refresh Handler (Unchanged) ---
+  // --- Refresh Handler ---
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Clear errors on refresh
     setErrorUpcoming(null);
     setErrorTournaments(null);
-    await Promise.all([fetchUpcomingMatches(true), fetchTournaments(true)]);
+    setErrorUserTeams(null); // Clear user teams error on refresh
+    await Promise.all([
+      fetchUpcomingMatches(true),
+      fetchTournaments(true),
+      fetchUserTeams(true), // Refresh user teams data
+    ]);
     setRefreshing(false);
-  }, [fetchUpcomingMatches, fetchTournaments]);
+  }, [fetchUpcomingMatches, fetchTournaments, fetchUserTeams]); // Add fetchUserTeams dependency
+
+  // --- Render Item for Tournament Points FlatList ---
+  // This function already uses item.totalPoints correctly
+  const renderTournamentPointsItem = ({ item }) => {
+    // 'item' here is a team object from the userTeamsData array
+    const tournamentName = item.tournamentId?.name || "Unknown Tournament";
+    const points = item.totalPoints ?? 0; // Use nullish coalescing for default
+
+    return (
+      <View className="bg-neutral-700 p-4 mt-6 rounded-lg w-36 h-24 mr-3 justify-between items-center">
+        <Text
+          className="text-neutral-200 text-2xl font-bold text-center"
+          numberOfLines={1}
+        >
+          {points}
+        </Text>
+        <Text
+          className="text-neutral-400 text-xs text-center mt-1"
+          numberOfLines={2}
+        >
+          {tournamentName}
+        </Text>
+      </View>
+    );
+  };
 
   // --- Navigation Handlers (Unchanged) ---
   const handleTournamentSelect = useCallback(
     (tournament) => {
+      // ... (keep existing implementation)
       if (!tournament?._id) return;
       router.push({
-        pathname: `/components/MatchResultsScreen`,
+        pathname: `/components/MatchResultsScreen`, // Ensure this path is correct
         params: {
           tournamentName: tournament.name,
           tournamentId: tournament._id,
         },
       });
     },
-    [router] // Dependency on router from expo-router
+    [router]
   );
 
   // --- Render Item for Upcoming Matches FlatList (Unchanged) ---
   const renderUpcomingMatchItem = ({ item }) => {
+    // ... (keep existing implementation)
     const matchDataForCard = {
       id: item._id,
-      sport: "football",
+      sport: "football", // Assuming football, adjust if needed
       matchName: item.matchName,
       matchDate: item.matchDate,
-      status: "UPCOMING",
+      status: "UPCOMING", // Or derive from item data if available
     };
     return (
       <View className="mx-2">
@@ -136,6 +203,7 @@ const HomeScreen = () => {
 
   // --- Modal Handlers (Unchanged) ---
   const handleLogout = () => {
+    // ... (keep existing implementation)
     Alert.alert(
       "Logout",
       "Are you sure you want to logout?",
@@ -147,6 +215,8 @@ const HomeScreen = () => {
           onPress: async () => {
             try {
               await signOut();
+              // Optional: Navigate to login screen after logout if needed
+              // router.replace('/login'); // Example using expo-router
             } catch (error) {
               console.error("Logout error:", error);
               Alert.alert("Error", "Failed to logout.");
@@ -158,27 +228,32 @@ const HomeScreen = () => {
     );
   };
   const handleMoreNavigation = () => {
+    // ... (keep existing implementation)
     setOptionsModalVisible(false);
-    router.push("/more");
+    router.push("/more"); // Ensure this path is correct
   };
   const showOptionsMenu = () => {
+    // ... (keep existing implementation)
     profileImageRef.current?.measure((fx, fy, w, h, px, py) => {
+      // Adjust calculations if needed based on layout
       const topOffset = py + h + 5;
-      const rightOffset = width - (px + w);
+      const rightOffset = Dimensions.get("window").width - (px + w);
       setModalPosition({ top: topOffset, right: rightOffset });
       setOptionsModalVisible(true);
     });
   };
   // --- End Modal Handlers ---
 
-  // Helper flags to determine if sections should be shown
+  // Helper flags updated to use new state
   const showUpcomingMatchesSection =
     !loadingUpcoming && !errorUpcoming && upcomingMatches.length > 0;
   const showTournamentsSection =
     !loadingTournaments && !errorTournaments && tournaments.length > 0;
+  // --- Updated Condition for Points Section (Uses new state) ---
+  const showPointsSection =
+    !loadingUserTeams && !errorUserTeams && userTeamsData.length > 0;
 
   return (
-    // Use bg-neutral-800 to match MatchResultsScreen
     <SafeAreaView className="flex-1 bg-neutral-800">
       <ScrollView
         contentContainerStyle={{ paddingBottom: 40 }}
@@ -187,15 +262,15 @@ const HomeScreen = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor="#ccc"
-            colors={["#ccc"]}
-            progressBackgroundColor="#444" // Use a darker color matching the theme
+            tintColor="#ccc" // iOS spinner color
+            colors={["#ccc"]} // Android spinner color(s)
+            progressBackgroundColor="#444" // Android spinner background
           />
         }
       >
-        {/* --- Header --- */}
-        {/* Use text-neutral-200 and text-neutral-400 for consistency */}
+        {/* --- Header (Unchanged) --- */}
         <View className="px-4 pt-4">
+          {/* ... (keep existing header JSX) */}
           <View className="flex-row justify-between items-center ">
             <Text className="text-neutral-200 font-semibold text-xl">
               Hi,{" "}
@@ -215,7 +290,7 @@ const HomeScreen = () => {
                 source={{
                   uri:
                     userData?.profileUrl ||
-                    "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
+                    "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png", // Default placeholder
                 }}
                 className="h-10 w-10 rounded-full"
               />
@@ -224,34 +299,61 @@ const HomeScreen = () => {
           <Text className="text-neutral-400 text-sm">Welcome back</Text>
         </View>
 
-        {/* --- Statistics Card --- */}
+        {/* --- Statistics Card (Unchanged) --- */}
         <View className="mt-6">
+          {/* ... (keep existing StatisticsCard JSX) */}
           <StatisticsCard
-            scoreEarned={userData?.scoreEarned || "0"}
-            gamesPlayed={userData?.gamesPlayed || "0"}
+            scoreEarned={userData?.scoreEarned || "0"} // Assuming scoreEarned comes from userData
+            tournamentJoined={tournamentJoinedCount} // Use state variable
           />
         </View>
 
-        {/* --- Games Played and Stats --- */}
-        {/* Use bg-neutral-700 and text-neutral-200/400 */}
-        <View className="flex-row justify-between items-center px-4 mt-6">
-          <View className="bg-neutral-700 p-4 rounded-lg flex-1 mr-2 items-center">
-            <Text className="text-neutral-200 text-lg font-bold">
-              {userData?.ranking || "-"}
-            </Text>
-            <Text className="text-neutral-400 text-sm mt-1">Ranking</Text>
-          </View>
-          <View className="bg-neutral-700 p-4 rounded-lg flex-1 ml-2 items-center">
-            <Text className="text-neutral-200 text-lg font-bold">
-              {userData?.matchesPlayed || "0"}
-            </Text>
-            <Text className="text-neutral-400 text-sm mt-1">
-              Matches Played
+        {/* --- Tournament Points Section (Conditional Rendering - Uses new state) --- */}
+        {/* Show loading indicator for points */}
+        {loadingUserTeams && !refreshing && (
+          <View className="mt-4 h-24 justify-center items-center px-4">
+            <ActivityIndicator size="small" color="#ccc" />
+            <Text className="text-neutral-400 mt-2 text-xs">
+              Loading Points...
             </Text>
           </View>
-        </View>
+        )}
+        {/* Show error message for points */}
+        {errorUserTeams && !refreshing && (
+          <View className="mt-4 h-24 justify-center items-center px-4">
+            <Text className="text-red-400 text-center text-xs">
+              {errorUserTeams}
+            </Text>
+          </View>
+        )}
+        {/* Show the FlatList only if data is loaded, no error, and not empty */}
+        {showPointsSection && !refreshing && (
+          <FlatList
+            data={userTeamsData} // Use the fetched user teams data
+            horizontal
+            renderItem={renderTournamentPointsItem}
+            keyExtractor={(item) => item._id} // Use team _id as key
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingVertical: 12, // Added some vertical padding
+            }}
+          />
+        )}
+        {/* Optional: Show 'No points' message */}
+        {!loadingUserTeams &&
+          !errorUserTeams &&
+          userTeamsData.length === 0 &&
+          !refreshing && (
+            <View className="mt-4 h-10 justify-center items-center px-4">
+              <Text className="text-neutral-500 text-center text-xs">
+                No tournament points found yet.
+              </Text>
+            </View>
+          )}
 
-        {/* --- Upcoming Matches Section (Conditional Rendering) --- */}
+        {/* --- Upcoming Matches Section (Conditional Rendering - Unchanged) --- */}
+        {/* ... (keep existing upcoming matches JSX with loading/error/data states) */}
         {/* Show loading indicator */}
         {loadingUpcoming && !refreshing && (
           <View className="mt-8 h-40 justify-center items-center">
@@ -282,7 +384,7 @@ const HomeScreen = () => {
               renderItem={renderUpcomingMatchItem}
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={{
-                paddingHorizontal: 10,
+                paddingHorizontal: 10, // Adjust padding as needed
                 paddingVertical: 5,
               }}
             />
@@ -300,7 +402,8 @@ const HomeScreen = () => {
             </View>
           )}
 
-        {/* --- Tournament Results Section (Conditional Rendering) --- */}
+        {/* --- Tournament Results Section (Conditional Rendering - Unchanged) --- */}
+        {/* ... (keep existing tournament results JSX with loading/error/data states) */}
         {/* Show loading indicator */}
         {loadingTournaments && !refreshing && (
           <View className="mt-8 pb-10 items-center">
@@ -323,6 +426,7 @@ const HomeScreen = () => {
               Tournament Results
             </Text>
             <View className="pb-10 items-center">
+              {/* Use map for tournaments */}
               {tournaments.map((tournament) => (
                 <TournamentResult
                   key={tournament._id}
@@ -346,7 +450,8 @@ const HomeScreen = () => {
           )}
       </ScrollView>
 
-      {/* Options Modal (Profile/Logout) */}
+      {/* Options Modal (Profile/Logout - Unchanged) */}
+      {/* ... (keep existing modal JSX) */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -364,10 +469,10 @@ const HomeScreen = () => {
               {
                 top: modalPosition.top,
                 right: modalPosition.right,
-                backgroundColor: "#2d2d2d",
-              }, // Use a slightly lighter dark bg
+                backgroundColor: "#2d2d2d", // Use a slightly lighter dark bg if desired
+              },
             ]}
-            onStartShouldSetResponder={() => true} // Prevents touch from passing through
+            onStartShouldSetResponder={() => true} // Prevents touch from passing through modal
           >
             {/* Use text-neutral-200 */}
             <TouchableOpacity
@@ -391,8 +496,8 @@ const HomeScreen = () => {
               className="active:bg-neutral-600"
             >
               <Text
-                style={[styles.optionButtonText, styles.logoutText]}
-                className="text-red-500"
+                style={[styles.optionButtonText, styles.logoutText]} // Keep base styles
+                className="text-red-500" // Apply color via className
               >
                 Logout
               </Text>
@@ -404,15 +509,15 @@ const HomeScreen = () => {
   );
 };
 
-// Styles for Modal - Keep these as StyleSheet for simplicity with positioning/overlay
+// Styles for Modal (Unchanged)
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1 },
   optionsModalView: {
     position: "absolute",
-    // backgroundColor: "#2d2d2d", // Moved inline with className for override
+    // backgroundColor: "#2d2d2d", // Moved inline for dynamic positioning override
     borderRadius: 10,
     overflow: "hidden",
-    width: 150,
+    width: 150, // Adjust width as needed
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
@@ -423,7 +528,8 @@ const styles = StyleSheet.create({
   optionButtonText: { fontSize: 15 }, // Base font size
   logoutText: {
     /* color: "#ff4b2b" */
-  }, // Color handled by className
+    // Color handled by className
+  },
   separator: { height: StyleSheet.hairlineWidth /* backgroundColor: "#555" */ }, // Color handled by className
 });
 

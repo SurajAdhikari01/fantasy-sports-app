@@ -5,7 +5,7 @@ const { width, height } = Dimensions.get("window");
 const adjustedWidth = width * 0.9;
 const adjustedHeight = height * 0.23;
 
-const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
+const StatisticsCard = ({ scoreEarned, tournamentJoined }) => (
   <View className="mt-6 items-center">
     <View className="relative">
       <View
@@ -13,8 +13,8 @@ const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
           adjustedHeight * 0.3
         }px] right-0 p-8 z-10 pt-24 items-end`}
       >
-        <Text className="text-white text-2xl">{gamesPlayed}</Text>
-        <Text className="text-white mt-2">Games Played</Text>
+        <Text className="text-white text-2xl">{tournamentJoined}</Text>
+        <Text className="text-white mt-2">Tournament</Text>
       </View>
 
       <Svg
