@@ -10,16 +10,15 @@ import {
 import { LinearGradient } from "expo-linear-gradient"; // Use expo-linear-gradient
 import { styled } from "nativewind";
 
-const teamPlaceholder = "https://via.placeholder.com/50";
 import cricketBg from "../../assets/cricketbg.png"; // Ensure this path is correct
 import footballBg from "../../assets/footballbg.png"; // Ensure this path is correct
 
 const StyledGradient = styled(LinearGradient);
 const screenWidth = Dimensions.get("window").width; // Get device screen width
 
-const UpcomingMatchCard = ({ match, onPress }) => {
-  const backgroundImg = match.sport === "football" ? footballBg : cricketBg;
-  const emoji = match.sport === "football" ? "⚽️" : "🏏"; // Set the emoji based on the sport
+const TournamentResult = ({ tournamentName, onPress }) => {
+  const backgroundImg = footballBg;
+  const emoji = "⚽️"; // Set the emoji based on the sport
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.cardContainer}>
@@ -46,7 +45,7 @@ const UpcomingMatchCard = ({ match, onPress }) => {
               numberOfLines={1} // Limit to 1 line
               ellipsizeMode="tail" // Add ellipsis (...) if text overflows
             >
-              {match.team1} vs {match.team2}
+              {tournamentName}
             </Text>
           </View>
         </View>
@@ -97,4 +96,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default UpcomingMatchCard;
+export default TournamentResult;

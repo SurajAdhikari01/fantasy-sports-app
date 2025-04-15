@@ -54,7 +54,7 @@ export default function AdminTabsLayout() {
           <Tabs.Screen
             name="liveMatches"
             options={{
-              tabBarLabel: "Live Matches",
+              tabBarLabel: "Live Stages",
               tabBarIcon: ({ color }) => (
                 <Ionicons name="pulse" size={24} color={color} />
               ),

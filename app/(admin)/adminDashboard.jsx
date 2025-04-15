@@ -34,7 +34,9 @@ const AdminDashboard = () => {
       setLoading(true);
       try {
         // Assuming this endpoint gets tournaments created by the logged-in admin user
-        const response = await api.get("tournaments/getTournamentsByUserId");
+        const response = await api.get(
+          "tournaments/getTournamentsByUserIdAdmin"
+        );
         if (response.data && Array.isArray(response.data.data)) {
           setTournaments(response.data.data);
         } else {
@@ -236,6 +238,26 @@ const AdminDashboard = () => {
                     />
                     <StyledText className="text-white text-center font-bold text-base">
                       Add Players
+                    </StyledText>
+                  </StyledTouchableOpacity>
+                  <StyledTouchableOpacity
+                    className="bg-blue-600 p-3 rounded-lg flex-row justify-center items-center shadow"
+                    onPress={() => {
+                      // Pass the specific tournament from the map iteration
+                      router.push({
+                        pathname: "../adminComponents/CreateFixtureScreen",
+                        params: { tournament: JSON.stringify(tournament) },
+                      });
+                    }}
+                  >
+                    <Ionicons
+                      name="add-outline"
+                      size={20}
+                      color="white"
+                      style={styles.buttonIconStyle}
+                    />
+                    <StyledText className="text-white text-center font-bold text-base">
+                      Add Upcoming Match
                     </StyledText>
                   </StyledTouchableOpacity>
                 </StyledView>
