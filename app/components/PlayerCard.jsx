@@ -25,7 +25,7 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
           alignItems: "center",
           justifyContent: "center",
           width: 64,
-          height: 90, // Increased height to accommodate name below
+          height: 100, 
         }}
       >
         <View
@@ -57,7 +57,6 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
             )}
           </TouchableOpacity>
 
-          {/* Points badge - only shown in VIEW_TEAM mode and when points exist */}
           {isViewTeam && playerPoints !== undefined && (
             <View style={styles.pointsBadge}>
               <Text style={styles.pointsText}>{playerPoints}</Text>

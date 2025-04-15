@@ -146,7 +146,7 @@ const calculatePositions = (numPlayers, teamData) => {
   combinedDef.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * defSpacing,
+      x: combinedDef.length === 1 ? centerX : 5 + (index + 1) * defSpacing,
       y: defY,
       section: "defenders",
       positionId: player ? `def-${index}` : `empty-def-${index}`,
@@ -158,19 +158,20 @@ const calculatePositions = (numPlayers, teamData) => {
   combinedMid.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * midSpacing,
+      x: combinedMid.length === 1 ? centerX : 5 + (index + 1) * midSpacing,
       y: midY + (index % 2 === 0 ? -3 : 3),
       section: "midfielders",
       positionId: player ? `mid-${index}` : `empty-mid-${index}`,
     });
   });
 
+
   // FWD (always render at least 1 if dist.fwd >= 1)
   const fwdSpacing = fieldWidth / (combinedFwd.length + 1);
   combinedFwd.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * fwdSpacing,
+      x: combinedFwd.length === 1 ? centerX : 5 + (index + 1) * fwdSpacing,
       y: fwdY,
       section: "forwards",
       positionId: player ? `fwd-${index}` : `empty-fwd-${index}`,

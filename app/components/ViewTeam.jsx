@@ -13,7 +13,7 @@ import {
   viewModeState,
   totalPointsState,
   teamIdState,
-  teamDataState,
+  currentRoundState,
 } from "./atoms"
 import api from "../config/axios"
 
@@ -31,16 +31,23 @@ const ViewTeam = () => {
   const playerLimit = useRecoilValue(playerLimitState)
   const [totalPoints, setTotalPoints] = useRecoilState(totalPointsState)
   const teamId = useRecoilValue(teamIdState)
+  const currentRound = useRecoilValue(currentRoundState) // "knockout" | "semifinal" | "final"
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
   const resetFetchedPlayers = useResetRecoilState(fetchedPlayersState)
   const resetViewMode = useResetRecoilState(viewModeState)
 
+  // On mount/update: set currentStage according to currentRound atom
+  useEffect(() => {
+    if (currentRound && ["knockout", "semifinal", "final"].includes(currentRound)) {
+      setCurrentStage(currentRound)
+    }
+  }, [currentRound])
+
   useEffect(() => {
     if (selectedTournament) {
       fetchTournamentPlayers()
-      //console.log("playerlimit view team", playerLimit)
     }
   }, [selectedTournament, currentStage])
 
@@ -52,8 +59,7 @@ const ViewTeam = () => {
 
       if (response.data.success) {
         const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
-        // console.log("teamForTournament", teamForTournament.totalPoints)
-        setTotalPoints(teamForTournament.totalPoints || 0)
+        setTotalPoints(teamForTournament?.totalPoints || 0)
         if (teamForTournament) {
           const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
             ...p,
@@ -80,7 +86,6 @@ const ViewTeam = () => {
       Alert.alert("Error", "No team found to edit");
       return;
     }
-    //console.log("teamId for editteam", teamId)
     router.push('components/EditTeam');
   };
 
@@ -88,37 +93,95 @@ const ViewTeam = () => {
     resetSelectedTournament()
     resetFetchedPlayers()
     resetViewMode()
-    // router.back() //not needed as selectedTournament reset vayesi afai back janxa
+  }
+
+  // PROMPT LOGIC
+  const renderStagePrompt = () => {
+    // If viewing a stage that has ended, or not the current round, show correct prompt
+    // currentStage: the tab the user is on
+    // currentRound: atom, the active round in tournament
+
+    if (currentRound === "semifinal") {
+      if (currentStage === "knockout") {
+        return (
+          <View className="bg-yellow-900 border border-yellow-700 rounded-lg px-4 py-3 mb-2 mx-2">
+            <Text className="text-yellow-300 font-medium">
+              Knockout has ended. Please proceed to Semifinal or Final.
+            </Text>
+          </View>
+        )
+      }
+      if (currentStage === "semifinal") {
+        return (
+          <View className="bg-emerald-900 border border-emerald-700 rounded-lg px-4 py-3 mb-2 mx-2">
+            <Text className="text-emerald-300 font-medium">
+              Semifinal has started. Please click "Edit Team" to change your team for the Semifinal.
+            </Text>
+          </View>
+        )
+      }
+      if (currentStage === "final") {
+        return (
+          <View className="bg-yellow-900 border border-yellow-700 rounded-lg px-4 py-3 mb-2 mx-2">
+            <Text className="text-yellow-300 font-medium">
+              Please proceed to Final.
+            </Text>
+          </View>
+        )
+      }
+    }
+    if (currentRound === "final") {
+      if (currentStage === "knockout" || currentStage === "semifinal") {
+        return (
+          <View className="bg-yellow-900 border border-yellow-700 rounded-lg px-4 py-3 mb-2 mx-2">
+            <Text className="text-yellow-300 font-medium">
+              Please proceed to Final.
+            </Text>
+          </View>
+        )
+      }
+      if (currentStage === "final") {
+        return (
+          <View className="bg-emerald-900 border border-emerald-700 rounded-lg px-4 py-3 mb-2 mx-2">
+            <Text className="text-emerald-300 font-medium">
+              Final has started. Please click "Edit Team" to change your team for the Final.
+            </Text>
+          </View>
+        )
+      }
+    }
+    return null;
   }
 
   const renderContent = () => {
-    if (players.length === 0) {
-      return (
-        <View className="flex-1 justify-center items-center">
-          <MaterialCommunityIcons name="account-group-outline" size={64} color="#334155" />
-          <Text className="text-slate-400 text-lg font-medium text-center mt-4">No players found</Text>
-          <Text className="text-slate-500 text-center mt-2">Stage has ended or not started yet</Text>
-        </View>
-      )
-    }
-
     return (
       <View className="flex-1">
-        <View style={{ height: screenHeight * 0.6, marginBottom: 16 }}>
-          <PitchView
-            teamData={{ all: players }}
-            handlePlayerPress={(player) => Alert.alert(player.name, `Price: ${player.price || "N/A"}`)}
-            handleOpenPlayerSelection={(section, positionId, position) =>
-              Alert.alert("Add Player", `Add player to ${section} position`)
-            }
-            handleRemovePlayer={(player) =>
-              Alert.alert("Remove Player", `Remove ${player.name} from team?`, [
-                { text: "Cancel", style: "cancel" },
-                { text: "Remove", style: "destructive" },
-              ])
-            }
-          />
-        </View>
+        {/* PROMPT */}
+        {renderStagePrompt()}
+
+        {players.length === 0 ? (
+          <View className="flex-1 justify-center items-center">
+            <MaterialCommunityIcons name="account-group-outline" size={64} color="#334155" />
+            <Text className="text-slate-400 text-lg font-medium text-center mt-4">No players found</Text>
+            <Text className="text-slate-500 text-center mt-2">Stage has ended or not started yet</Text>
+          </View>
+        ) : (
+          <View style={{ height: screenHeight * 0.6, marginBottom: 16 }}>
+            <PitchView
+              teamData={{ all: players }}
+              handlePlayerPress={(player) => Alert.alert(player.name, `Price: ${player.price || "N/A"}`)}
+              handleOpenPlayerSelection={(section, positionId, position) =>
+                Alert.alert("Add Player", `Add player to ${section} position`)
+              }
+              handleRemovePlayer={(player) =>
+                Alert.alert("Remove Player", `Remove ${player.name} from team?`, [
+                  { text: "Cancel", style: "cancel" },
+                  { text: "Remove", style: "destructive" },
+                ])
+              }
+            />
+          </View>
+        )}
 
         {/* Squad Status */}
         <View className="mb-6 mx-2">
