@@ -1,5 +1,6 @@
 import { atom, atomFamily, selector } from "recoil";
 
+
 // Default sport is set to football
 export const sportState = atom({
   key: "sportState",
@@ -18,12 +19,12 @@ export const viewModeState = atom({
 
 export const totalPointsState = atom({
   key: "totalPointsState",
-  default: 0, 
+  default: 0,
 });
 
 export const playerLimitState = atom({
   key: "playerLimitState",
-  default: 0,
+  default: 10,
 });
 
 export const teamDataState = atom({
@@ -34,21 +35,6 @@ export const teamDataState = atom({
 export const franchisesState = atom({
   key: "franchisesState",
   default: [],
-});
-
-export const filterRoleState = atom({
-  key: "filterRoleState",
-  default: "All",
-});
-
-export const sortByState = atomFamily({
-  key: "sortByState",
-  default: "points",
-});
-
-export const selectedPlayerState = atomFamily({
-  key: "selectedPlayerState",
-  default: null,
 });
 
 export const showPlayerStatsState = atomFamily({
@@ -69,32 +55,6 @@ export const selectedSectionState = atomFamily({
 export const fetchedPlayersState = atom({
   key: "fetchedPlayersState",
   default: [],
-});
-
-export const selectedFranchiseState = atom({
-  key: "selectedFranchiseState",
-  default: null,
-});
-
-export const filteredAvailablePlayersState = selector({
-  key: "filteredAvailablePlayersState",
-  get: ({ get }) => {
-    const filterRole = get(filterRoleState);
-    const sortBy = get(sortByState("default"));
-    const teamData = get(teamDataState);
-    const fetchedPlayers = get(fetchedPlayersState);
-
-    const teamPlayers = Object.values(teamData).flat();
-    let players = fetchedPlayers.filter(
-      (player) => !teamPlayers.some((p) => p._id === player._id)
-    );
-
-    if (filterRole !== "All") {
-      players = players.filter((p) => p.role === filterRole);
-    }
-
-    return [...players].sort((a, b) => b[sortBy] - a[sortBy]);
-  },
 });
 
 export const totalPlayersState = selector({

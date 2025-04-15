@@ -13,6 +13,7 @@ import {
   viewModeState,
   totalPointsState,
   teamIdState,
+  teamDataState,
 } from "./atoms"
 import api from "../config/axios"
 
@@ -30,19 +31,21 @@ const ViewTeam = () => {
   const playerLimit = useRecoilValue(playerLimitState)
   const totalPoints = useRecoilValue(totalPointsState)
   const teamId = useRecoilValue(teamIdState)
+  const [teamData, setTeamData] = useRecoilState(teamDataState)
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
-  const resetPlayerLimit = useResetRecoilState(playerLimitState)
   const resetFetchedPlayers = useResetRecoilState(fetchedPlayersState)
   const resetViewMode = useResetRecoilState(viewModeState)
 
   useEffect(() => {
     if (selectedTournament) {
       fetchTournamentPlayers()
+      console.log("playerlimit view team", playerLimit)
     }
   }, [selectedTournament, currentStage])
 
+  //fetches team
   const fetchTournamentPlayers = async () => {
     try {
       setLoading(true)
@@ -77,13 +80,12 @@ const ViewTeam = () => {
       Alert.alert("Error", "No team found to edit");
       return;
     }
-    console.log("teamId", teamId)
+    console.log("teamId for editteam", teamId)
     router.push('components/EditTeam');
   };
 
   const handleBack = () => {
     resetSelectedTournament()
-    resetPlayerLimit()
     resetFetchedPlayers()
     resetViewMode()
     // router.back() //not needed as selectedTournament reset vayesi afai back janxa

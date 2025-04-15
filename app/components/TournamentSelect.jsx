@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Image, Dimensions } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TabView, SceneMap, TabBar } from "react-native-tab-view";
+import { TabView, SceneMap } from "react-native-tab-view";
 import api from "../config/axios";
 import { useRecoilState } from "recoil";
 import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState, teamIdState } from "./atoms";
@@ -39,17 +39,14 @@ const TournamentSelect = () => {
     try {
       setLoading(true);
 
-      // Fetch joined tournaments
-      const joinedResponse = await api.get("/teams");
+      const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
       if (joinedResponse.data.success) {
         setJoinedTournaments(joinedResponse.data.data || []);
       } else {
         Alert.alert("Error", joinedResponse.data.message || "Failed to fetch joined tournaments");
       }
 
-      // Fetch available tournaments
       const availableResponse = await api.get("/tournaments/getAllTournaments");
-      // console.log("Available tournaments response:", availableResponse.data);
       if (availableResponse.data.success) {
         setAvailableTournaments(availableResponse.data.data || []);
       } else {
@@ -93,27 +90,25 @@ const TournamentSelect = () => {
   const renderJoinedTournamentItem = ({ item }) => (
     <View className="bg-white rounded-xl shadow-sm p-5 mb-4 mx-4 border border-gray-100">
       <View className="flex-row justify-between items-start">
-        <Text className="text-xl font-bold text-gray-800 flex-1">{item.tournamentId.name}</Text>
+        <Text className="text-xl font-bold text-gray-800 flex-1">{item.name}</Text>
         <View className="bg-green-100 px-3 py-1 rounded-full">
           <Text className="text-green-800 font-semibold text-xs">Joined</Text>
         </View>
       </View>
 
       <View className="mt-4">
-        <View className="flex-row items-center mb-2">
-          <Ionicons name="trophy" size={18} color="#4b5563" />
-          <Text className="text-gray-700 ml-2 font-medium">Total Points: {item.totalPoints || 0}</Text>
-        </View>
-
         <View className="flex-row flex-wrap">
           <View className="flex-row items-center mr-4 mb-2">
             <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-2 text-sm">Knockout: {new Date(item.tournamentId.knockoutStart).toLocaleDateString()}</Text>
+            <Text className="text-gray-600 ml-2 text-sm">Knockout: {item.knockoutStart ? new Date(item.knockoutStart).toLocaleDateString() : "N/A"}</Text>
           </View>
-
           <View className="flex-row items-center mr-4 mb-2">
             <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-2 text-sm">Semifinal: {new Date(item.tournamentId.semifinalStart).toLocaleDateString()}</Text>
+            <Text className="text-gray-600 ml-2 text-sm">Semifinal: {item.semifinalStart ? new Date(item.semifinalStart).toLocaleDateString() : "N/A"}</Text>
+          </View>
+          <View className="flex-row items-center mr-4 mb-2">
+            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
+            <Text className="text-gray-600 ml-2 text-sm">Final: {item.finalStart ? new Date(item.finalStart).toLocaleDateString() : "N/A"}</Text>
           </View>
         </View>
       </View>
@@ -121,16 +116,16 @@ const TournamentSelect = () => {
       <TouchableOpacity
         className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-blue-600 active:bg-blue-700"
         onPress={() => {
-          setSelectedTournament(item.tournamentId._id);
-          setTotalPoints(item.totalPoints);
-          setSelectedTournamentPlayers(item.players);
+          setSelectedTournament(item._id);
+          setTotalPoints(0); // Your endpoint does not provide totalPoints
+          setSelectedTournamentPlayers([]); // No player data, needs adjustment if you want to show players
           setViewMode('VIEW_TEAM');
           setTeamid(item._id);
-          console.log("Selected team ID: from tournament select", teamid);
+          setPlayerLimit(item.playerLimitPerTeam);
         }}
       >
         <Ionicons name="people" size={18} color="white" />
-        <Text className="text-white font-medium ml-2">View Team</Text>
+        <Text className="text-white font-medium ml-2">View Tournament</Text>
       </TouchableOpacity>
     </View>
   );
@@ -257,8 +252,8 @@ const TournamentSelect = () => {
         <TabView
           navigationState={{ index, routes }}
           renderScene={SceneMap({
-            joined: MyTournaments,
             available: AvailableTournaments,
+            joined: MyTournaments,
           })}
           onIndexChange={setIndex}
           initialLayout={{ width: Dimensions.get("window").width }}
