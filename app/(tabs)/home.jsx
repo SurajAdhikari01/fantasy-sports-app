@@ -246,7 +246,6 @@ const HomeScreen = () => {
         contentContainerStyle={{ paddingBottom: 20 }}
         showsVerticalScrollIndicator={false}
       >
-        {/* Header Section */}
         <View className="px-4">
           <View className="flex-row justify-between items-center ">
             <Text className="text-white font-semibold text-xl">
