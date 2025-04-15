@@ -31,6 +31,7 @@ import { SPORT_CONFIGS } from "./sportConfigs";
 import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTeamActions } from "./TeamActions";
+import TeamGuideModal from "./help"
 
 const EnhancedTeamView = ({ onSubmit }) => {
   // GLOBAL/RECOIL STATE
@@ -215,7 +216,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
     setIsLoading,
     router,
   });
-
+  const [guideVisible, setGuideVisible] = useState(false);
   // Loading indicator
   if (isLoading) {
     return (
@@ -231,7 +232,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
   const deadline = "Sat 25 Jan 19:15";
   const isOverBudget = parseFloat(teamValue) > SPORT_CONFIGS[sport].maxTeamValue;
 
-  
+
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
       <StatusBar barStyle="light-content" backgroundColor="#111827" />
@@ -256,10 +257,17 @@ const EnhancedTeamView = ({ onSubmit }) => {
         >
           <AntDesign name="arrowleft" size={22} color="white" />
         </TouchableOpacity>
-        <Text className="text-white text-xl font-bold">Create Team</Text>
-        <TouchableOpacity className="p-2 rounded-full bg-gray-700/80">
+        <Text className="text-white text-xl font-bold">
+          {isEditMode ? "Edit Team" : "Create Team"}
+        </Text>
+        <TouchableOpacity
+          className="p-2 rounded-full bg-gray-700/80"
+          onPress={() => setGuideVisible(true)}
+        >
           <AntDesign name="questioncircleo" size={22} color="white" />
         </TouchableOpacity>
+        <TeamGuideModal visible={guideVisible} onClose={() => setGuideVisible(false)} />
+
       </Animated.View>
 
       {/* Team Value Section */}

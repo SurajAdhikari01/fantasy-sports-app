@@ -89,9 +89,10 @@ const EditTeam = () => {
   }, [selectedTournament, sport]);
 
   const handleSubmit = async (currentTeamData) => {
-    const currentPlayerIds = Object.values(currentTeamData).flat().map(p => p._id);
+    const currentPlayerIds = Object.values(currentTeamData).flat().map(p => p._id).filter(Boolean);
     const addPlayers = currentPlayerIds.filter(id => !originalPlayerIds.includes(id));
     const removePlayers = originalPlayerIds.filter(id => !currentPlayerIds.includes(id));
+    console.log("submitting", { addPlayers, removePlayers });
 
     try {
       await api.put(`/teams/${teamId}`, { addPlayers, removePlayers });

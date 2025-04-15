@@ -8,13 +8,13 @@ import { useRecoilState } from "recoil";
 import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState, teamIdState } from "./atoms";
 import { viewModeState } from "./atoms";
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const TournamentSelect = () => {
   const [joinedTournaments, setJoinedTournaments] = useState([]);
   const [availableTournaments, setAvailableTournaments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState('joined');
   const router = useRouter();
 
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
@@ -28,7 +28,7 @@ const TournamentSelect = () => {
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: "joined", title: "My Tournaments" },
-    { key: "available", title: "Available" },
+    { key: "available", title: "Discover" },
   ]);
 
   useEffect(() => {
@@ -88,37 +88,37 @@ const TournamentSelect = () => {
   };
 
   const renderJoinedTournamentItem = ({ item }) => (
-    <View className="bg-white rounded-xl shadow-sm p-5 mb-4 mx-4 border border-gray-100">
+    <View className="bg-slate-800 rounded-xl shadow-lg p-5 mb-4 mx-4 border border-slate-700">
       <View className="flex-row justify-between items-start">
-        <Text className="text-xl font-bold text-gray-800 flex-1">{item.name}</Text>
-        <View className="bg-green-100 px-3 py-1 rounded-full">
-          <Text className="text-green-800 font-semibold text-xs">Joined</Text>
+        <Text className="text-xl font-bold text-white flex-1">{item.name}</Text>
+        <View className="bg-emerald-900 px-3 py-1 rounded-full">
+          <Text className="text-emerald-400 font-semibold text-xs">Joined</Text>
         </View>
       </View>
 
-      <View className="mt-4">
+      <View className="mt-4 bg-slate-700/50 p-3 rounded-lg">
         <View className="flex-row flex-wrap">
           <View className="flex-row items-center mr-4 mb-2">
-            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-2 text-sm">Knockout: {item.knockoutStart ? new Date(item.knockoutStart).toLocaleDateString() : "N/A"}</Text>
+            <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
+            <Text className="text-slate-300 ml-2 text-sm">Knockout: {item.knockoutStart ? new Date(item.knockoutStart).toLocaleDateString() : "N/A"}</Text>
           </View>
           <View className="flex-row items-center mr-4 mb-2">
-            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-2 text-sm">Semifinal: {item.semifinalStart ? new Date(item.semifinalStart).toLocaleDateString() : "N/A"}</Text>
+            <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
+            <Text className="text-slate-300 ml-2 text-sm">Semifinal: {item.semifinalStart ? new Date(item.semifinalStart).toLocaleDateString() : "N/A"}</Text>
           </View>
           <View className="flex-row items-center mr-4 mb-2">
-            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-2 text-sm">Final: {item.finalStart ? new Date(item.finalStart).toLocaleDateString() : "N/A"}</Text>
+            <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
+            <Text className="text-slate-300 ml-2 text-sm">Final: {item.finalStart ? new Date(item.finalStart).toLocaleDateString() : "N/A"}</Text>
           </View>
         </View>
       </View>
 
       <TouchableOpacity
-        className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-blue-600 active:bg-blue-700"
+        className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 active:opacity-90"
         onPress={() => {
           setSelectedTournament(item._id);
-          setTotalPoints(0); // Your endpoint does not provide totalPoints
-          setSelectedTournamentPlayers([]); // No player data, needs adjustment if you want to show players
+          setTotalPoints(0);
+          setSelectedTournamentPlayers([]);
           setViewMode('VIEW_TEAM');
           setTeamid(item._id);
           setPlayerLimit(item.playerLimitPerTeam);
@@ -131,23 +131,23 @@ const TournamentSelect = () => {
   );
 
   const renderAvailableTournamentItem = ({ item }) => (
-    <View className="bg-white rounded-xl shadow-md p-5 mb-4 border-l-4 border-blue-500 mx-4">
-      <Text className="text-xl font-bold text-gray-800">{item.name}</Text>
+    <View className="bg-slate-800 rounded-xl shadow-lg p-5 mb-4 mx-4 border-l-4 border-purple-500">
+      <Text className="text-xl font-bold text-white">{item.name}</Text>
 
-      <View className="mt-4 bg-gray-50 p-3 rounded-lg">
+      <View className="mt-4 bg-slate-700/50 p-3 rounded-lg">
         <View className="flex-row items-center mb-2">
-          <Ionicons name="person" size={18} color="#4b5563" />
-          <Text className="text-gray-700 ml-2 font-medium">Player Limit: {item.playerLimitPerTeam || "N/A"}</Text>
+          <Ionicons name="person" size={18} color="#94a3b8" />
+          <Text className="text-slate-300 ml-2 font-medium">Player Limit: {item.playerLimitPerTeam || "N/A"}</Text>
         </View>
 
         <View className="flex-row items-center">
-          <Ionicons name="alert-circle-outline" size={18} color="#4b5563" />
-          <Text className="text-gray-700 ml-2 font-medium">Registration Limit: {item.registrationLimits || "N/A"}</Text>
+          <Ionicons name="alert-circle-outline" size={18} color="#94a3b8" />
+          <Text className="text-slate-300 ml-2 font-medium">Registration Limit: {item.registrationLimits || "N/A"}</Text>
         </View>
       </View>
 
       <TouchableOpacity
-        className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-green-600 active:bg-green-700 shadow-sm"
+        className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 active:opacity-90 shadow-sm"
         onPress={() => handleJoinTournament(item._id, item.playerLimitPerTeam)}
       >
         <Ionicons name="add-circle" size={18} color="white" />
@@ -159,26 +159,25 @@ const TournamentSelect = () => {
   const renderEmptyState = () => (
     <View className="flex-1 justify-center items-center py-10">
       <Ionicons
-        name={activeTab === 'joined' ? "trophy-outline" : "calendar-outline"}
+        name={index === 0 ? "trophy-outline" : "calendar-outline"}
         size={64}
-        color="#d1d5db"
+        color="#475569"
       />
-      <Text className="text-gray-500 text-lg mt-4 text-center px-6">
-        {activeTab === 'joined'
+      <Text className="text-slate-400 text-lg mt-4 text-center px-6">
+        {index === 0
           ? "You haven't joined any tournaments yet"
           : "No tournaments available at the moment"}
       </Text>
       <TouchableOpacity
-        className="mt-6 px-6 py-3 bg-blue-100 rounded-full flex-row items-center"
+        className="mt-6 px-6 py-3 bg-slate-700 rounded-full flex-row items-center"
         onPress={fetchTournaments}
       >
-        <Ionicons name="refresh" size={18} color="#3b82f6" />
-        <Text className="text-blue-600 font-medium ml-2">Refresh</Text>
+        <Ionicons name="refresh" size={18} color="#a5b4fc" />
+        <Text className="text-indigo-300 font-medium ml-2">Refresh</Text>
       </TouchableOpacity>
     </View>
   );
 
-  //for swipe action;
   const MyTournaments = () => (
     <FlatList
       data={joinedTournaments}
@@ -190,8 +189,8 @@ const TournamentSelect = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#3b82f6']}
-          tintColor="#3b82f6"
+          colors={['#a78bfa']}
+          tintColor="#a78bfa"
         />
       }
     />
@@ -199,7 +198,9 @@ const TournamentSelect = () => {
 
   const AvailableTournaments = () => (
     <FlatList
-      data={availableTournaments}
+      data={availableTournaments.filter(tournament =>
+        !joinedTournaments.some(joined => joined._id === tournament._id)
+      )}
       keyExtractor={(item) => item._id}
       renderItem={renderAvailableTournamentItem}
       contentContainerClassName="pb-6 pt-2"
@@ -208,8 +209,8 @@ const TournamentSelect = () => {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          colors={['#3b82f6']}
-          tintColor="#3b82f6"
+          colors={['#a78bfa']}
+          tintColor="#a78bfa"
         />
       }
     />
@@ -217,16 +218,16 @@ const TournamentSelect = () => {
 
   const renderTabBar = (props) => {
     return (
-      <View className="flex-row mx-4 my-2 bg-gray-100 rounded-xl p-1">
+      <View className="flex-row mx-4 my-3 bg-slate-700 rounded-xl p-1">
         {props.navigationState.routes.map((route, i) => {
           const isActive = i === props.navigationState.index;
           return (
             <TouchableOpacity
               key={route.key}
-              className={`flex-1 items-center py-2 rounded-lg ${isActive ? 'bg-white shadow' : ''}`}
+              className={`flex-1 items-center py-2.5 rounded-lg ${isActive ? 'bg-slate-800' : ''}`}
               onPress={() => setIndex(i)}
             >
-              <Text className={`font-semibold ${isActive ? 'text-blue-600' : 'text-gray-500'}`}>
+              <Text className={`font-semibold ${isActive ? 'text-purple-400' : 'text-slate-400'}`}>
                 {route.title}
               </Text>
             </TouchableOpacity>
@@ -237,23 +238,30 @@ const TournamentSelect = () => {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView className="flex-1 bg-slate-900">
+      <LinearGradient
+        colors={['rgba(79, 70, 229, 0.15)', 'transparent']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        className="absolute top-0 left-0 right-0 h-64"
+      />
+      
       <View className="px-5 pt-4 pb-2">
-        <Text className="text-3xl font-bold text-gray-900 mb-1">Tournaments</Text>
-        <Text className="text-gray-500">Manage your teams and join new competitions</Text>
+        <Text className="text-3xl font-bold text-white mb-1">Tournaments</Text>
+        <Text className="text-slate-400">Manage your teams and join new competitions</Text>
       </View>
 
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text className="mt-3 text-gray-500">Loading tournaments...</Text>
+          <ActivityIndicator size="large" color="#a78bfa" />
+          <Text className="mt-3 text-slate-400">Loading tournaments...</Text>
         </View>
       ) : (
         <TabView
           navigationState={{ index, routes }}
           renderScene={SceneMap({
-            available: AvailableTournaments,
             joined: MyTournaments,
+            available: AvailableTournaments,
           })}
           onIndexChange={setIndex}
           initialLayout={{ width: Dimensions.get("window").width }}
