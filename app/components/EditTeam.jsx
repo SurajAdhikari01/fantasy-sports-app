@@ -1,172 +1,114 @@
-
-import { useState, useEffect } from "react"
-import { View, Text, TouchableOpacity, ActivityIndicator, Alert, ScrollView, Dimensions } from "react-native"
-import { SafeAreaView } from "react-native-safe-area-context"
-import { useRouter } from "expo-router"
-import { useRecoilState, useRecoilValue, useResetRecoilState } from "recoil"
-import { Ionicons, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons"
-import { LinearGradient } from "expo-linear-gradient"
-import PitchView from "./PitchView"
+import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
+import { useRecoilState, useRecoilValue, useSetRecoilState } from 'recoil';
+import { useRouter } from 'expo-router';
 import {
-    selectedTournamentState,
-    playerLimitState,
-    fetchedPlayersState,
-    viewModeState,
-    totalPointsState,
-    teamDataState,
-    teamIdState,
-} from "./atoms"
-import api from "../config/axios"
-import PlayerSelectionModal from "./PlayerSelectionModal"
+  teamDataState,
+  teamIdState,
+  sportState,
+  viewModeState,
+  selectedTournamentState,
+  playerLimitState,
+} from './atoms';
+import api from '../config/axios';
+import EnhancedTeamView from './EnhancedTeamView';
+import { SPORT_CONFIGS } from './sportConfigs';
 
-const { height: screenHeight } = Dimensions.get("window")
+function groupPlayersBySection(players, sport) {
+  const config = SPORT_CONFIGS[sport];
+  const teamData = {};
+  // Build an empty array per section
+  Object.keys(config.sections).forEach((section) => {
+    teamData[section] = [];
+  });
 
-const EditTeam = ({ route }) => {
-    const { teamId } = useRecoilValue(teamIdState)
-    const router = useRouter()
-    const [loading, setLoading] = useState(true)
-    const [players, setPlayers] = useState([])
-    const [selectedTournament] = useRecoilState(selectedTournamentState)
-    const [currentStage, setCurrentStage] = useState("knockout")
-    const [viewMode, setViewMode] = useRecoilState(viewModeState)
-    const [teamData, setTeamData] = useRecoilState(teamDataState)
-    const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState)
-    const [addedPlayers, setAddedPlayers] = useState([])
-    const [removedPlayers, setRemovedPlayers] = useState([])
-    const [showPlayerSelectionModal, setShowPlayerSelectionModal] = useState(false)
-    const [selectedPosition, setSelectedPosition] = useState(null)
-
-    useEffect(() => {
-        fetchTeamData()
-        fetchAvailablePlayers()
-    }, [])
-
-    const fetchTeamData = async () => {
-        try {
-            const response = await api.get(`/teams/${teamId}`)
-            if (response.data.success) {
-                const formattedPlayers = response.data.data.players[currentStage].map(p => ({
-                    ...p,
-                    _id: p._id,
-                    playerType: p.playerType?.toLowerCase().trim(),
-                }))
-                setPlayers(formattedPlayers)
-                setTeamData({ [currentStage]: formattedPlayers })
-            }
-        } catch (error) {
-            Alert.alert("Error", "Failed to load team data")
-        } finally {
-            setLoading(false)
-        }
+  players.forEach((player) => {
+    // Find which section this player belongs to
+    const section = Object.keys(config.sections).find((section) =>
+      config.sections[section].playerTypes.includes(player.playerType?.toLowerCase())
+    );
+    if (section) {
+      teamData[section].push(player);
     }
-
-    const fetchAvailablePlayers = async () => {
-        try {
-            const response = await api.get(`/players?tournament=${selectedTournament}`)
-            if (response.data.success) {
-                setFetchedPlayers(response.data.data)
-            }
-        } catch (error) {
-            Alert.alert("Error", "Failed to load available players")
-        }
-    }
-
-    const handleAddPlayer = (player, position) => {
-        setAddedPlayers(prev => [...prev, player._id])
-        setRemovedPlayers(prev => prev.filter(id => id !== player._id))
-        setTeamData(prev => ({
-            ...prev,
-            [currentStage]: prev[currentStage].map(p =>
-                p.position === position ? { ...player, position } : p
-            )
-        }))
-    }
-
-    const handleRemovePlayer = (playerId) => {
-        setRemovedPlayers(prev => [...prev, playerId])
-        setAddedPlayers(prev => prev.filter(id => id !== playerId))
-        setTeamData(prev => ({
-            ...prev,
-            [currentStage]: prev[currentStage].filter(p => p._id !== playerId)
-        }))
-    }
-
-    const handleSave = async () => {
-        try {
-            const payload = {
-                addPlayers: addedPlayers,
-                removePlayers: removedPlayers,
-                stage: currentStage
-            }
-
-            const response = await api.put(`/teams/${teamId}`, payload)
-            if (response.data.success) {
-                Alert.alert("Success", "Team updated successfully!")
-                setViewMode("VIEW")
-
-                router.back()
-            }
-        } catch (error) {
-            Alert.alert("Error", error.response?.data?.message || "Failed to update team")
-        }
-    }
-
-    const renderHeader = () => (
-        <View className="px-4 py-3 flex-row items-center justify-between border-b border-gray-100">
-            <TouchableOpacity
-                onPress={() => {
-                    setViewMode("VIEW")
-                    router.back()
-                }}
-                className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
-            >
-                <Ionicons name="chevron-back" size={24} color="#374151" />
-            </TouchableOpacity>
-
-            <Text className="text-xl font-bold text-gray-800">Edit Team</Text>
-
-            <TouchableOpacity
-                onPress={handleSave}
-                className="bg-blue-500 px-4 py-2 rounded-lg"
-            >
-                <Text className="text-white font-medium">Save</Text>
-            </TouchableOpacity>
-        </View>
-    )
-
-    return (
-        <SafeAreaView className="flex-1 bg-white">
-            {renderHeader()}
-
-            <ScrollView>
-                {/* Stage Selector and other UI elements from original ViewTeam */}
-
-                <View style={{ height: screenHeight * 0.6 }}>
-                    <PitchView
-                        teamData={teamData}
-                        handlePlayerPress={(player) => { }}
-                        handleOpenPlayerSelection={(section, positionId, position) => {
-                            setSelectedPosition(position)
-                            setShowPlayerSelectionModal(true)
-                        }}
-                        handleRemovePlayer={handleRemovePlayer}
-                        editMode={true}
-                    />
-                </View>
-
-                <PlayerSelectionModal
-                    visible={showPlayerSelectionModal}
-                    onClose={() => setShowPlayerSelectionModal(false)}
-                    onSelectPlayer={(player) => handleAddPlayer(player, selectedPosition)}
-                    availablePlayers={fetchedPlayers.filter(p =>
-                        !teamData[currentStage].some(tp => tp._id === p._id) &&
-                        !removedPlayers.includes(p._id)
-                    )}
-                    position={selectedPosition}
-                />
-            </ScrollView>
-        </SafeAreaView>
-    )
+  });
+  return teamData;
 }
 
-export default EditTeam
+const EditTeam = () => {
+  const router = useRouter();
+  const teamId = useRecoilValue(teamIdState);
+  const [teamData, setTeamData] = useRecoilState(teamDataState);
+  const sport = useRecoilValue(sportState);
+  const setViewMode = useSetRecoilState(viewModeState);
+  const selectedTournament = useRecoilValue(selectedTournamentState);
+  const playerLimit = useRecoilValue(playerLimitState);
+  const [originalPlayerIds, setOriginalPlayerIds] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Set the view mode to EDIT_TEAM when component mounts
+  useEffect(() => {
+    setViewMode("EDIT_TEAM");
+    return () => {
+      setViewMode("MANAGE_TEAM");
+    };
+  }, [setViewMode]);
+
+  // On mount, fetch the team and structure teamData for editing
+  useEffect(() => {
+    async function fetchAndSetTeamData() {
+      setLoading(true);
+      try {
+        const response = await api.get(`/teams`);
+        console.log("response", response.data);
+        if (response.data.success) {
+          const teamForTournament = response.data.data.find(
+            (team) => team.tournamentId?._id === selectedTournament
+          );
+          if (teamForTournament) {
+            console.log("playerlimit edit team", playerLimit);
+            const allPlayers =
+              Object.values(teamForTournament.players || {})
+                .flat()
+                .map((p) => ({
+                  ...p,
+                  playerType: (p.playerType?.toLowerCase() || "").trim(),
+                }));
+
+            setOriginalPlayerIds(allPlayers.map((p) => p._id));
+            setTeamData(groupPlayersBySection(allPlayers, sport));
+          }
+        }
+      } catch (e) {
+        Alert.alert('Error', 'Failed to load team for editing');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAndSetTeamData();
+  }, [selectedTournament, sport]);
+
+  const handleSubmit = async (currentTeamData) => {
+    const currentPlayerIds = Object.values(currentTeamData).flat().map(p => p._id).filter(Boolean);
+    const addPlayers = currentPlayerIds.filter(id => !originalPlayerIds.includes(id));
+    const removePlayers = originalPlayerIds.filter(id => !currentPlayerIds.includes(id));
+    console.log("submitting", { addPlayers, removePlayers });
+
+    try {
+      await api.put(`/teams/${teamId}`, { addPlayers, removePlayers });
+      console.log("Updated team successfully", response.data);
+      Alert.alert('Success', 'Team updated successfully!');
+      setTeamData({});
+      setViewMode("VIEW_TEAM");
+      router.back();
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.message || 'Failed to update team');
+    }
+  };
+
+  if (loading) return null;
+
+  return <EnhancedTeamView onSubmit={handleSubmit} />;
+};
+
+export default EditTeam;

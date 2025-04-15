@@ -46,7 +46,7 @@ export default function LeaderboardScreen() {
 
       try {
         // Using getAllTournaments as per the modal example
-        const response = await api.get("/tournaments/getAllTournaments");
+        const response = await api.get("/tournaments/getTournamentsByUserId");
         if (response.data && response.data.success) {
           const fetchedTournaments = response.data.data || [];
           setTournaments(fetchedTournaments);

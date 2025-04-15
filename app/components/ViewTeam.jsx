@@ -13,6 +13,7 @@ import {
   viewModeState,
   totalPointsState,
   teamIdState,
+  teamDataState,
 } from "./atoms"
 import api from "../config/axios"
 
@@ -29,20 +30,22 @@ const ViewTeam = () => {
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
   const totalPoints = useRecoilValue(totalPointsState)
-  const [teamId, setTeamId] = useRecoilState(teamIdState)
+  const teamId = useRecoilValue(teamIdState)
+  const [teamData, setTeamData] = useRecoilState(teamDataState)
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
-  const resetPlayerLimit = useResetRecoilState(playerLimitState)
   const resetFetchedPlayers = useResetRecoilState(fetchedPlayersState)
   const resetViewMode = useResetRecoilState(viewModeState)
 
   useEffect(() => {
     if (selectedTournament) {
       fetchTournamentPlayers()
+      //console.log("playerlimit view team", playerLimit)
     }
   }, [selectedTournament, currentStage])
 
+  //fetches team
   const fetchTournamentPlayers = async () => {
     try {
       setLoading(true)
@@ -52,7 +55,6 @@ const ViewTeam = () => {
         const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
 
         if (teamForTournament) {
-          setTeamId(teamForTournament)
           const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
             ...p,
             playerType: (p.playerType?.toLowerCase() || "").trim(),
@@ -78,12 +80,12 @@ const ViewTeam = () => {
       Alert.alert("Error", "No team found to edit");
       return;
     }
+    //console.log("teamId for editteam", teamId)
     router.push('components/EditTeam');
   };
 
   const handleBack = () => {
     resetSelectedTournament()
-    resetPlayerLimit()
     resetFetchedPlayers()
     resetViewMode()
     // router.back() //not needed as selectedTournament reset vayesi afai back janxa
@@ -93,15 +95,9 @@ const ViewTeam = () => {
     if (players.length === 0) {
       return (
         <View className="flex-1 justify-center items-center">
-          <MaterialCommunityIcons name="account-group-outline" size={64} color="#CBD5E1" />
-          <Text className="text-gray-500 text-lg font-medium text-center mt-4">No players found</Text>
-          <Text className="text-gray-400 text-center mt-2">Stage has ended or not started yet</Text>
-          {/* <TouchableOpacity
-            className="mt-6 bg-blue-500 px-6 py-3 rounded-full"
-            onPress={() => Alert.alert("Stage has started yet")}
-          >
-            <Text className="text-white font-medium">Add Players</Text>
-          </TouchableOpacity> */}
+          <MaterialCommunityIcons name="account-group-outline" size={64} color="#334155" />
+          <Text className="text-slate-400 text-lg font-medium text-center mt-4">No players found</Text>
+          <Text className="text-slate-500 text-center mt-2">Stage has ended or not started yet</Text>
         </View>
       )
     }
@@ -127,26 +123,16 @@ const ViewTeam = () => {
         {/* Squad Status */}
         <View className="mb-6 mx-2">
           <LinearGradient
-            colors={["#EFF6FF", "#DBEAFE"]}
+            colors={["#1e293b", "#334155"]}
             className="p-4 rounded-xl shadow-sm"
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
           >
             <View className="flex-row justify-between items-center">
-              {/* <View>
-                <TouchableOpacity
-                  onPress={() => Alert.alert("Edit Team", "Edit your team details")}
-                  className="bg-blue-500 px-4 py-2 rounded-full"
-                >
-                  <Text className="text-white font-medium">Edit</Text>
-                </TouchableOpacity>
-              </View> */}
-
               <View className="items-end">
-                {/* <Text className="text-blue-900 text-xs font-medium uppercase tracking-wide">Points</Text> */}
                 <View className="flex-row items-center mt-1">
-                  <MaterialCommunityIcons name="star" size={18} color="#1D4ED8" />
-                  <Text className="font-bold text-blue-800 text-lg ml-1">{totalPoints} Points</Text>
+                  <MaterialCommunityIcons name="star" size={18} color="#a78bfa" />
+                  <Text className="font-bold text-purple-300 text-lg ml-1">{totalPoints} Points</Text>
                 </View>
               </View>
             </View>
@@ -157,29 +143,29 @@ const ViewTeam = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 bg-slate-900">
       {/* Header */}
-      <View className="px-4 py-3 flex-row items-center border-b border-gray-100">
+      <View className="px-4 py-3 flex-row items-center border-b border-slate-800">
         <TouchableOpacity
           onPress={handleBack}
-          className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+          className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center"
         >
-          <Ionicons name="chevron-back" size={24} color="#374151" />
+          <Ionicons name="chevron-back" size={24} color="#a3a3a3" />
         </TouchableOpacity>
-        <Text className="text-xl font-bold text-gray-800 ml-3">Your Team</Text>
+        <Text className="text-xl font-bold text-white ml-3">Your Team</Text>
         {teamId && (
           <TouchableOpacity
             onPress={handleEdit}
-            className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+            className="w-10 h-10 rounded-full bg-slate-800 items-center justify-center ml-auto"
           >
-            <Ionicons name="create-outline" size={20} color="#3B82F6" />
+            <Ionicons name="create-outline" size={20} color="#a78bfa" />
           </TouchableOpacity>
         )}
       </View>
 
       {/* Stage Selection Tabs */}
       <View className="px-4 pt-4 pb-2">
-        <View className="flex-row bg-gray-100 p-1 rounded-xl">
+        <View className="flex-row bg-slate-800 p-1 rounded-xl">
           {[
             { title: "Knockout", stageName: "knockout", icon: "trophy-outline" },
             { title: "Semifinal", stageName: "semifinal", icon: "git-network-outline" },
@@ -187,13 +173,13 @@ const ViewTeam = () => {
           ].map((stage) => (
             <TouchableOpacity
               key={stage.stageName}
-              className={`flex-1 py-2.5 px-3 rounded-lg flex-row items-center justify-center ${currentStage === stage.stageName ? "bg-white shadow-sm" : ""
+              className={`flex-1 py-2.5 px-3 rounded-lg flex-row items-center justify-center ${currentStage === stage.stageName ? "bg-slate-900 shadow-sm" : ""
                 }`}
               onPress={() => setCurrentStage(stage.stageName)}
             >
-              <Ionicons name={stage.icon} size={16} color={currentStage === stage.stageName ? "#3B82F6" : "#6B7280"} />
+              <Ionicons name={stage.icon} size={16} color={currentStage === stage.stageName ? "#a78bfa" : "#64748b"} />
               <Text
-                className={`font-medium text-sm ml-1.5 ${currentStage === stage.stageName ? "text-blue-500" : "text-gray-500"
+                className={`font-medium text-sm ml-1.5 ${currentStage === stage.stageName ? "text-purple-300" : "text-slate-400"
                   }`}
               >
                 {stage.title}
@@ -206,8 +192,8 @@ const ViewTeam = () => {
       {/* Main Content */}
       {loading ? (
         <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#3B82F6" />
-          <Text className="text-gray-500 mt-4 font-medium">Loading team data...</Text>
+          <ActivityIndicator size="large" color="#a78bfa" />
+          <Text className="text-slate-400 mt-4 font-medium">Loading team data...</Text>
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>{renderContent()}</ScrollView>

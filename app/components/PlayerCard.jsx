@@ -56,7 +56,7 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
               </View>
             )}
           </TouchableOpacity>
-          
+
           {/* Points badge - only shown in VIEW_TEAM mode and when points exist */}
           {isViewTeam && playerPoints !== undefined && (
             <View style={styles.pointsBadge}>
@@ -100,12 +100,12 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
               <Text style={styles.modalName}>{player.name}</Text>
               <Text style={styles.modalType}>{player.playerType}</Text>
               <Text style={styles.modalPrice}>Price: ${player.price}M</Text>
-              
+
               {/* Display points in modal, prioritize calculated points in view mode */}
               <Text style={styles.modalPoints}>
                 Points: {isViewTeam && playerPoints !== undefined ? playerPoints : (player.points || 0)}
               </Text>
-              
+
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10 }}>
                 <Text style={styles.franchiseLabel}>Franchise: </Text>
                 <Text style={styles.franchiseValue}>
@@ -113,7 +113,7 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
                 </Text>
               </View>
 
-              {viewMode === "MANAGE_TEAM" && (
+              {(viewMode === "MANAGE_TEAM" || viewMode === "EDIT_TEAM") && (
                 <>
                   <TouchableOpacity
                     style={[styles.actionButton, { backgroundColor: "#F87171" }]}
