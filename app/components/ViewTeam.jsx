@@ -29,9 +29,8 @@ const ViewTeam = () => {
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState)
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
-  const totalPoints = useRecoilValue(totalPointsState)
+  const [totalPoints, setTotalPoints] = useRecoilState(totalPointsState)
   const teamId = useRecoilValue(teamIdState)
-  const [teamData, setTeamData] = useRecoilState(teamDataState)
 
   // Reset functions
   const resetSelectedTournament = useResetRecoilState(selectedTournamentState)
@@ -53,7 +52,8 @@ const ViewTeam = () => {
 
       if (response.data.success) {
         const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
-
+        // console.log("teamForTournament", teamForTournament.totalPoints)
+        setTotalPoints(teamForTournament.totalPoints || 0)
         if (teamForTournament) {
           const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
             ...p,

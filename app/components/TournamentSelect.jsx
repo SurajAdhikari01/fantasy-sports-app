@@ -5,7 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TabView, SceneMap } from "react-native-tab-view";
 import api from "../config/axios";
 import { useRecoilState } from "recoil";
-import { fetchedPlayersState, selectedTournamentState, playerLimitState, totalPointsState, teamIdState } from "./atoms";
+import { fetchedPlayersState, selectedTournamentState, playerLimitState, teamIdState } from "./atoms";
 import { viewModeState } from "./atoms";
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,7 +19,6 @@ const TournamentSelect = () => {
 
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState);
-  const [totalPoints, setTotalPoints] = useRecoilState(totalPointsState);
   const [playerLimit, setPlayerLimit] = useRecoilState(playerLimitState);
   const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState([]);
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
@@ -117,7 +116,6 @@ const TournamentSelect = () => {
         className="flex-row justify-center items-center py-3 px-4 mt-4 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 active:opacity-90"
         onPress={() => {
           setSelectedTournament(item._id);
-          setTotalPoints(0);
           setSelectedTournamentPlayers([]);
           setViewMode('VIEW_TEAM');
           setTeamid(item._id);
