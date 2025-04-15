@@ -11,7 +11,6 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import axios from "../config/axios";
-import { router } from "expo-router";
 
 const ResultsScreen = () => {
   // --- State Variables ---

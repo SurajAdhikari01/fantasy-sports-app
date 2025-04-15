@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react"; // Import useRef
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -11,208 +11,145 @@ import {
   Modal,
   StyleSheet,
   Pressable,
+  ActivityIndicator,
+  RefreshControl,
 } from "react-native";
-import Svg, { Path, Defs, LinearGradient, Stop } from "react-native-svg";
-// import { useNavigation } from "@react-navigation/native"; // Keep if needed
-import MatchCard from "../components/MatchCard";
+
 import { router } from "expo-router";
-import UpcomingMatchCard from "../components/UpcomingMatchCard";
 import { useAuth } from "../context/AuthContext";
 import { Alert } from "react-native";
+import StatisticsCard from "../components/HomeSVGCard";
+import MatchCard from "../components/MatchCard"; // Used for upcoming matches
+import api from "../config/axios";
+import TournamentResult from "../components/TournamentResult"; // Import the updated card
+// useNavigation import removed as it's not used directly in this component's logic
+// import { useNavigation } from "@react-navigation/native";
 
-// --- (Keep existing code for Dimensions, matches, MatchesList, upcomingMatches, StatisticsCard) ---
-const { width, height } = Dimensions.get("window");
-const adjustedWidth = width * 0.9;
-const adjustedHeight = height * 0.23;
-// ... (matches, MatchesList, upcomingMatches, StatisticsCard definitions remain the same) ...
-const matches = [
-  {
-    id: "1",
-    sport: "football",
-    team1: "Real Madrid",
-    team2: "Chelsea Club",
-    score: "2 - 0",
-    status: "LIVE",
-  },
-  {
-    id: "2",
-    sport: "cricket",
-    team1: "M. Indians",
-    team2: "Raj. Royals",
-    score: "123/7 - 67/2",
-    status: "HOLD",
-  },
-  {
-    id: "3",
-    sport: "football",
-    team1: "Barcelona",
-    team2: "Juventus",
-    score: "1 - 1",
-    status: "LIVE",
-  },
-  {
-    id: "4",
-    sport: "football",
-    team1: "PSG",
-    team2: "Bayern",
-    score: "0 - 0",
-    status: "UPCOMING",
-  },
-];
-const MatchesList = () => {
-  // const navigation = useNavigation(); // Can remove if only using router
-
-  const renderItem = ({ item }) => (
-    <View className="mx-2">
-      <MatchCard
-        match={item}
-        onPress={() => {
-          // Navigate based on the sport type
-          const routeName =
-            item.sport === "football" ? "FootballDetail" : "CricketDetail";
-
-          router.push({
-            // Make sure your route structure matches this
-            pathname: `/components/${routeName}/[id]`,
-            params: { id: item.id }, // Pass the match id as a parameter
-          });
-        }}
-      />
-    </View>
-  );
-
-  return (
-    <FlatList
-      data={matches}
-      horizontal
-      keyExtractor={(item) => item.id}
-      renderItem={renderItem}
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ paddingHorizontal: 10 }}
-    />
-  );
-};
-const upcomingMatches = [
-  {
-    id: "4",
-    sport: "football",
-    team1: "PSG",
-    team2: "Bayern",
-    status: "UPCOMING",
-  },
-  {
-    id: "6",
-    sport: "cricket",
-    team1: "Rajistan",
-    team2: "Kathmandu",
-    status: "UPCOMING",
-  },
-];
-
-const StatisticsCard = ({ scoreEarned, gamesPlayed }) => (
-  <View className="mt-6 items-center">
-    <View className="relative">
-      <View
-        className={`absolute top-[${
-          adjustedHeight * 0.3
-        }px] right-0 p-8 z-10 pt-24 items-end`}
-      >
-        <Text className="text-white text-2xl">{gamesPlayed}</Text>
-        <Text className="text-white mt-2">Games Played</Text>
-      </View>
-
-      <Svg
-        height={adjustedHeight}
-        width={adjustedWidth}
-        viewBox={`0 0 ${adjustedWidth} ${adjustedHeight}`}
-      >
-        {/* Background Path */}
-        <Path
-          d={`
-            M 0 ${adjustedHeight * 0.3}
-            A 30, 30 0 0 1 ${adjustedWidth * 0.05}, ${adjustedHeight * 0.1}
-            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.3}
-            L ${adjustedWidth * 0.9} ${adjustedHeight * 0.1}
-            A 30,30 0 0 1 ${adjustedWidth}, ${adjustedHeight * 0.3}
-            L ${adjustedWidth} ${adjustedHeight * 0.78}
-            A 30, 30 0 0 1 ${adjustedWidth * 0.9}, ${adjustedHeight * 0.99}
-            L ${adjustedWidth * 0.5} ${adjustedHeight * 0.9}
-            L ${adjustedWidth * 0.09} ${adjustedHeight}
-            A 30,30 0 0 1 0, ${adjustedHeight * 0.8}
-            L 0 ${adjustedHeight * 0.3}
-            Z
-          `}
-          fill="#1f1f1f"
-          stroke="#ddd"
-          strokeWidth="3"
-          strokeDasharray="12, 8"
-        />
-      </Svg>
-
-      <Svg
-        height={adjustedHeight}
-        width={adjustedWidth}
-        viewBox={`0 0 ${adjustedWidth} ${adjustedHeight}`}
-        style={{ position: "absolute", top: 0 }}
-      >
-        <Defs>
-          <LinearGradient id="grad" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor="#ff416c" />
-            <Stop offset="1" stopColor="#ff4b2b" />
-          </LinearGradient>
-        </Defs>
-        <View className="absolute top-0 left-0 p-8">
-          <Text className="text-white text-2xl">{scoreEarned}</Text>
-          <Text className="text-white mt-2">Score Earned</Text>
-        </View>
-
-        <Path
-          d={`
-            M ${adjustedWidth * 0.1} 0
-            A 20, 20 1 1 1 ${adjustedWidth * 0.07} 0
-            L ${adjustedWidth * 0.6} 0
-            A 20, 20 0 0 1 ${adjustedWidth * 0.65}, ${adjustedHeight * 0.15}
-            L ${adjustedWidth * 0.58} ${adjustedHeight * 0.6}
-            A 20, 20 0 0 1 ${adjustedWidth * 0.54}, ${adjustedHeight * 0.69}
-            L ${adjustedWidth * 0.135} ${adjustedHeight * 0.81}
-            A 30, 30 0 0 1 ${adjustedWidth * 0.038}, ${adjustedHeight * 0.7}
-            L ${adjustedWidth * 0.03} ${adjustedHeight * 0.1}
-            Z
-          `}
-          fill="url(#grad)"
-        />
-      </Svg>
-    </View>
-  </View>
-);
+const { width } = Dimensions.get("window");
 
 const HomeScreen = () => {
+  // navigation constant removed
   const { signOut, userData } = useAuth();
   const [optionsModalVisible, setOptionsModalVisible] = useState(false);
-  const [logoutConfirmModalVisible, setLogoutConfirmModalVisible] =
-    useState(false);
-  const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 }); // State for position
-  const profileImageRef = useRef(null); // Ref for the touchable opacity
+  const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 });
+  const profileImageRef = useRef(null);
 
+  // --- State for Dynamic Data ---
+  const [upcomingMatches, setUpcomingMatches] = useState([]);
+  const [loadingUpcoming, setLoadingUpcoming] = useState(true);
+  const [errorUpcoming, setErrorUpcoming] = useState(null);
+
+  const [tournaments, setTournaments] = useState([]); // State for the tournament list
+  const [loadingTournaments, setLoadingTournaments] = useState(true);
+  const [errorTournaments, setErrorTournaments] = useState(null);
+
+  const [refreshing, setRefreshing] = useState(false);
+  // --- End State ---
+
+  // --- Data Fetching Functions (Unchanged) ---
+  const fetchUpcomingMatches = useCallback(async (isRefreshing = false) => {
+    if (!isRefreshing) setLoadingUpcoming(true);
+    setErrorUpcoming(null);
+    try {
+      const response = await api.get("/upcoming/getmatches");
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setUpcomingMatches(response.data.data);
+      } else {
+        setUpcomingMatches([]);
+      }
+    } catch (err) {
+      setErrorUpcoming(
+        err.response?.data?.message || "Failed to load upcoming matches."
+      );
+      setUpcomingMatches([]);
+    } finally {
+      if (!isRefreshing) setLoadingUpcoming(false);
+    }
+  }, []);
+
+  const fetchTournaments = useCallback(async (isRefreshing = false) => {
+    if (!isRefreshing) setLoadingTournaments(true);
+    setErrorTournaments(null);
+    try {
+      const response = await api.get("/tournaments/getTournamentsByUserId");
+      if (response.data?.success && Array.isArray(response.data.data)) {
+        setTournaments(response.data.data);
+      } else {
+        setTournaments([]);
+      }
+    } catch (err) {
+      setErrorTournaments(
+        err.response?.data?.message || "Failed to load tournaments."
+      );
+      setTournaments([]);
+    } finally {
+      if (!isRefreshing) setLoadingTournaments(false);
+    }
+  }, []);
+
+  // --- Initial Data Load (Unchanged) ---
+  useEffect(() => {
+    fetchUpcomingMatches();
+    fetchTournaments();
+  }, [fetchUpcomingMatches, fetchTournaments]);
+
+  // --- Refresh Handler (Unchanged) ---
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Clear errors on refresh
+    setErrorUpcoming(null);
+    setErrorTournaments(null);
+    await Promise.all([fetchUpcomingMatches(true), fetchTournaments(true)]);
+    setRefreshing(false);
+  }, [fetchUpcomingMatches, fetchTournaments]);
+
+  // --- Navigation Handlers (Unchanged) ---
+  const handleTournamentSelect = useCallback(
+    (tournament) => {
+      if (!tournament?._id) return;
+      router.push({
+        pathname: `/components/MatchResultsScreen`,
+        params: {
+          tournamentName: tournament.name,
+          tournamentId: tournament._id,
+        },
+      });
+    },
+    [router] // Dependency on router from expo-router
+  );
+
+  // --- Render Item for Upcoming Matches FlatList (Unchanged) ---
+  const renderUpcomingMatchItem = ({ item }) => {
+    const matchDataForCard = {
+      id: item._id,
+      sport: "football",
+      matchName: item.matchName,
+      matchDate: item.matchDate,
+      status: "UPCOMING",
+    };
+    return (
+      <View className="mx-2">
+        <MatchCard match={matchDataForCard} />
+      </View>
+    );
+  };
+
+  // --- Modal Handlers (Unchanged) ---
   const handleLogout = () => {
     Alert.alert(
       "Logout",
       "Are you sure you want to logout?",
       [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
+        { text: "Cancel", style: "cancel" },
         {
           text: "Logout",
           style: "destructive",
           onPress: async () => {
             try {
               await signOut();
-              // AuthGuard should handle redirect
             } catch (error) {
               console.error("Logout error:", error);
-              Alert.alert("Error", "Failed to logout. Please try again.");
+              Alert.alert("Error", "Failed to logout.");
             }
           },
         },
@@ -220,35 +157,47 @@ const HomeScreen = () => {
       { cancelable: true }
     );
   };
-
   const handleMoreNavigation = () => {
     setOptionsModalVisible(false);
-    router.push("/more"); // Ensure '/profile' route exists
+    router.push("/more");
   };
-
-  // Function to measure the image position and show the modal
   const showOptionsMenu = () => {
     profileImageRef.current?.measure((fx, fy, w, h, px, py) => {
-      // fx, fy: position relative to parent
-      // w, h: width/height of element
-      // px, py: position relative to screen
-      const topOffset = py + h + 5; // Position below the image + 5px margin
-      const rightOffset = width - (px + w); // Position aligned to the right edge
-
+      const topOffset = py + h + 5;
+      const rightOffset = width - (px + w);
       setModalPosition({ top: topOffset, right: rightOffset });
       setOptionsModalVisible(true);
     });
   };
+  // --- End Modal Handlers ---
+
+  // Helper flags to determine if sections should be shown
+  const showUpcomingMatchesSection =
+    !loadingUpcoming && !errorUpcoming && upcomingMatches.length > 0;
+  const showTournamentsSection =
+    !loadingTournaments && !errorTournaments && tournaments.length > 0;
 
   return (
-    <SafeAreaView className="flex-1 bg-[#2a2a2a] gap-12">
+    // Use bg-neutral-800 to match MatchResultsScreen
+    <SafeAreaView className="flex-1 bg-neutral-800">
       <ScrollView
-        contentContainerStyle={{ paddingBottom: 20 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#ccc"
+            colors={["#ccc"]}
+            progressBackgroundColor="#444" // Use a darker color matching the theme
+          />
+        }
       >
-        <View className="px-4">
+        {/* --- Header --- */}
+        {/* Use text-neutral-200 and text-neutral-400 for consistency */}
+        <View className="px-4 pt-4">
           <View className="flex-row justify-between items-center ">
-            <Text className="text-white font-semibold text-xl">
+            <Text className="text-neutral-200 font-semibold text-xl">
               Hi,{" "}
               {userData?.username
                 ? `${
@@ -257,9 +206,11 @@ const HomeScreen = () => {
                   }`
                 : "User"}
             </Text>
-
-            {/* Attach ref and onPress handler to the TouchableOpacity */}
-            <TouchableOpacity ref={profileImageRef} onPress={showOptionsMenu}>
+            <TouchableOpacity
+              ref={profileImageRef}
+              onPress={showOptionsMenu}
+              className="active:opacity-70"
+            >
               <Image
                 source={{
                   uri:
@@ -270,98 +221,179 @@ const HomeScreen = () => {
               />
             </TouchableOpacity>
           </View>
-          <Text className="text-gray-400 text-sm">Welcome back</Text>
+          <Text className="text-neutral-400 text-sm">Welcome back</Text>
         </View>
 
-        {/* Statistics Card */}
-        <StatisticsCard
-          scoreEarned={userData?.scoreEarned || "150"}
-          gamesPlayed={userData?.gamesPlayed || "3"}
-        />
+        {/* --- Statistics Card --- */}
+        <View className="mt-6">
+          <StatisticsCard
+            scoreEarned={userData?.scoreEarned || "0"}
+            gamesPlayed={userData?.gamesPlayed || "0"}
+          />
+        </View>
 
-        {/* Games Played and Stats */}
-        <View className="flex-row justify-between items-center p-6 mt-4">
-          <View className="bg-[#3a3a3a] p-4 rounded-lg flex-1 mr-2">
-            <Text className="text-white text-lg">
-              {userData?.ranking || "42"}
+        {/* --- Games Played and Stats --- */}
+        {/* Use bg-neutral-700 and text-neutral-200/400 */}
+        <View className="flex-row justify-between items-center px-4 mt-6">
+          <View className="bg-neutral-700 p-4 rounded-lg flex-1 mr-2 items-center">
+            <Text className="text-neutral-200 text-lg font-bold">
+              {userData?.ranking || "-"}
             </Text>
-            <Text className="text-gray-400 text-sm">Ranking</Text>
+            <Text className="text-neutral-400 text-sm mt-1">Ranking</Text>
           </View>
-          <View className="bg-[#3a3a3a] p-4 rounded-lg flex-1 ml-2">
-            <Text className="text-white text-lg">
-              {userData?.matchesPlayed || "134"}
+          <View className="bg-neutral-700 p-4 rounded-lg flex-1 ml-2 items-center">
+            <Text className="text-neutral-200 text-lg font-bold">
+              {userData?.matchesPlayed || "0"}
             </Text>
-            <Text className="text-gray-400 text-sm">Matches</Text>
+            <Text className="text-neutral-400 text-sm mt-1">
+              Matches Played
+            </Text>
           </View>
         </View>
 
-        {/* Ongoing Matches */}
-        <View>
-          <Text className="text-white text-lg font-semibold p-6">
-            Ongoing Matches
-          </Text>
-          <MatchesList />
-        </View>
-
-        {/* Upcoming Matches */}
-        <View>
-          <Text className="text-white text-lg font-semibold p-6">
-            Upcomings
-          </Text>
-          <View className="flex-col items-center pb-20">
-            {upcomingMatches.map((match) => (
-              <UpcomingMatchCard
-                key={match.id}
-                match={match}
-                onPress={() => {
-                  const routeName =
-                    match.sport === "football"
-                      ? "FootballDetail"
-                      : "CricketDetail";
-                  router.push({
-                    pathname: `/components/${routeName}/[id]`,
-                    params: { id: match.id },
-                  });
-                }}
-              />
-            ))}
+        {/* --- Upcoming Matches Section (Conditional Rendering) --- */}
+        {/* Show loading indicator */}
+        {loadingUpcoming && !refreshing && (
+          <View className="mt-8 h-40 justify-center items-center">
+            <ActivityIndicator size="small" color="#ccc" />
+            <Text className="text-neutral-400 mt-2 text-sm">
+              Loading Matches...
+            </Text>
           </View>
-        </View>
+        )}
+        {/* Show error message */}
+        {errorUpcoming && !refreshing && (
+          <View className="mt-8 h-40 justify-center items-center px-4">
+            <Text className="text-red-400 text-center text-sm">
+              {errorUpcoming}
+            </Text>
+          </View>
+        )}
+        {/* Show the section only if there is data */}
+        {showUpcomingMatchesSection && !refreshing && (
+          <View className="mt-8">
+            <Text className="text-neutral-200 text-lg font-semibold px-4 mb-3">
+              Upcoming Matches
+            </Text>
+            <FlatList
+              data={upcomingMatches}
+              horizontal
+              keyExtractor={(item) => item._id}
+              renderItem={renderUpcomingMatchItem}
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{
+                paddingHorizontal: 10,
+                paddingVertical: 5,
+              }}
+            />
+          </View>
+        )}
+        {/* Optional: Show 'No matches' only if not loading, no error, and empty */}
+        {!loadingUpcoming &&
+          !errorUpcoming &&
+          upcomingMatches.length === 0 &&
+          !refreshing && (
+            <View className="mt-8 h-10 justify-center items-center px-4">
+              <Text className="text-neutral-500 text-center text-sm">
+                No upcoming matches listed.
+              </Text>
+            </View>
+          )}
+
+        {/* --- Tournament Results Section (Conditional Rendering) --- */}
+        {/* Show loading indicator */}
+        {loadingTournaments && !refreshing && (
+          <View className="mt-8 pb-10 items-center">
+            <ActivityIndicator size="small" color="#ccc" />
+            <Text className="text-neutral-400 mt-2 text-sm">
+              Loading Tournaments...
+            </Text>
+          </View>
+        )}
+        {/* Show error message */}
+        {errorTournaments && !refreshing && (
+          <View className="mt-8 items-center px-4 py-10">
+            <Text className="text-red-400 text-center">{errorTournaments}</Text>
+          </View>
+        )}
+        {/* Show the section only if there is data */}
+        {showTournamentsSection && !refreshing && (
+          <View className="mt-8">
+            <Text className="text-neutral-200 text-lg font-semibold px-4 mb-3">
+              Tournament Results
+            </Text>
+            <View className="pb-10 items-center">
+              {tournaments.map((tournament) => (
+                <TournamentResult
+                  key={tournament._id}
+                  tournamentName={tournament.name}
+                  onPress={() => handleTournamentSelect(tournament)}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+        {/* Optional: Show 'No tournaments' only if not loading, no error, and empty */}
+        {!loadingTournaments &&
+          !errorTournaments &&
+          tournaments.length === 0 &&
+          !refreshing && (
+            <View className="mt-8 items-center px-4 py-10">
+              <Text className="text-neutral-500 text-center">
+                No tournaments found. Pull down to refresh.
+              </Text>
+            </View>
+          )}
       </ScrollView>
 
-      {/* Options Modal (Profile/Logout) - Positioned using state */}
+      {/* Options Modal (Profile/Logout) */}
       <Modal
         animationType="fade"
         transparent={true}
         visible={optionsModalVisible}
         onRequestClose={() => setOptionsModalVisible(false)}
       >
-        {/* Pressable overlay to close modal */}
         <Pressable
-          style={styles.modalOverlay} // Make overlay fill screen but allow touches through if needed, or handle close here
+          style={styles.modalOverlay} // Keep StyleSheet for overlay
           onPress={() => setOptionsModalVisible(false)}
         >
-          {/* Position the modal content absolutely */}
+          {/* Use bg-neutral-800 for consistency */}
           <View
             style={[
-              styles.optionsModalView,
-              { top: modalPosition.top, right: modalPosition.right }, // Apply calculated position
+              styles.optionsModalView, // Keep StyleSheet for positioning/base styles
+              {
+                top: modalPosition.top,
+                right: modalPosition.right,
+                backgroundColor: "#2d2d2d",
+              }, // Use a slightly lighter dark bg
             ]}
-            // Prevent closing when tapping inside the modal itself
-            onStartShouldSetResponder={() => true}
+            onStartShouldSetResponder={() => true} // Prevents touch from passing through
           >
+            {/* Use text-neutral-200 */}
             <TouchableOpacity
-              style={styles.optionButton}
+              style={styles.optionButton} // Keep StyleSheet for padding/etc.
               onPress={handleMoreNavigation}
+              className="active:bg-neutral-600" // Add active state background
             >
-              <Text style={styles.optionButtonText}>View More</Text>
+              <Text
+                style={styles.optionButtonText}
+                className="text-neutral-200"
+              >
+                View More
+              </Text>
             </TouchableOpacity>
-            <View style={styles.separator} />
+            {/* Use bg-neutral-600 */}
+            <View style={styles.separator} className="bg-neutral-600" />
+            {/* Use text-red-500 */}
             <TouchableOpacity
               style={styles.optionButton}
               onPress={handleLogout}
+              className="active:bg-neutral-600"
             >
-              <Text style={[styles.optionButtonText, styles.logoutText]}>
+              <Text
+                style={[styles.optionButtonText, styles.logoutText]}
+                className="text-red-500"
+              >
                 Logout
               </Text>
             </TouchableOpacity>
@@ -372,94 +404,27 @@ const HomeScreen = () => {
   );
 };
 
-// Updated Styles
+// Styles for Modal - Keep these as StyleSheet for simplicity with positioning/overlay
 const styles = StyleSheet.create({
-  // Overlay for the options modal (covers screen, allows absolute positioning)
-  modalOverlay: {
-    flex: 1,
-    // backgroundColor: 'rgba(0, 0, 0, 0.3)', // Optional: dim background slightly
-  },
-  // Styles for Options Modal (now positioned absolutely)
+  modalOverlay: { flex: 1 },
   optionsModalView: {
-    position: "absolute", // Key change for positioning
-    backgroundColor: "#2d2d2d",
-    borderRadius: 10, // Smaller radius for dropdown feel
+    position: "absolute",
+    // backgroundColor: "#2d2d2d", // Moved inline with className for override
+    borderRadius: 10,
     overflow: "hidden",
-    width: 150, // Adjust width as needed
+    width: 150,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
-    elevation: 6,
+    elevation: 6, // Keep elevation for Android shadow
   },
-  optionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-  optionButtonText: {
-    color: "white",
-    fontSize: 15,
-  },
+  optionButton: { paddingVertical: 12, paddingHorizontal: 15 }, // Defines tap area size
+  optionButtonText: { fontSize: 15 }, // Base font size
   logoutText: {
-    color: "#ff4b2b",
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth, // Thinner separator
-    backgroundColor: "#555",
-  },
-
-  // Styles for Confirmation Modal (Centered)
-  confirmModalOverlay: {
-    // Separate overlay style for centered modal
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
-  },
-  confirmModalView: {
-    margin: 20,
-    backgroundColor: "#2d2d2d",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-    width: "80%",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    marginTop: 20,
-  },
-  button: {
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    elevation: 2,
-    marginHorizontal: 10,
-    minWidth: 90,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonCancel: {
-    backgroundColor: "#555",
-  },
-  buttonLogout: {
-    backgroundColor: "#ff4b2b",
-  },
-  textStyle: {
-    color: "white",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  modalText: {
-    marginBottom: 20,
-    textAlign: "center",
-    color: "white",
-    fontSize: 17,
-  },
+    /* color: "#ff4b2b" */
+  }, // Color handled by className
+  separator: { height: StyleSheet.hairlineWidth /* backgroundColor: "#555" */ }, // Color handled by className
 });
 
 export default HomeScreen;

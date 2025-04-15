@@ -2,8 +2,8 @@ import React from "react";
 import { TouchableOpacity, View, Text, Image, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient"; // Use expo-linear-gradient
 import { styled } from "nativewind";
+import { Ionicons } from "@expo/vector-icons"; // Import Ionicons
 
-const teamPlaceholder = "https://via.placeholder.com/50";
 import cricketBg from "../../assets/cricketbg.png"; // Ensure this path is correct
 import footballBg from "../../assets/footballbg.jpg"; // Ensure this path is correct
 
@@ -11,6 +11,21 @@ const StyledGradient = styled(LinearGradient);
 
 const MatchCard = ({ match, onPress }) => {
   const backgroundImg = match.sport === "football" ? footballBg : cricketBg;
+  const sportIcon = match.sport === "football" ? "football" : "cricket-sharp";
+  const matchDateTime = match.matchDate ? new Date(match.matchDate) : null;
+  const formattedDate = matchDateTime
+    ? matchDateTime.toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+      })
+    : "Date TBD";
+  const formattedTime = matchDateTime
+    ? matchDateTime.toLocaleTimeString(undefined, {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })
+    : "Time TBD";
 
   return (
     <TouchableOpacity onPress={onPress} style={styles.cardContainer}>
@@ -18,7 +33,7 @@ const MatchCard = ({ match, onPress }) => {
         colors={["#ff416c", "#ff4b2b"]} // Gradient colors
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
-        className="rounded-xl p-4 mx-2 h-44 w-48 justify-between"
+        className="rounded-xl p-4 mx-2 h-44 w-60 justify-between"
       >
         {/* Background Image */}
         <Image
@@ -29,33 +44,49 @@ const MatchCard = ({ match, onPress }) => {
 
         {/* Content Overlay */}
         <View style={styles.overlay}>
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white text-xs bg-white/30 px-2 py-1 rounded-full">
-              {match.status}
+          {/* Top Row: Status and Sport Icon */}
+          <View className="flex-row justify-between items-center mb-2">
+            <Text className="text-white text-xs bg-black/40 px-2 py-1 rounded-full font-semibold shadow-sm">
+              <View className="flex-row items-center ">
+                <Ionicons
+                  name="time-outline"
+                  size={14}
+                  color="white"
+                  style={{ marginRight: 4 }}
+                />
+                <Text className="text-white text-xs font-medium">
+                  {formattedTime}
+                </Text>
+              </View>
             </Text>
-            <Text className="text-white text-xs bg-red-500 px-2 py-1 rounded-full">
-              15
+            <Ionicons name={sportIcon} size={16} color="white" />
+          </View>
+
+          {/* Middle Row: Match Name */}
+          <View className="flex-1 justify-center items-center my-1">
+            <Text
+              className="text-white text-center text-base font-bold leading-tight shadow-md"
+              numberOfLines={2} // Allow up to 2 lines for match name
+              ellipsizeMode="tail"
+            >
+              {match.matchName || "Match Name"}
             </Text>
           </View>
 
-          <View className="flex-row justify-between items-center my-2">
-            <Image
-              source={{ uri: teamPlaceholder }}
-              className="h-12 w-12 rounded-full"
-            />
-            <Text className="text-white text-lg font-bold">VS</Text>
-            <Image
-              source={{ uri: teamPlaceholder }}
-              className="h-12 w-12 rounded-full"
-            />
+          {/* Bottom Row: Date and Time */}
+          <View className="items-center border-t border-white/20 pt-2 mt-auto">
+            <View className="flex-row items-center">
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="white"
+                style={{ marginRight: 4 }}
+              />
+              <Text className="text-white text-xs font-medium">
+                {formattedDate}
+              </Text>
+            </View>
           </View>
-
-          <Text className="text-white text-center text-sm font-semibold">
-            {match.score}
-          </Text>
-          <Text className="text-white text-xs text-center">
-            {match.team1} vs {match.team2}
-          </Text>
         </View>
       </StyledGradient>
     </TouchableOpacity>
