@@ -4,7 +4,6 @@ import { View } from "react-native";
 import { styled } from "nativewind";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { RecoilRoot } from "recoil";
 
 // Styling container with NativeWind
 const Container = styled(View, "flex-1 bg-gray-900");
@@ -26,8 +25,10 @@ export default function TabsLayout() {
               right: 0,
               height: TAB_BAR_HEIGHT + insets.bottom, // Account for safe area
               borderTopWidth: 0,
-              elevation: 5,
+              elevation: 0, // Remove elevation to prevent shadow artifacts
               zIndex: 2,
+              backgroundColor: 'transparent', // Ensure transparent background
+              overflow: 'hidden', // Prevent content overflow
             },
             tabBarActiveTintColor: "#F97316",
             tabBarInactiveTintColor: "#9CA3AF",
@@ -41,9 +42,8 @@ export default function TabsLayout() {
                   right: 0,
                   bottom: 0,
                 }}
-                intensity={100}
+                intensity={80} // Slightly reduced intensity
                 tint="dark"
-                borderRadius={30}
               />
             ),
             // Add bottom padding to prevent content overlap with tab bar
@@ -98,10 +98,10 @@ export default function TabsLayout() {
                       justifyContent: "center",
                       alignItems: "center",
                       shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 5 },
-                      shadowOpacity: 0.3,
-                      shadowRadius: 6.27,
-                      elevation: 10,
+                      shadowOffset: { width: 0, height: 3 }, // Reduced shadow offset
+                      shadowOpacity: 0.2, // Reduced shadow opacity
+                      shadowRadius: 4, // Reduced shadow radius
+                      elevation: 8, // Slightly reduced elevation
                       transform: [{ rotate: "45deg" }],
                     }}
                   />

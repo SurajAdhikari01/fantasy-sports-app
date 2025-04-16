@@ -240,6 +240,7 @@ const TournamentSelect = () => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchTournaments();
+    setActiveIndex(0); 
   };
 
   // --- Render Item Functions ---
