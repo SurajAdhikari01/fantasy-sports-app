@@ -146,7 +146,7 @@ const calculatePositions = (numPlayers, teamData) => {
   combinedDef.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * defSpacing,
+      x: combinedDef.length === 1 ? centerX : 5 + (index + 1) * defSpacing,
       y: defY,
       section: "defenders",
       positionId: player ? `def-${index}` : `empty-def-${index}`,
@@ -158,19 +158,20 @@ const calculatePositions = (numPlayers, teamData) => {
   combinedMid.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * midSpacing,
+      x: combinedMid.length === 1 ? centerX : 5 + (index + 1) * midSpacing,
       y: midY + (index % 2 === 0 ? -3 : 3),
       section: "midfielders",
       positionId: player ? `mid-${index}` : `empty-mid-${index}`,
     });
   });
 
+
   // FWD (always render at least 1 if dist.fwd >= 1)
   const fwdSpacing = fieldWidth / (combinedFwd.length + 1);
   combinedFwd.forEach((player, index) => {
     positions.push({
       player,
-      x: 5 + (index + 1) * fwdSpacing,
+      x: combinedFwd.length === 1 ? centerX : 5 + (index + 1) * fwdSpacing,
       y: fwdY,
       section: "forwards",
       positionId: player ? `fwd-${index}` : `empty-fwd-${index}`,
@@ -195,20 +196,6 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
   const viewMode = useRecoilValue(viewModeState);
   const isViewMode = viewMode === "VIEW_TEAM";
 
-  // Calculate player points
-  const calculatePlayerPoints = (player) => {
-    if (!isViewMode || !player || !player._id) return undefined;
-    if (!teamData || !teamData.points || !Array.isArray(teamData.points)) return 0;
-    let totalPoints = 0;
-    teamData.points.forEach((matchData) => {
-      if (matchData?.players && Array.isArray(matchData.players)) {
-        const entry = matchData.players.find((p) => p?.playerId === player._id);
-        if (entry && typeof entry.points === "number") totalPoints += entry.points;
-      }
-    });
-    return totalPoints;
-  };
-
   const onReplacePlayer = (player) => {
     let section = "midfielders";
     if (player?.playerType) {
@@ -223,15 +210,15 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
     const positionId = playerPos?.positionId || `replace-${player._id || Date.now()}`;
     const coordinates = playerPos
       ? {
-          x: (playerPos.x / 100) * containerDimensions.width,
-          y: (playerPos.y / 100) * containerDimensions.height,
-        }
+        x: (playerPos.x / 100) * containerDimensions.width,
+        y: (playerPos.y / 100) * containerDimensions.height,
+      }
       : undefined;
     handleRemovePlayer(player, true);
     handleOpenPlayerSelection(section, positionId, coordinates);
   };
 
-  useEffect(() => {}, [teamData]);
+  useEffect(() => { }, [teamData]);
 
   // Always calculate positions with the correct minimums
   const positions = calculatePositions(playerLimit, teamData);
@@ -262,7 +249,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
         const player = position.player;
         const posX = (position.x / 100) * containerDimensions.width;
         const posY = (position.y / 100) * containerDimensions.height;
-        const playerPoints = player ? calculatePlayerPoints(player) : undefined;
+        // const playerPoints = player ? calculatePlayerPoints(player) : undefined;
 
         return player ? (
           <View
@@ -286,7 +273,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
               onRemovePlayer={() => handleRemovePlayer(player)}
               onReplacePlayer={onReplacePlayer}
               position={{ x: posX, y: posY }}
-              playerPoints={playerPoints}
+              // playerPoints={playerPointsMap[player._id] ?? 0}
               className="w-18 h-18"
             />
           </View>

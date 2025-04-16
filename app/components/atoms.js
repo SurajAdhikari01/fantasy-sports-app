@@ -32,6 +32,11 @@ export const teamDataState = atom({
   default: {},
 });
 
+export const currentRoundState = atom({
+  key: "currentRoundState",
+  default: "knockout",
+});
+
 export const franchisesState = atom({
   key: "franchisesState",
   default: [],
