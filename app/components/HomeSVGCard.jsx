@@ -59,7 +59,7 @@ const StatisticsCard = ({ scoreEarned, tournamentJoined }) => (
         </Defs>
         <View className="absolute top-0 left-0 p-8">
           <Text className="text-white text-2xl">{scoreEarned}</Text>
-          <Text className="text-white mt-2">Score Earned</Text>
+          <Text className="text-white mt-2">Highest Score</Text>
         </View>
 
         <Path
