@@ -278,9 +278,7 @@ const HomeScreen = () => {
             >
               <Image
                 source={{
-                  uri:
-                    userData?.profileUrl ||
-                    "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
+                  uri: "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
                 }}
                 className="h-10 w-10 rounded-full"
               />
