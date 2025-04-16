@@ -13,14 +13,17 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "../config/axios";
+import { useLocalSearchParams } from "expo-router";
 
 // NativeWind classes replace StyleSheet
 // Ensure you have NativeWind setup in your project (tailwind.config.js, babel plugin, etc.)
 
-const MatchResultsScreen = () => {
-  const navigation = useNavigation();
+const MatchResultsScreen = ({ onClose, selectedTournament }) => {
+  const navigation = useNavigation(); // REMOVE if ONLY used for goBack
   const route = useRoute();
-  const { tournamentId, tournamentName } = route.params;
+  const params = useLocalSearchParams(); // Get route params
+  const tournamentId = params?.tournamentId ?? selectedTournament?._id;
+  const tournamentName = params?.tournamentName ?? selectedTournament?.name;
 
   // --- State Variables (Unchanged) ---
   const [isLoadingMatches, setIsLoadingMatches] = useState(true);
@@ -31,6 +34,12 @@ const MatchResultsScreen = () => {
   const [error, setError] = useState(null);
   const [infoMessage, setInfoMessage] = useState(null);
   const [expandedMatches, setExpandedMatches] = useState({});
+
+  if (!tournamentId && !tournamentName) {
+    console.log("Tournament ID is missing.");
+  }
+
+  // --- Helpers & Callbacks (Logic Unchanged) ---
 
   // --- Helpers & Callbacks (Logic Unchanged, only JSX/Styles might change later) ---
   const getPlayerTeamSide = useCallback((playerId, match) => {
@@ -179,7 +188,10 @@ const MatchResultsScreen = () => {
   }, [tournamentId, fetchMatches, fetchPlayers]);
 
   const handleBack = () => {
-    navigation.goBack();
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    }
+    onClose?.();
   };
 
   // --- Render Event Item Component (Converted to NativeWind) ---
