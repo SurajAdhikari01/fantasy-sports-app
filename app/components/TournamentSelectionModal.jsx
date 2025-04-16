@@ -124,11 +124,11 @@ const TournamentSelectionModal = ({ visible, onClose, onTournamentSelect }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#f8f8f8", // Background for the safe area
+    backgroundColor: "#121212", // Dark background
   },
   modalContent: {
     flex: 1,
-    padding: Platform.OS === "ios" ? 15 : 20, // Adjust padding for platform
+    padding: Platform.OS === "ios" ? 15 : 20,
   },
   header: {
     flexDirection: "row",
@@ -137,43 +137,41 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 10,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#2C2C2C",
   },
   title: {
     fontSize: 22,
     fontWeight: "bold",
-    color: "#333",
+    color: "#FFFFFF",
   },
   closeButton: {
     paddingVertical: 5,
     paddingHorizontal: 10,
-    // backgroundColor: '#e0e0e0', // Optional background for button
     borderRadius: 5,
   },
   closeButtonText: {
     fontSize: 16,
-    color: "#007AFF", // iOS blue
+    color: "#90CAF9", // Material UI blue
     fontWeight: "500",
   },
   itemContainer: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1E1E1E",
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#2C2C2C",
     borderRadius: 8,
     marginBottom: 10,
-    // Shadow for iOS
+    // Optional subtle shadow on dark
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    // Elevation for Android
-    elevation: 2,
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 1,
   },
   itemText: {
     fontSize: 18,
-    color: "#444",
+    color: "#FFFFFF",
   },
   centered: {
     flex: 1,
@@ -185,13 +183,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 30,
     paddingHorizontal: 20,
-    color: "#555",
+    color: "#CCCCCC",
   },
   errorText: {
-    color: "red",
+    color: "#EF5350", // Material red
   },
   infoText: {
-    color: "blue",
+    color: "#90CAF9", // Light blue
   },
 });
 

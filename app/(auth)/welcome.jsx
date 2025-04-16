@@ -207,8 +207,7 @@ const WelcomeScreen = () => {
           onRequestClose={handleCloseMatchResults}
         >
           <MatchResultsScreen
-            tournamentId={selectedTournament.id}
-            tournamentName={selectedTournament.name}
+            selectedTournament={selectedTournament}
             onClose={handleCloseMatchResults}
           />
         </Modal>

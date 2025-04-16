@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import axios from "../config/axios";
 import { useLocalSearchParams } from "expo-router";
+import api from "../config/axios";
 
 // NativeWind classes replace StyleSheet
 // Ensure you have NativeWind setup in your project (tailwind.config.js, babel plugin, etc.)
@@ -22,7 +23,7 @@ const MatchResultsScreen = ({ onClose, selectedTournament }) => {
   const navigation = useNavigation(); // REMOVE if ONLY used for goBack
   const route = useRoute();
   const params = useLocalSearchParams(); // Get route params
-  const tournamentId = params?.tournamentId ?? selectedTournament?._id;
+  const tournamentId = params?.tournamentId ?? selectedTournament?.id;
   const tournamentName = params?.tournamentName ?? selectedTournament?.name;
 
   // --- State Variables (Unchanged) ---
@@ -35,7 +36,8 @@ const MatchResultsScreen = ({ onClose, selectedTournament }) => {
   const [infoMessage, setInfoMessage] = useState(null);
   const [expandedMatches, setExpandedMatches] = useState({});
 
-  if (!tournamentId && !tournamentName) {
+  if (tournamentId && tournamentName) {
+    console.log(selectedTournament);
     console.log("Tournament ID is missing.");
   }
 
@@ -85,7 +87,8 @@ const MatchResultsScreen = ({ onClose, selectedTournament }) => {
     setIsLoadingPlayers(true);
     try {
       // Use tId in the API call
-      const response = await axios.get(`/players/${tId}/players`);
+      const response = await api.get(`/players/${tId}/players`);
+
       if (response.status === 200 && response.data?.data) {
         const playersMap = response.data.data.reduce((acc, player) => {
           if (player._id) acc[player._id] = player;
@@ -121,7 +124,8 @@ const MatchResultsScreen = ({ onClose, selectedTournament }) => {
     setMatches([]); // Clear previous matches
 
     try {
-      const response = await axios.get(`/tournaments/${tId}/matches`);
+      const response = await api.get(`/tournaments/${tId}/matches`);
+      console.log("Matches response:", response.data);
       if (response.status === 200 && response.data?.data?.matches) {
         const sortedMatches = (response.data.data.matches || []).sort(
           (a, b) => {
