@@ -14,6 +14,7 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 
 import { router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
@@ -262,29 +263,28 @@ const HomeScreen = () => {
         {/* --- Header --- */}
         <View className="px-4 pt-4">
           <View className="flex-row justify-between items-center ">
-            <Text className="text-neutral-200 font-semibold text-xl">
-              Hi,{" "}
-              {userData?.username
-                ? `${
-                    userData.username.charAt(0).toUpperCase() +
-                    userData.username.slice(1).toLowerCase()
-                  }`
-                : "User"}
-            </Text>
+            <View className="flex-1">
+              <Text className="text-neutral-200 font-semibold text-xl">
+                Hi,{" "}
+                {userData?.username
+                  ? `${
+                      userData.username.charAt(0).toUpperCase() +
+                      userData.username.slice(1).toLowerCase()
+                    }`
+                  : "User"}
+              </Text>
+              <Text className="text-neutral-400 text-sm">Welcome back</Text>
+            </View>
             <TouchableOpacity
               ref={profileImageRef}
               onPress={showOptionsMenu}
               className="active:opacity-70"
             >
-              <Image
-                source={{
-                  uri: "https://png.pngtree.com/png-vector/20220611/ourmid/pngtree-person-gray-photo-placeholder-man-silhouette-on-white-background-png-image_4826258.png",
-                }}
-                className="h-10 w-10 rounded-full"
-              />
+              <View className=" rounded-full items-center justify-center ">
+                <Ionicons name="person" size={28} color="grey" />
+              </View>
             </TouchableOpacity>
           </View>
-          <Text className="text-neutral-400 text-sm">Welcome back</Text>
         </View>
 
         {/* --- Statistics Card (UPDATED) --- */}
