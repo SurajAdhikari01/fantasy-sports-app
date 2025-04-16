@@ -1,14 +1,3 @@
-import { selector } from "recoil";
-import { playerLimitState } from "./atoms";
-
-// Recoil selector to retrieve player limit dynamically
-export const playerLimitSelector = selector({
-  key: "playerLimitSelector",
-  get: ({ get }) => {
-    return get(playerLimitState); // Retrieve the current value of playerLimitState
-  },
-});
-
 export const SPORT_CONFIGS = {
   football: {
     maxTeamValue: 100,
@@ -24,15 +13,19 @@ export const SPORT_CONFIGS = {
         playerTypes: ["defender"],
       },
       midfielders: {
-        min: 2,
-        max: 10,
+        min: 1,
+        max: 5,
         playerTypes: ["midfielder"],
       },
       forwards: {
         min: 1,
-        max: 10,
+        max: 3,
         playerTypes: ["forward"],
       },
     },
+    distributionRules: {
+      base: { gk: 1, def: 1, mid: 1, fwd: 1 }, // Minimum
+      sequence: ['def', ['mid', 'fwd'], ['mid', 'fwd'], 'def', ['mid', 'fwd'], 'def', ['mid', 'fwd']] // For players 5-11
+    }
   },
 };

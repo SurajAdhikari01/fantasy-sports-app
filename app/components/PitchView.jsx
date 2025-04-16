@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { View, TouchableOpacity, Image, Dimensions } from "react-native";
+import { View, TouchableOpacity, Image, Dimensions, Alert } from "react-native";
 import PlayerCard from "./PlayerCard";
 import { FontAwesome5 } from "@expo/vector-icons";
 import footballPitch from "../../assets/football-field.jpg";
@@ -11,35 +11,96 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Helper: ensure at least 1 for each outfield line if total players is less
 function getSectionDistribution(numPlayers) {
+  // Base minimums: 1 GK, 1 DEF, 1 MID, 1 FWD (if enough players)
   if (numPlayers <= 1) {
-    // Just 1: always GK
     return { gk: 1, def: 0, mid: 0, fwd: 0 };
   }
   if (numPlayers === 2) {
-    // GK + DEF
     return { gk: 1, def: 1, mid: 0, fwd: 0 };
   }
   if (numPlayers === 3) {
-    // GK + DEF + FWD
     return { gk: 1, def: 1, mid: 0, fwd: 1 };
   }
   if (numPlayers === 4) {
-    // GK + DEF + MID + FWD
     return { gk: 1, def: 1, mid: 1, fwd: 1 };
   }
-  // For 5+, distribute roughly as 1-2-2 (DEF-MID-FWD), or more
-  // Always at least 1 in each outfield, rest distributed
+
+  // For 5+, follow the specific distribution logic from requirements
   const gk = 1;
-  let spots = numPlayers - 1;
   let def = 1, mid = 1, fwd = 1;
-  spots -= 3;
-  // Now distribute remaining spots
-  while (spots > 0) {
-    if (def <= mid && def <= fwd) def++;
-    else if (mid <= def && mid <= fwd) mid++;
-    else fwd++;
-    spots--;
+
+  // Define minimums for each position when we have 5+ players
+  const MIN_DEF = 1;
+  const MIN_MID = 1;
+  const MIN_FWD = 1;
+
+  // Extra players distribution based on the rules
+  if (numPlayers >= 5) def++; // 5 players: add 1 DEF (becomes 2 DEF)
+
+  // Player 6-7: Add to MID or FWD (flexible)
+  let remaining = numPlayers - 5;
+  if (remaining > 0) {
+    // Default priority: add to MID first
+    mid += Math.min(2, remaining);
+    remaining -= Math.min(2, remaining);
   }
+
+  // Player 8: Must add 1 DEF (becomes 3 DEF)
+  if (numPlayers >= 8) {
+    def++;
+    remaining = numPlayers - 8;
+  }
+
+  // Player 9: Add to MID or FWD
+  if (remaining > 0) {
+    mid++;
+    remaining--;
+  }
+
+  // Player 10: Must add 1 DEF (becomes 4 DEF)
+  if (numPlayers >= 10) {
+    def++;
+    remaining = numPlayers - 10;
+  }
+
+  // Player 11: Add to MID or FWD
+  if (remaining > 0) {
+    mid++;
+    remaining--;
+  }
+
+  // Apply hard caps while ensuring minimums
+  // Ensure we never go below minimum requirements for each position
+  def = Math.min(Math.max(def, MIN_DEF), 4);
+  mid = Math.min(Math.max(mid, MIN_MID), 5); 
+  fwd = Math.min(Math.max(fwd, MIN_FWD), 3);
+
+  // Check if total exceeds numPlayers and adjust accordingly
+  let total = gk + def + mid + fwd;
+  if (total > numPlayers) {
+    // We need to reduce while respecting minimums
+    let excess = total - numPlayers;
+    
+    // Reduce in this order: MID, DEF, FWD (but never below minimums)
+    while (excess > 0 && mid > MIN_MID) {
+      mid--;
+      excess--;
+    }
+    while (excess > 0 && def > MIN_DEF) {
+      def--;
+      excess--;
+    }
+    while (excess > 0 && fwd > MIN_FWD) {
+      fwd--;
+      excess--;
+    }
+    
+    // If we still have excess, we cannot satisfy both constraints
+    if (excess > 0) {
+      console.warn("Cannot satisfy both max players and minimum position requirements");
+    }
+  }
+
   return { gk, def, mid, fwd };
 }
 
@@ -105,20 +166,88 @@ const calculatePositions = (numPlayers, teamData) => {
     }
   }
 
-  // --- Section distribution ---
-  const dist = getSectionDistribution(validNumPlayers);
+  const currentCounts = {
+    gk: goalkeepers.length || 0,
+    def: defenders.length || 0,
+    mid: midfielders.length || 0,
+    fwd: forwards.length || 0
+  };
 
-  // Clamp to at least one in each outfield line for positions
-  const gkLen = Math.max(dist.gk, goalkeepers.length);
-  const defLen = Math.max(dist.def, defenders.length);
-  const midLen = Math.max(dist.mid, midfielders.length);
-  const fwdLen = Math.max(dist.fwd, forwards.length);
+  // Total current players
+  const currentPlayerCount = Object.values(currentCounts).reduce((a, b) => a + b, 0);
 
-  // Compose arrays for rendering, fill with null for open slots
-  const combinedGk = [...goalkeepers, ...Array(Math.max(0, gkLen - goalkeepers.length)).fill(null)];
-  const combinedDef = [...defenders, ...Array(Math.max(0, defLen - defenders.length)).fill(null)];
-  const combinedMid = [...midfielders, ...Array(Math.max(0, midLen - midfielders.length)).fill(null)];
-  const combinedFwd = [...forwards, ...Array(Math.max(0, fwdLen - forwards.length)).fill(null)];
+  // Calculate ideal distribution based on max player count
+  const idealDist = getSectionDistribution(validNumPlayers);
+
+  // Calculate remaining slots available in each section
+  const remainingSlots = {
+    gk: Math.max(0, idealDist.gk - currentCounts.gk),
+    def: Math.max(0, idealDist.def - currentCounts.def),
+    mid: Math.max(0, idealDist.mid - currentCounts.mid),
+    fwd: Math.max(0, idealDist.fwd - currentCounts.fwd)
+  };
+
+  // Calculate minimum required players for each section
+  const minRequirements = {
+    gk: 1,
+    def: validNumPlayers >= 2 ? 1 : 0,
+    mid: validNumPlayers >= 4 ? 1 : 0,
+    fwd: validNumPlayers >= 3 ? 1 : 0
+  };
+
+  // Apply minimum requirements and current counts
+  const sections = [
+    { key: "goalkeepers", arr: goalkeepers, max: 1, min: minRequirements.gk },
+    { key: "defenders", arr: defenders, max: 4, min: minRequirements.def },
+    { key: "midfielders", arr: midfielders, max: 5, min: minRequirements.mid },
+    { key: "forwards", arr: forwards, max: 3, min: minRequirements.fwd },
+  ];
+
+  // Create position slots with players first, then add empty slots
+  let positions = [];
+
+  // Add existing players first
+  sections.forEach(({ key, arr }) => {
+    arr.forEach((player, idx) => {
+      positions.push({
+        player,
+        section: key,
+        positionId: `${key.slice(0, 3)}-${idx}`
+      });
+    });
+  });
+
+  // Determine remaining slots to add
+  const remainingSlotsCount = validNumPlayers - currentPlayerCount;
+  if (remainingSlotsCount > 0) {
+    // Priority order for adding slots
+    const sectionPriority = ["goalkeepers", "defenders", "midfielders", "forwards"];
+
+    // Add empty slots based on section priority and remaining count
+    let slotsToAdd = remainingSlotsCount;
+    sectionPriority.forEach(sectionKey => {
+      if (slotsToAdd <= 0) return;
+
+      const section = sections.find(s => s.key === sectionKey);
+      const currentSectionCount = positions.filter(p => p.section === sectionKey).length;
+      const idealSectionCount = sectionKey === "goalkeepers" ? idealDist.gk :
+        sectionKey === "defenders" ? idealDist.def :
+          sectionKey === "midfielders" ? idealDist.mid : idealDist.fwd;
+
+      const slotsNeeded = Math.max(0, idealSectionCount - currentSectionCount);
+      const slotsToAddInSection = Math.min(slotsToAdd, slotsNeeded);
+
+      for (let i = 0; i < slotsToAddInSection; i++) {
+        positions.push({
+          player: null,
+          section: sectionKey,
+          positionId: `empty-${sectionKey.slice(0, 3)}-${currentSectionCount + i}`
+        });
+      }
+
+      slotsToAdd -= slotsToAddInSection;
+    });
+  }
 
   // Placement constants
   const fieldWidth = 90; // percent
@@ -128,57 +257,55 @@ const calculatePositions = (numPlayers, teamData) => {
     midY = 40,
     fwdY = 15;
 
-  const positions = [];
+  // Transform positions array to include coordinates
+  const positionsWithCoordinates = [];
+
+  // Process by section for positional arrangement
+  const gkPositions = positions.filter(p => p.section === "goalkeepers");
+  const defPositions = positions.filter(p => p.section === "defenders");
+  const midPositions = positions.filter(p => p.section === "midfielders");
+  const fwdPositions = positions.filter(p => p.section === "forwards");
 
   // GK
-  combinedGk.forEach((player, index) => {
-    positions.push({
-      player,
+  gkPositions.forEach((pos, index) => {
+    positionsWithCoordinates.push({
+      ...pos,
       x: centerX,
       y: gkY,
-      section: "goalkeepers",
-      positionId: player ? `gk-${index}` : `empty-gk-${index}`,
     });
   });
 
   // DEF
-  const defSpacing = fieldWidth / (combinedDef.length + 1);
-  combinedDef.forEach((player, index) => {
-    positions.push({
-      player,
-      x: combinedDef.length === 1 ? centerX : 5 + (index + 1) * defSpacing,
+  const defSpacing = fieldWidth / (defPositions.length + 1);
+  defPositions.forEach((pos, index) => {
+    positionsWithCoordinates.push({
+      ...pos,
+      x: defPositions.length === 1 ? centerX : 5 + (index + 1) * defSpacing,
       y: defY,
-      section: "defenders",
-      positionId: player ? `def-${index}` : `empty-def-${index}`,
     });
   });
 
   // MID
-  const midSpacing = fieldWidth / (combinedMid.length + 1);
-  combinedMid.forEach((player, index) => {
-    positions.push({
-      player,
-      x: combinedMid.length === 1 ? centerX : 5 + (index + 1) * midSpacing,
+  const midSpacing = fieldWidth / (midPositions.length + 1);
+  midPositions.forEach((pos, index) => {
+    positionsWithCoordinates.push({
+      ...pos,
+      x: midPositions.length === 1 ? centerX : 5 + (index + 1) * midSpacing,
       y: midY + (index % 2 === 0 ? -3 : 3),
-      section: "midfielders",
-      positionId: player ? `mid-${index}` : `empty-mid-${index}`,
     });
   });
 
-
-  // FWD (always render at least 1 if dist.fwd >= 1)
-  const fwdSpacing = fieldWidth / (combinedFwd.length + 1);
-  combinedFwd.forEach((player, index) => {
-    positions.push({
-      player,
-      x: combinedFwd.length === 1 ? centerX : 5 + (index + 1) * fwdSpacing,
+  // FWD
+  const fwdSpacing = fieldWidth / (fwdPositions.length + 1);
+  fwdPositions.forEach((pos, index) => {
+    positionsWithCoordinates.push({
+      ...pos,
+      x: fwdPositions.length === 1 ? centerX : 5 + (index + 1) * fwdSpacing,
       y: fwdY,
-      section: "forwards",
-      positionId: player ? `fwd-${index}` : `empty-fwd-${index}`,
     });
   });
 
-  return positions;
+  return positionsWithCoordinates;
 };
 
 const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) => {
@@ -196,6 +323,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
   const viewMode = useRecoilValue(viewModeState);
   const isViewMode = viewMode === "VIEW_TEAM";
 
+  // Updated to check if player redistribution is valid
   const onReplacePlayer = (player) => {
     let section = "midfielders";
     if (player?.playerType) {
@@ -205,6 +333,36 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
       else if (type.includes("midfielder") || type.includes("midfield")) section = "midfielders";
       else if (type.includes("forward") || type.includes("striker") || type.includes("attack")) section = "forwards";
     }
+    
+    // Check if replacing this player would violate minimum requirements
+    const currentCounts = {
+      goalkeepers: (teamData?.goalkeepers || []).length,
+      defenders: (teamData?.defenders || []).length,
+      midfielders: (teamData?.midfielders || []).length,
+      forwards: (teamData?.forwards || []).length
+    };
+    
+    // If removing would bring a position below minimum
+    if (section === "goalkeepers" && currentCounts.goalkeepers <= 1) {
+      Alert.alert("Invalid Change", "You must keep at least 1 goalkeeper.");
+      return;
+    }
+    
+    if (section === "defenders" && currentCounts.defenders <= 1 && playerLimit >= 2) {
+      Alert.alert("Invalid Change", "You must keep at least 1 defender.");
+      return;
+    }
+    
+    if (section === "midfielders" && currentCounts.midfielders <= 1 && playerLimit >= 4) {
+      Alert.alert("Invalid Change", "You must keep at least 1 midfielder.");
+      return;
+    }
+    
+    if (section === "forwards" && currentCounts.forwards <= 1 && playerLimit >= 3) {
+      Alert.alert("Invalid Change", "You must keep at least 1 forward.");
+      return;
+    }
+    
     const positions = calculatePositions(playerLimit, teamData);
     const playerPos = positions.find((pos) => pos.player && pos.player._id === player._id);
     const positionId = playerPos?.positionId || `replace-${player._id || Date.now()}`;
@@ -215,6 +373,49 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
       }
       : undefined;
     handleRemovePlayer(player, true);
+    handleOpenPlayerSelection(section, positionId, coordinates);
+  };
+
+  // Handle selecting a position to add a player
+  const handleSelectPosition = (section, positionId, coordinates) => {
+    // Check if adding a player would cause other positions to go below minimum
+    const currentCounts = {
+      goalkeepers: (teamData?.goalkeepers || []).length,
+      defenders: (teamData?.defenders || []).length,
+      midfielders: (teamData?.midfielders || []).length,
+      forwards: (teamData?.forwards || []).length
+    };
+    
+    const totalPlayers = Object.values(currentCounts).reduce((a, b) => a + b, 0);
+    
+    // If we're at playerLimit, adding would require removing from elsewhere
+    if (totalPlayers >= playerLimit) {
+      // Calculate which position would lose a slot
+      const idealDist = getSectionDistribution(playerLimit);
+      
+      // If adding to this section would cause another to go below minimum
+      if (section === "defenders" && 
+          currentCounts.defenders >= idealDist.def && 
+          (currentCounts.midfielders <= idealDist.mid || currentCounts.forwards <= idealDist.fwd)) {
+        Alert.alert("Invalid Change", "Adding another defender would reduce forwards or midfielders below minimum required.");
+        return;
+      }
+      
+      if (section === "midfielders" && 
+          currentCounts.midfielders >= idealDist.mid && 
+          (currentCounts.defenders <= idealDist.def || currentCounts.forwards <= idealDist.fwd)) {
+        Alert.alert("Invalid Change", "Adding another midfielder would reduce forwards or defenders below minimum required.");
+        return;
+      }
+      
+      if (section === "forwards" && 
+          currentCounts.forwards >= idealDist.fwd && 
+          (currentCounts.defenders <= idealDist.def || currentCounts.midfielders <= idealDist.mid)) {
+        Alert.alert("Invalid Change", "Adding another forward would reduce midfielders or defenders below minimum required.");
+        return;
+      }
+    }
+
     handleOpenPlayerSelection(section, positionId, coordinates);
   };
 
@@ -249,7 +450,6 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
         const player = position.player;
         const posX = (position.x / 100) * containerDimensions.width;
         const posY = (position.y / 100) * containerDimensions.height;
-        // const playerPoints = player ? calculatePlayerPoints(player) : undefined;
 
         return player ? (
           <View
@@ -273,7 +473,6 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
               onRemovePlayer={() => handleRemovePlayer(player)}
               onReplacePlayer={onReplacePlayer}
               position={{ x: posX, y: posY }}
-              // playerPoints={playerPointsMap[player._id] ?? 0}
               className="w-18 h-18"
             />
           </View>
@@ -288,7 +487,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
                 transform: [{ translateX: -32 }, { translateY: -32 }],
               }}
               onPress={() =>
-                handleOpenPlayerSelection(position.section, position.positionId, {
+                handleSelectPosition(position.section, position.positionId, {
                   x: posX,
                   y: posY,
                 })

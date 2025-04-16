@@ -5,24 +5,28 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ImageBackground,
-  Platform,
+  Modal,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import LeaderboardModal from "../components/LeaderboardModal"; // Assuming this path is correct
+import MatchResultsScreen from "../components/MatchResultsScreen";
+import TournamentSelectionModal from "../components/TournamentSelectionModal";
 
-// Import the background image - Ensure the path is correct relative to this file
 import backgroundImage from "../../assets/footballbg.jpg";
 
 const WelcomeScreen = () => {
-  const [isLeaderboardVisible, setIsLeaderboardVisible] = useState(false);
+  const [isMatchResultsVisible, setIsMatchResultsVisible] = useState(false);
+  const [isTournamentModalVisible, setIsTournamentModalVisible] =
+    useState(false);
+
+  const [selectedTournament, setSelectedTournament] = useState(null); // { id: '...', name: '...' }
 
   const handleNavigation = (path) => {
     router.push(path);
   };
 
-  // Data for the informational blocks remains the same
   const features = [
     {
       title: "Explore Leagues",
@@ -54,6 +58,41 @@ const WelcomeScreen = () => {
     },
   ];
 
+  // --- Handlers ---
+  const handleTrophyPress = () => {
+    setIsTournamentModalVisible(true);
+  };
+
+  // This function receives the selected tournament object from the modal's callback
+  const handleSelectTournament = (tournamentData) => {
+    // Ensure the data from the modal is valid
+    if (tournamentData && tournamentData._id && tournamentData.name) {
+      //console.log("Selected Tournament:", tournamentData._id);
+
+      setSelectedTournament({
+        id: tournamentData._id,
+        name: tournamentData.name,
+      });
+      setIsTournamentModalVisible(false); // Close selection modal
+      setIsMatchResultsVisible(true); // Open results modal
+    } else {
+      console.error(
+        "Invalid tournament data received from modal:",
+        tournamentData
+      );
+      Alert.alert(
+        "Error",
+        "Could not select tournament. Invalid data received."
+      );
+      setIsTournamentModalVisible(false); // Still close the modal
+    }
+  };
+
+  const handleCloseMatchResults = () => {
+    setIsMatchResultsVisible(false);
+    setSelectedTournament(null); // Clear selection when closing results
+  };
+
   return (
     <ImageBackground
       source={backgroundImage}
@@ -62,16 +101,16 @@ const WelcomeScreen = () => {
       resizeMode="cover"
     >
       <View className="flex-1 bg-black/75">
-        {/* SafeAreaView respects notches/status bar */}
         <SafeAreaView className="flex-1 bg-transparent">
+          {/* Trophy Icon */}
           <TouchableOpacity
-            className="absolute top-20 right-5 z-10 p-2 bg-white/40 rounded-full"
-            onPress={() => setIsLeaderboardVisible(true)}
+            className="absolute top-20 right-5 z-10 p-2 bg-white/40 rounded-full ios:shadow-sm android:elevation-4"
+            onPress={handleTrophyPress}
           >
             <Ionicons name="trophy" size={26} color="#FFD700" />
           </TouchableOpacity>
 
-          {/* Main Content View: Uses flex to distribute space */}
+          {/* Main Content */}
           <View className="flex-1 justify-around px-5 pt-12 pb-5">
             {/* Welcome Message */}
             <View className="items-center">
@@ -83,7 +122,7 @@ const WelcomeScreen = () => {
               </Text>
             </View>
 
-            {/* Feature Display Blocks Section */}
+            {/* Feature Cards */}
             <View>
               <Text className="text-xl font-semibold text-gray-200 text-center mb-5">
                 Discover What's Inside
@@ -111,11 +150,9 @@ const WelcomeScreen = () => {
                         <Text className="text-sm font-bold text-white text-center mb-1">
                           {feature.title}
                         </Text>
-                        {/* --- Subtitle Style Changes --- */}
                         <Text className="text-xs text-gray-200 text-center leading-snug">
                           {feature.subtitle}
                         </Text>
-                        {/* --- End Subtitle Style Changes --- */}
                       </LinearGradient>
                     </View>
                   );
@@ -123,9 +160,8 @@ const WelcomeScreen = () => {
               </View>
             </View>
 
-            {/* Login and Signup Buttons */}
+            {/* Login/Signup Buttons */}
             <View className="px-2">
-              {/* Login Button */}
               <TouchableOpacity onPress={() => handleNavigation("/signin")}>
                 <LinearGradient
                   colors={["#8E2DE2", "#4A00E0"]}
@@ -144,8 +180,6 @@ const WelcomeScreen = () => {
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
-
-              {/* Sign Up Button */}
               <TouchableOpacity
                 className="flex-row justify-center items-center rounded-full py-3.5 px-5 border-2 border-[#03DAC6] bg-transparent ios:shadow-md android:elevation-6"
                 onPress={() => handleNavigation("/signup")}
@@ -165,12 +199,25 @@ const WelcomeScreen = () => {
         </SafeAreaView>
       </View>
 
-      {/* Leaderboard Modal remains unchanged */}
-      <LeaderboardModal
-        visible={isLeaderboardVisible}
-        onClose={() => setIsLeaderboardVisible(false)}
-        // Pass the actual username if available after login state is implemented
-        currentUserUsername={"SurajAdhikari01"} // Using your login as an example
+      {selectedTournament && (
+        <Modal
+          visible={isMatchResultsVisible}
+          animationType="slide"
+          presentationStyle="fullScreen"
+          onRequestClose={handleCloseMatchResults}
+        >
+          <MatchResultsScreen
+            selectedTournament={selectedTournament}
+            onClose={handleCloseMatchResults}
+          />
+        </Modal>
+      )}
+
+      <TournamentSelectionModal
+        visible={isTournamentModalVisible}
+        onClose={() => setIsTournamentModalVisible(false)}
+        onTournamentSelect={handleSelectTournament}
+        selectedTournament={selectedTournament} // Pass the selected tournament to the modal
       />
     </ImageBackground>
   );

@@ -30,7 +30,7 @@ const ViewTeam = () => {
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
   const [totalPoints, setTotalPoints] = useRecoilState(totalPointsState)
-  const teamId = useRecoilValue(teamIdState)
+  const [teamId, setTeamId] = useRecoilState(teamIdState)
   const currentRound = useRecoilValue(currentRoundState) // "knockout" | "semifinal" | "final"
 
   // Reset functions
@@ -58,10 +58,23 @@ const ViewTeam = () => {
       const response = await api.get(`/teams`)
 
       if (response.data.success) {
-        const teamForTournament = response.data.data.find((team) => team.tournamentId?._id === selectedTournament)
+        const teamForTournament = response.data.data.find(
+          (team) => team.tournamentId?._id === selectedTournament
+        )
+
+        // ADD THIS LINE to log the selected team ID:
+        if (teamForTournament) {
+          console.log('Selected Team ID:', teamForTournament._id)
+          setTeamId(teamForTournament._id)
+        } else {
+          console.log('No team found for selected tournament:', selectedTournament)
+        }
+
         setTotalPoints(teamForTournament?.totalPoints || 0)
         if (teamForTournament) {
-          const stagePlayers = [...(teamForTournament.players?.[currentStage] || [])].map((p) => ({
+          const stagePlayers = [
+            ...(teamForTournament.players?.[currentStage] || []),
+          ].map((p) => ({
             ...p,
             playerType: (p.playerType?.toLowerCase() || "").trim(),
             photo:
@@ -81,12 +94,35 @@ const ViewTeam = () => {
     }
   }
 
-  const handleEdit = () => {
+  const handleEdit = async () => {
     if (!teamId) {
       Alert.alert("Error", "No team found to edit");
       return;
     }
-    router.push('components/EditTeam');
+    console.log("teamid", teamId)
+    try {
+
+      const response = await api.post(`/checkTeamUpdateAbility/check/${teamId}`);
+      console.log("response", response.data)
+
+      // if (response.data.success) {
+        router.push('components/EditTeam');
+      // } else {
+      //   Alert.alert("Cannot Edit Team", response.data.message || "You do not have permission to edit this team at this time.");
+      // }
+    } catch (error) {
+      if (error.response) {
+        // Server responded with a status other than 2xx
+        console.log("API error:", error.response.data, error.response.status);
+      } else if (error.request) {
+        // No response received
+        console.log("No response from server:", error.request);
+      } else {
+        // Error setting up the request
+        console.log("Error:", error.message);
+      }
+      Alert.alert("Error", "Could not verify team edit permissions. Please try again.");
+    }
   };
 
   const handleBack = () => {
