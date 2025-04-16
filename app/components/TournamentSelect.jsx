@@ -22,7 +22,6 @@ const TournamentSelect = () => {
   const [playerLimit, setPlayerLimit] = useRecoilState(playerLimitState);
   const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState([]);
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
-  const [teamid, setTeamid] = useRecoilState(teamIdState);
   const [currentRound, setCurrentRoundState] = useRecoilState(currentRoundState);
   const [showEnded, setShowEnded] = useState(false);
 
@@ -226,7 +225,6 @@ const TournamentSelect = () => {
             setSelectedTournament(item._id);
             setSelectedTournamentPlayers([]);
             setViewMode('VIEW_TEAM');
-            setTeamid(item._id);
             setPlayerLimit(item.playerLimitPerTeam);
             const round = getCurrentRound(item);
             setCurrentRoundState(round);
