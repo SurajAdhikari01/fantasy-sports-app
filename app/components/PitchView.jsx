@@ -454,9 +454,9 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer, pl
 
         // Get player points if they exist
         const playerPoints = player && player._id ? playerPointsData[player._id] : undefined;
-        if (player && player._id && playerPoints !== undefined) {
-          console.log(`Points for ${player.name}: ${playerPoints}`);
-        }
+        // if (player && player._id && playerPoints !== undefined) {
+        //   console.log(`Points for ${player.name}: ${playerPoints}`);
+        // }
         return player ? (
           <View
             key={position.positionId || `player-${player._id || index}`}

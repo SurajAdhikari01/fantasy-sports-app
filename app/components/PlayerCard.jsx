@@ -17,6 +17,9 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
   // Default position if none is provided
   const defaultPosition = { x: 0, y: 0 };
   const safePosition = position || defaultPosition;
+  
+  // Get franchise name (if available)
+  const franchiseName = player.franchise?.name || "Free Agent";
 
   return (
     <>
@@ -95,9 +98,7 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
 
               <View style={{ flexDirection: "row", alignItems: "center", marginTop: 10 }}>
                 <Text style={styles.franchiseLabel}>Franchise: </Text>
-                <Text style={styles.franchiseValue}>
-                  {player.franchise?.name || "Free Agent"}
-                </Text>
+                <Text style={styles.franchiseValue}>{franchiseName}</Text>
               </View>
 
               {(viewMode === "MANAGE_TEAM" || viewMode === "EDIT_TEAM") && (
