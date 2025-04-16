@@ -199,6 +199,8 @@ export function useTeamActions({
       if (response.data.success) {
         Alert.alert("Success", "Team created successfully!");
         if (router && typeof router.push === 'function') {
+          setselectedtournament(tournamentId);
+          setTeamData({});
           router.push("home");
         }
       } else {
