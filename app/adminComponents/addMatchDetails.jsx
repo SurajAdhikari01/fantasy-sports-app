@@ -571,7 +571,7 @@ export default function AddMatchDetail() {
     // Use consistent dark background
     <StyledSafeAreaView className="flex-1 bg-[#2a2a2a]">
       {/* Header */}
-      <StyledView className="flex-row items-center p-4 border-b border-gray-700/60">
+      <StyledView className="flex-row items-center px-4 py-4 mr-8 border-b border-gray-700/60">
         <TouchableOpacity onPress={handleBack} className="mr-3 p-1">
           <Ionicons name="arrow-back" size={24} color="white" />
         </TouchableOpacity>
@@ -700,7 +700,7 @@ export default function AddMatchDetail() {
                 </StyledText>
                 <StyledView className="bg-[#4a4a4a] p-3 rounded-md border border-gray-600">
                   <StyledText className="text-white text-lg font-semibold text-center">
-                    {franchiseName1 || "Team 1"} {matchDetails.score}
+                    {franchiseName1 || "Team 1"} {matchDetails.score}{" "}
                     {franchiseName2 || "Team 2"}
                   </StyledText>
                 </StyledView>
