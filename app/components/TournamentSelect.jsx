@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-// Removed TabView and SceneMap imports
 import api from "../config/axios";
 import { useRecoilState } from "recoil";
 import {
@@ -23,8 +22,8 @@ import {
   playerLimitState,
   teamIdState,
   currentRoundState,
+  viewModeState,
 } from "./atoms";
-import { viewModeState } from "./atoms";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 
@@ -43,27 +42,20 @@ const TournamentSelect = () => {
     selectedTournamentState
   );
   const [playerLimit, setPlayerLimit] = useRecoilState(playerLimitState);
-  const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState(
-    []
-  );
+  const [selectedTournamentPlayers, setSelectedTournamentPlayers] = useState([]);
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
-  const [currentRound, setCurrentRoundState] =
-    useRecoilState(currentRoundState);
-  // const [showEnded, setShowEnded] = useState(false); // This state seems unused globally, moved logic locally to routes
+  const [currentRound, setCurrentRoundState] = useRecoilState(currentRoundState);
 
   // --- State for manual tab/swipe implementation ---
   const [activeIndex, setActiveIndex] = useState(0); // 0 for Joined, 1 for Available
   const scrollViewRef = useRef(null);
   // --- End State ---
 
-  // Removed initialLayout and routes state
-
   useEffect(() => {
     fetchTournaments();
   }, []);
 
-  // Helper functions (getRoundsToShow, getNextRoundInfo, fetchTournaments, getCurrentRound, handleJoinTournament, onRefresh) remain the same
-  // ... (Keep existing helper functions) ...
+  // Helper functions 
   const getRoundsToShow = ({ knockoutStart, semifinalStart, finalStart }) => {
     const now = new Date();
     const knockout = knockoutStart ? new Date(knockoutStart) : null;
@@ -111,7 +103,6 @@ const TournamentSelect = () => {
         return { roundLabel: "Semifinal", deadline: semifinal };
       }
       // If knockout hasn't happened yet, the next round is still knockout technically
-      // This case might need refinement based on exact registration logic
       if (knockout && now < knockout) {
         return { roundLabel: "Knockout", deadline: knockout };
       }
@@ -136,7 +127,7 @@ const TournamentSelect = () => {
         }
         // No knockout, no semifinal yet
         if (!knockout && !semifinal) {
-          return { roundLabel: "Final", deadline: final }; // Assuming direct to final? Needs logic check.
+          return { roundLabel: "Final", deadline: final };
         }
         if (!knockout && semifinal && now < semifinal) {
           return { roundLabel: "Semifinal", deadline: semifinal };
@@ -155,16 +146,14 @@ const TournamentSelect = () => {
       return { roundLabel: "Tournament Ended", deadline: null };
     }
     // Fallback if no dates are set or logic is complex
-    return { roundLabel: "Check Details", deadline: null }; // Changed fallback
+    return { roundLabel: "Check Details", deadline: null };
   };
 
   const fetchTournaments = async () => {
     try {
       setLoading(true);
 
-      const joinedResponse = await api.get(
-        "tournaments/getTournamentsByUserId"
-      );
+      const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
       if (joinedResponse.data.success) {
         setJoinedTournaments(joinedResponse.data.data || []);
       } else {
@@ -208,14 +197,12 @@ const TournamentSelect = () => {
       if (!final || now < final) {
         return "SEMIFINAL";
       }
-      // If final exists and we have reached it, handled above. Fallback needed?
     }
     if (ko && now >= ko) {
       // If semifinal exists and we haven't reached it yet, we are in KNOCKOUT
       if (!semi || now < semi) {
         return "KNOCKOUT";
       }
-      // If semifinal exists and we have reached it, handled above.
     }
     // If none of the start dates have been reached
     return "NOT_STARTED";
@@ -224,39 +211,24 @@ const TournamentSelect = () => {
   const handleJoinTournament = async (tournamentId, playerLimitPerTeam) => {
     try {
       setLoading(true);
-      // Assuming you need to fetch players *before* navigating or confirming join
-      // If joining is a separate API call, add it here.
-      // const joinResponse = await api.post(`/tournaments/${tournamentId}/join`); // Example join call
-      // if (!joinResponse.data.success) {
-      //   Alert.alert("Error", joinResponse.data.message || "Failed to join tournament");
-      //   setLoading(false);
-      //   return;
-      // }
-
-      // Fetch players for the newly joined tournament (or maybe this happens on the next screen?)
-      // This part seems more related to viewing the tournament *after* joining.
-      // Let's assume joining is implicit or handled by viewing.
-      const response = await api.get(`/players/${tournamentId}/players`); // Fetching players might not be needed here
-
-      // if (response.data.success) { // Check might be redundant if join logic is separate
+      
       setSelectedTournament(tournamentId);
       setPlayerLimit(playerLimitPerTeam);
-      // setFetchedPlayers(response.data.data || []); // Maybe clear or fetch later
       setFetchedPlayers([]); // Clear players, fetch on view
       setViewMode("CREATE_TEAM"); // Go to team creation/view after joining
+      
       const tournamentInfo =
         availableTournaments.find((t) => t._id === tournamentId) ||
         joinedTournaments.find((t) => t._id === tournamentId);
+        
       if (tournamentInfo) {
         const round = getCurrentRound(tournamentInfo);
         setCurrentRoundState(round);
       } else {
         setCurrentRoundState("NOT_STARTED"); // Default if info not found
       }
+      
       router.push("main"); // Navigate to the main screen where team management happens
-      // } else {
-      //   Alert.alert("Error", response.data.message || "Failed to fetch players");
-      // }
     } catch (error) {
       Alert.alert("Error", "Failed to join tournament. Please try again.");
       console.error("Error joining tournament:", error);
@@ -270,12 +242,11 @@ const TournamentSelect = () => {
     fetchTournaments();
   };
 
-  // --- Render Item Functions (renderJoinedTournamentItem, renderAvailableTournamentItem) ---
-  // Adjusted onPress for "View Tournament" in renderJoinedTournamentItem
+  // --- Render Item Functions ---
   const renderJoinedTournamentItem = ({ item }) => {
     const currentRoundLabel = getCurrentRound(item);
     const roundsToShow = getRoundsToShow(item);
-    const nextRoundInfo = getNextRoundInfo(item); // Get next round info for display
+    const nextRoundInfo = getNextRoundInfo(item);
 
     return (
       <View style={styles.card}>
@@ -289,7 +260,6 @@ const TournamentSelect = () => {
         <View style={styles.infoBox}>
           <View style={styles.infoRowWrap}>
             <View style={styles.infoItem}>
-              {/* Display current round status */}
               <Ionicons
                 name={
                   currentRoundLabel === "FINAL"
@@ -304,19 +274,18 @@ const TournamentSelect = () => {
                 color="#94a3b8"
               />
               <Text style={[styles.infoText, styles.statusText]}>
-                {
-                  currentRoundLabel === "KNOCKOUT"
-                    ? "Knockout round active"
-                    : currentRoundLabel === "SEMIFINAL"
-                    ? "Semifinal round active"
-                    : currentRoundLabel === "FINAL"
-                    ? "Final round active"
-                    : nextRoundInfo.roundLabel === "Tournament Ended"
-                    ? "Tournament Ended"
-                    : "Starts Soon" // Or "Not Started"
-                }
+                {currentRoundLabel === "KNOCKOUT"
+                  ? "Knockout round active"
+                  : currentRoundLabel === "SEMIFINAL"
+                  ? "Semifinal round active"
+                  : currentRoundLabel === "FINAL"
+                  ? "Final round active"
+                  : nextRoundInfo.roundLabel === "Tournament Ended"
+                  ? "Tournament Ended"
+                  : "Starts Soon"}
               </Text>
             </View>
+            
             {/* Display upcoming round dates */}
             {roundsToShow.length === 0 &&
               nextRoundInfo.roundLabel !== "Tournament Ended" && (
@@ -325,6 +294,7 @@ const TournamentSelect = () => {
                   <Text style={styles.infoText}>Awaiting round details</Text>
                 </View>
               )}
+              
             {roundsToShow.map((round) => (
               <View style={styles.infoItem} key={round.key}>
                 <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
@@ -337,7 +307,6 @@ const TournamentSelect = () => {
           </View>
         </View>
 
-        {/* Keep View Tournament button enabled even if ended */}
         <TouchableOpacity
           style={[styles.button, styles.viewButton]}
           onPress={() => {
@@ -383,16 +352,14 @@ const TournamentSelect = () => {
           {!isEnded ? (
             <>
               <View style={styles.infoItem}>
-                <Ionicons name="timer-outline" size={18} color="#2dd4bf" />{" "}
-                {/* Teal color */}
+                <Ionicons name="timer-outline" size={18} color="#2dd4bf" />
                 <Text style={[styles.infoText, styles.joinInfoText]}>
                   Join for {roundLabel} round
                 </Text>
               </View>
               {deadline && (
                 <View style={styles.infoItem}>
-                  <Ionicons name="alarm-outline" size={18} color="#fbbf24" />{" "}
-                  {/* Yellow color */}
+                  <Ionicons name="alarm-outline" size={18} color="#fbbf24" />
                   <Text style={[styles.infoText, styles.deadlineText]}>
                     Deadline: {deadline.toLocaleDateString()}{" "}
                     {deadline.toLocaleTimeString([], {
@@ -405,8 +372,7 @@ const TournamentSelect = () => {
             </>
           ) : (
             <View style={styles.infoItem}>
-              <Ionicons name="close-circle-outline" size={18} color="#f87171" />{" "}
-              {/* Red color */}
+              <Ionicons name="close-circle-outline" size={18} color="#f87171" />
               <Text style={[styles.infoText, styles.endedText]}>
                 Tournament Ended
               </Text>
@@ -414,7 +380,7 @@ const TournamentSelect = () => {
           )}
         </View>
 
-        {!isEnded && (
+        {!isEnded ? (
           <TouchableOpacity
             style={[styles.button, styles.joinButton]}
             onPress={() =>
@@ -424,9 +390,7 @@ const TournamentSelect = () => {
             <Ionicons name="add-circle-outline" size={18} color="white" />
             <Text style={styles.buttonText}>Join Tournament</Text>
           </TouchableOpacity>
-        )}
-        {/* Optionally show a disabled/different button for ended tournaments */}
-        {isEnded && (
+        ) : (
           <View style={[styles.button, styles.disabledButton]}>
             <Ionicons name="archive-outline" size={18} color="#64748b" />
             <Text style={styles.disabledButtonText}>View Results (Soon)</Text>
@@ -435,7 +399,6 @@ const TournamentSelect = () => {
       </View>
     );
   };
-  // --- End Render Item Functions ---
 
   // --- Empty State Component ---
   const renderEmptyState = (isJoinedList) => (
@@ -443,7 +406,7 @@ const TournamentSelect = () => {
       <Ionicons
         name={isJoinedList ? "trophy-outline" : "calendar-outline"}
         size={64}
-        color="#475569" // slate-600
+        color="#475569"
       />
       <Text style={styles.emptyStateText}>
         {isJoinedList
@@ -457,16 +420,15 @@ const TournamentSelect = () => {
       </Text>
       <TouchableOpacity
         style={styles.refreshButton}
-        onPress={onRefresh} // Use onRefresh directly
+        onPress={onRefresh}
       >
-        <Ionicons name="refresh" size={18} color="#a5b4fc" /> {/* indigo-300 */}
+        <Ionicons name="refresh" size={18} color="#a5b4fc" />
         <Text style={styles.refreshButtonText}>Refresh</Text>
       </TouchableOpacity>
     </View>
   );
-  // --- End Empty State ---
 
-  // --- Components for each page (previously FirstRoute, SecondRoute) ---
+  // --- Components for each page ---
   const JoinedTournamentsPage = () => {
     const [showEnded, setShowEnded] = useState(false);
 
@@ -482,10 +444,8 @@ const TournamentSelect = () => {
       ? endedTournaments
       : activeTournaments;
     const hasEndedToShow = endedTournaments.length > 0;
-    const hasActiveToShow = activeTournaments.length > 0;
 
     const renderListFooter = () =>
-      // Only show toggle if there are ended tournaments OR if currently showing ended tournaments
       (hasEndedToShow || showEnded) && (
         <View style={styles.footerContainer}>
           <TouchableOpacity
@@ -494,8 +454,7 @@ const TournamentSelect = () => {
           >
             <Ionicons name="time-outline" size={18} color="#fbbf24" />
             <Text style={styles.toggleEndedButtonText}>
-              {showEnded ? "Hide" : "View"} Past Tournaments (
-              {endedTournaments.length})
+              {showEnded ? "Hide" : "View"} Past Tournaments ({endedTournaments.length})
             </Text>
           </TouchableOpacity>
         </View>
@@ -507,13 +466,13 @@ const TournamentSelect = () => {
         keyExtractor={(item) => item._id}
         renderItem={renderJoinedTournamentItem}
         contentContainerStyle={styles.listContentContainer}
-        ListEmptyComponent={() => renderEmptyState(true)} // Pass true for joined list
+        ListEmptyComponent={() => renderEmptyState(true)}
         ListFooterComponent={renderListFooter}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={["#a78bfa"]} // indigo-400
+            colors={["#a78bfa"]}
             tintColor="#a78bfa"
           />
         }
@@ -562,7 +521,7 @@ const TournamentSelect = () => {
         keyExtractor={(item) => item._id}
         renderItem={renderAvailableTournamentItem}
         contentContainerStyle={styles.listContentContainer}
-        ListEmptyComponent={() => renderEmptyState(false)} // Pass false for available list
+        ListEmptyComponent={() => renderEmptyState(false)}
         ListFooterComponent={renderListFooter}
         refreshControl={
           <RefreshControl
@@ -575,7 +534,6 @@ const TournamentSelect = () => {
       />
     );
   };
-  // --- End Page Components ---
 
   // --- Custom Tab Bar ---
   const CustomTabBar = () => {
@@ -601,7 +559,6 @@ const TournamentSelect = () => {
       </View>
     );
   };
-  // --- End Custom Tab Bar ---
 
   // --- Event Handlers for Swipe and Tab Press ---
   const handleScroll = (event) => {
@@ -619,14 +576,12 @@ const TournamentSelect = () => {
         animated: true,
       });
     }
-    // setActiveIndex(index); // Scroll handler will set the index
   };
-  // --- End Event Handlers ---
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
-        colors={["rgba(79, 70, 229, 0.15)", "transparent"]} // slate-900 background ensures visibility
+        colors={["rgba(79, 70, 229, 0.15)", "transparent"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradientBackground}
@@ -653,9 +608,9 @@ const TournamentSelect = () => {
           horizontal
           pagingEnabled
           showsHorizontalScrollIndicator={false}
-          onMomentumScrollEnd={handleScroll} // Use momentum end for better index detection
-          scrollEventThrottle={16} // Adjust if needed
-          style={styles.scrollView} // Ensure ScrollView takes remaining space
+          onMomentumScrollEnd={handleScroll}
+          scrollEventThrottle={16}
+          style={styles.scrollView}
         >
           {/* Page 1: Joined Tournaments */}
           <View style={styles.pageStyle}>
@@ -672,7 +627,7 @@ const TournamentSelect = () => {
   );
 };
 
-// --- Styles ---
+// Enhanced styles with more Tailwind-like aesthetics
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -683,21 +638,22 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 256, // h-64
+    height: 256, 
   },
   headerContainer: {
-    paddingHorizontal: 20, // px-5
-    paddingTop: 16, // pt-4
-    paddingBottom: 8, // pb-2
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   headerTitle: {
-    fontSize: 30, // text-3xl
+    fontSize: 30,
     fontWeight: "bold",
     color: "white",
-    marginBottom: 4, // mb-1
+    marginBottom: 4,
   },
   headerSubtitle: {
     color: "#94a3b8", // slate-400
+    fontSize: 15,
   },
   loadingContainer: {
     flex: 1,
@@ -705,8 +661,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   loadingText: {
-    marginTop: 12, // mt-3
-    color: "#94a3b8", // slate-400
+    marginTop: 12,
+    color: "#94a3b8",
   },
   // Tab Bar Styles
   tabBarContainer: {
@@ -716,6 +672,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#334155", // slate-700
     borderRadius: 12,
     padding: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   tabItem: {
     flex: 1,
@@ -723,45 +684,46 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: 10,
     borderRadius: 8,
-    marginHorizontal: 2, // Added slight margin between tabs
+    marginHorizontal: 2,
   },
   activeTabItem: {
-    backgroundColor: "#1e293b", // slate-800 (darker than container)
+    backgroundColor: "#1e293b", // slate-800
   },
   tabText: {
     fontWeight: "600",
-    color: "#94a3b8", // slate-400 (inactive text)
+    color: "#94a3b8", // slate-400
   },
   activeTabText: {
-    color: "#a78bfa", // indigo-400 (active text)
+    color: "#a78bfa", // indigo-400
   },
   // ScrollView and Page Styles
   scrollView: {
-    flex: 1, // Take remaining height
+    flex: 1,
   },
   pageStyle: {
-    width: windowWidth, // Each page takes full screen width
-    flex: 1, // Allow content within page to expand
+    width: windowWidth,
+    flex: 1,
   },
   // List Styles
   listContentContainer: {
-    paddingBottom: 24, // pb-6
-    paddingTop: 8, // pt-2
+    paddingBottom: 24,
+    paddingTop: 8,
+    flexGrow: 1, // Important for empty state to center properly
   },
   // Card Styles (Shared)
   card: {
     backgroundColor: "#1e293b", // slate-800
-    borderRadius: 12, // rounded-xl
-    padding: 20, // p-5
-    marginBottom: 16, // mb-4
-    marginHorizontal: 16, // mx-4
+    borderRadius: 16, // Slightly larger rounded corners
+    padding: 20,
+    marginBottom: 16,
+    marginHorizontal: 16,
     borderWidth: 1,
     borderColor: "#334155", // slate-700
-    shadowColor: "#000", // Basic shadow for depth
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3, // for Android
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 4, // Enhanced shadow for better depth
   },
   availableCardBorder: {
     borderLeftWidth: 4,
@@ -770,94 +732,69 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start", // Align items top
-    marginBottom: 16, // Add space below header
+    alignItems: "flex-start",
+    marginBottom: 16,
   },
   cardTitle: {
-    fontSize: 20, // text-xl
+    fontSize: 20,
     fontWeight: "bold",
     color: "white",
-    flex: 1, // Allow text to wrap if long
-    marginRight: 8, // Space before badge
+    flex: 1,
+    marginRight: 8,
   },
   joinedBadge: {
     backgroundColor: "#065f46", // emerald-900
-    paddingHorizontal: 12, // px-3
-    paddingVertical: 4, // py-1
-    borderRadius: 999, // rounded-full
-    alignSelf: "flex-start", // Align to top
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 999,
+    alignSelf: "flex-start",
   },
   joinedBadgeText: {
     color: "#34d399", // emerald-400
-    fontWeight: "600", // font-semibold
-    fontSize: 12, // text-xs
+    fontWeight: "600",
+    fontSize: 12,
   },
   // Info Box Styles
   infoBox: {
     backgroundColor: "rgba(51, 65, 85, 0.5)", // slate-700 with opacity
-    borderRadius: 8, // rounded-lg
-    padding: 12, // p-3
-    marginTop: 16, // mt-4
+    borderRadius: 12, // Increased roundedness
+    padding: 14, // Slightly more padding
+    marginTop: 16,
   },
   infoRowWrap: {
-    // New style for wrapping rows if needed
     flexDirection: "row",
-    flexWrap: "wrap", // Allow items to wrap to next line
-    alignItems: "center", // Align items vertically in a row
+    flexWrap: "wrap",
+    alignItems: "center",
   },
   infoItem: {
-    // Style for each icon + text pair
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 16, // mr-4
-    marginBottom: 8, // mb-2 (for wrapping)
+    marginRight: 16,
+    marginBottom: 10, // Slightly more spacing
   },
   infoText: {
     color: "#cbd5e1", // slate-300
-    marginLeft: 8, // ml-2
-    fontSize: 14, // text-sm (consistency)
-    fontWeight: "500", // font-medium (consistency)
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "500",
   },
   statusText: {
-    // Optional: Add specific color based on status
-    // Example: color: '#fbbf24' // yellow-400 for 'Starts Soon'
+    fontWeight: "600",
   },
   joinInfoText: {
     color: "#2dd4bf", // teal-400
+    fontWeight: "600",
   },
   deadlineText: {
     color: "#fbbf24", // yellow-400
+    fontWeight: "500",
   },
   endedText: {
     color: "#f87171", // red-400
+    fontWeight: "500",
   },
   // Button Styles
   button: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    paddingVertical: 12, // py-3
-    paddingHorizontal: 16, // px-4
-    marginTop: 16, // mt-4
-    borderRadius: 12, // rounded-xl
-    // Common gradient replaced by solid colors for simplicity here
-    // Add activeOpacity for press effect if needed: activeOpacity={0.9}
-  },
-  viewButton: {
-    backgroundColor: "#7c3aed", // Equivalent to violet-600 (adjust as needed)
-    // For gradient, wrap with LinearGradient or use react-native-linear-gradient
-  },
-  joinButton: {
-    backgroundColor: "#059669", // Equivalent to emerald-600
-  },
-  buttonText: {
-    color: "white",
-    fontWeight: "500", // font-medium
-    marginLeft: 8, // ml-2
-    fontSize: 16, // Slightly larger text
-  },
-  disabledButton: {
-    // Style for ended tournament action placeholder
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
@@ -865,28 +802,60 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginTop: 16,
     borderRadius: 12,
-    backgroundColor: "#334155", // slate-700 (muted background)
+  },
+  viewButton: {
+    backgroundColor: "#7c3aed", // violet-600
+    shadowColor: "#7c3aed",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  joinButton: {
+    backgroundColor: "#059669", // emerald-600
+    shadowColor: "#059669",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  buttonText: {
+    color: "white",
+    fontWeight: "600", // Increased weight for better readability
+    marginLeft: 8,
+    fontSize: 16,
+  },
+  disabledButton: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    backgroundColor: "#334155", // slate-700
   },
   disabledButtonText: {
-    color: "#64748b", // slate-500 (muted text)
+    color: "#64748b", // slate-500
     fontWeight: "500",
     marginLeft: 8,
     fontSize: 16,
   },
   // Empty State Styles
   emptyStateContainer: {
-    flex: 1, // Take available space in FlatList
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 40, // py-10 equivalent vertical padding + horizontal
-    minHeight: 300, // Ensure it takes some minimum space
+    padding: 40,
+    minHeight: 300,
   },
   emptyStateText: {
     color: "#94a3b8", // slate-400
-    fontSize: 18, // text-lg
-    marginTop: 16, // mt-4
+    fontSize: 18,
+    marginTop: 16,
     textAlign: "center",
-    paddingHorizontal: 24, // px-6
+    paddingHorizontal: 24,
+    fontWeight: "500",
   },
   emptyStateSubText: {
     color: "#64748b", // slate-500
@@ -896,36 +865,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   refreshButton: {
-    marginTop: 24, // mt-6
-    paddingHorizontal: 24, // px-6
-    paddingVertical: 12, // py-3
+    marginTop: 24,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     backgroundColor: "#334155", // slate-700
-    borderRadius: 999, // rounded-full
+    borderRadius: 999,
     flexDirection: "row",
     alignItems: "center",
   },
   refreshButtonText: {
     color: "#a5b4fc", // indigo-300
-    fontWeight: "500", // font-medium
-    marginLeft: 8, // ml-2
+    fontWeight: "500",
+    marginLeft: 8,
   },
   // Footer (Toggle Past Tournaments) Styles
   footerContainer: {
-    paddingVertical: 16, // py-4
+    paddingVertical: 16,
     alignItems: "center",
   },
   toggleEndedButton: {
     backgroundColor: "#334155", // slate-700
-    borderRadius: 999, // rounded-full
-    paddingHorizontal: 24, // px-6
-    paddingVertical: 12, // py-3
+    borderRadius: 999,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     flexDirection: "row",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
   toggleEndedButtonText: {
     color: "#fbbf24", // yellow-400
-    fontWeight: "600", // font-semibold
-    marginLeft: 8, // ml-2
+    fontWeight: "600",
+    marginLeft: 8,
   },
 });
 
