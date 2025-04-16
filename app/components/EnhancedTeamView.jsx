@@ -32,6 +32,7 @@ import { AntDesign, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useTeamActions } from "./TeamActions";
 import TeamGuideModal from "./help"
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const EnhancedTeamView = ({ onSubmit }) => {
   // GLOBAL/RECOIL STATE
@@ -50,6 +51,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
   const totalPlayers = Object.values(teamData).flat().length;
   const viewMode = useRecoilValue(viewModeState);
   const teamValue = useRecoilValue(teamValueState);
+  const isViewMode = viewMode === "VIEW_TEAM";
 
   // UI/LOCAL STATE
   const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
@@ -232,6 +234,63 @@ const EnhancedTeamView = ({ onSubmit }) => {
   const deadline = "Sat 25 Jan 19:15";
   const isOverBudget = parseFloat(teamValue) > SPORT_CONFIGS[sport].maxTeamValue;
 
+  // Function to handle clearing the entire team
+  const handleClearTeam = () => {
+    // Get total player count to check if there are players to remove
+    const totalPlayers = [
+      ...(teamData?.goalkeepers || []),
+      ...(teamData?.defenders || []),
+      ...(teamData?.midfielders || []),
+      ...(teamData?.forwards || []),
+      ...(teamData?.all || [])
+    ].length;
+
+    if (totalPlayers === 0) {
+      Alert.alert("No Players", "There are no players to remove.");
+      return;
+    }
+
+    Alert.alert(
+      "Clear Team",
+      "Are you sure you want to remove all players?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear",
+          style: "destructive",
+          onPress: () => {
+            // Check if we have a dedicated function for clearing all players
+            if (typeof handleClearAllPlayers === 'function') {
+              // Use the dedicated function if available
+              handleClearAllPlayers();
+            } else {
+              // Fallback: collect all players into a single array
+              const allPlayers = [
+                ...(teamData?.goalkeepers || []),
+                ...(teamData?.defenders || []),
+                ...(teamData?.midfielders || []),
+                ...(teamData?.forwards || []),
+                ...(teamData?.all || [])
+              ];
+
+              // Create a unique list of players by ID to avoid duplicates
+              const uniquePlayers = {};
+              allPlayers.forEach(player => {
+                if (player && player._id) {
+                  uniquePlayers[player._id] = player;
+                }
+              });
+
+              // Remove each player with the "skipConfirmation" flag set to true
+              Object.values(uniquePlayers).forEach(player => {
+                handleRemovePlayer(player, true);
+              });
+            }
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-gray-900">
@@ -341,12 +400,14 @@ const EnhancedTeamView = ({ onSubmit }) => {
             }}
           />
         </View>
+
         <Text className="text-gray-400 text-xs mt-1 text-center">
           {totalPlayers === playerLimit
             ? "Team complete!"
             : `${playerLimit - totalPlayers} more player${playerLimit - totalPlayers !== 1 ? "s" : ""} needed`}
         </Text>
       </Animated.View>
+
 
       {/* Main Content */}
       <Animated.View
@@ -358,7 +419,23 @@ const EnhancedTeamView = ({ onSubmit }) => {
           transform: [{ translateY: slideAnim }],
         }}
       >
+        {!isViewMode && (
+          <TouchableOpacity
+            className="absolute top-4 right-4 bg-red-500 rounded-md px-3 py-2 z-20"
+            onPress={handleClearTeam}
+          >
+            <View className="flex-row items-center">
+              {/* <Text>"Clear Team"</Text> */}
+              <FontAwesome5 name="trash" size={16} color="white" style={{ marginRight: 5 }} />
+              <View className="bg-white/20 w-[1px] h-4 mx-1" />
+              <View className="px-1">
+                <FontAwesome5 name="user-minus" size={13} color="white" />
+              </View>
+            </View>
+          </TouchableOpacity>
+        )}
         <View className="flex-1 pt-2 pb-1">
+
           <PitchView
             teamData={teamData}
             handleOpenPlayerSelection={handleOpenPlayerSelection}
