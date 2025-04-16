@@ -26,6 +26,7 @@ const ViewTeam = () => {
 
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState([])
+  const [playerPoints, setPlayerPoints] = useState({}) // Add this state to store player points
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState)
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
@@ -71,7 +72,35 @@ const ViewTeam = () => {
         }
 
         setTotalPoints(teamForTournament?.totalPoints || 0)
+        
         if (teamForTournament) {
+          // Extract player points from the team data
+          const pointsMap = {}
+          
+          // Process the points data if available
+          if (Array.isArray(teamForTournament.points)) {
+            // Iterate through each match's points data
+            teamForTournament.points.forEach(matchPoints => {
+              // Check if this match has player-specific points data
+              if (Array.isArray(matchPoints.players)) {
+                // Process each player's points in this match
+                matchPoints.players.forEach(playerPointEntry => {
+                  if (playerPointEntry.playerId && playerPointEntry.points !== undefined) {
+                    // If multiple entries for same player, sum them up
+                    if (pointsMap[playerPointEntry.playerId]) {
+                      pointsMap[playerPointEntry.playerId] += playerPointEntry.points;
+                    } else {
+                      pointsMap[playerPointEntry.playerId] = playerPointEntry.points;
+                    }
+                  }
+                });
+              }
+            });
+          }
+          
+          setPlayerPoints(pointsMap)
+          console.log("Player Points:", pointsMap)
+          
           const stagePlayers = [
             ...(teamForTournament.players?.[currentStage] || []),
           ].map((p) => ({
@@ -84,6 +113,7 @@ const ViewTeam = () => {
           setPlayers(stagePlayers)
         } else {
           setPlayers([])
+          setPlayerPoints({})
         }
       }
     } catch (error) {
@@ -205,6 +235,7 @@ const ViewTeam = () => {
           <View style={{ height: screenHeight * 0.6, marginBottom: 16 }}>
             <PitchView
               teamData={{ all: players }}
+              playerPointsData={playerPoints} // Pass the player points data to PitchView
               handlePlayerPress={(player) => Alert.alert(player.name, `Price: ${player.price || "N/A"}`)}
               handleOpenPlayerSelection={(section, positionId, position) =>
                 Alert.alert("Add Player", `Add player to ${section} position`)

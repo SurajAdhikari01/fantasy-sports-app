@@ -44,7 +44,6 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
             shadowRadius: 3.84,
             elevation: 5,
             overflow: "hidden",
-            position: "relative", // Added for absolute positioning of points badge
           }}
         >
           <TouchableOpacity style={{ width: "100%", height: "100%" }} onPress={handlePlayerPress}>
@@ -56,33 +55,22 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
               </View>
             )}
           </TouchableOpacity>
-
-          {isViewTeam && playerPoints !== undefined && (
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsText}>{playerPoints}</Text>
-            </View>
-          )}
         </View>
 
-        {/* Player name under the circle */}
-        <Text
-          style={{
-            backgroundColor: "rgba(0,0,0,0.7)",
-            color: "white",
-            paddingHorizontal: 6,
-            paddingVertical: 2,
-            borderRadius: 4,
-            fontSize: 10,
-            marginTop: 4,
-            maxWidth: 70,
-            textAlign: "center",
-            overflow: "hidden",
-          }}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {player.name}
-        </Text>
+        {/* Player name and points below the circle */}
+        <View style={styles.infoContainer}>
+          <Text
+            style={styles.playerName}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {player.name}
+          </Text>
+          
+          {isViewTeam && playerPoints !== undefined && (
+            <Text style={styles.pointsText}>{playerPoints} pts</Text>
+          )}
+        </View>
       </View>
 
       {/* Modal for detailed player view */}
@@ -153,6 +141,27 @@ const PlayerCard = ({ player, isPitch, onRemovePlayer, onReplacePlayer, position
 };
 
 const styles = StyleSheet.create({
+  infoContainer: {
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+    marginTop: 4,
+    width: 70,
+    alignItems: "center",
+  },
+  playerName: {
+    color: "white",
+    fontSize: 10,
+    textAlign: "center",
+    maxWidth: "100%",
+  },
+  pointsText: {
+    color: "#3B82F6", // Blue color for points
+    fontSize: 10,
+    fontWeight: "bold",
+    marginTop: 2,
+  },
   modalContainer: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -224,25 +233,6 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: "white",
     marginLeft: 8,
-    fontWeight: "bold",
-  },
-  pointsBadge: {
-    position: "absolute",
-    top: -8,
-    right: -8,
-    backgroundColor: "#3B82F6",
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "white",
-    zIndex: 10,
-  },
-  pointsText: {
-    color: "white",
-    fontSize: 12,
     fontWeight: "bold",
   },
   franchiseLabel: {
