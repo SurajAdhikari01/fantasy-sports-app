@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Dimensions } from "react-native";
+import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, Dimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TabView, SceneMap } from "react-native-tab-view";
@@ -24,7 +24,7 @@ const TournamentSelect = () => {
   const [viewMode, setViewMode] = useRecoilState(viewModeState);
   const [currentRound, setCurrentRoundState] = useRecoilState(currentRoundState);
   const [showEnded, setShowEnded] = useState(false);
-
+  const initialLayout = { width: Dimensions.get('window').width };
 
   const renderFooter = () => (
     <View className="py-4 items-center">
@@ -317,8 +317,8 @@ const TournamentSelect = () => {
     </View>
   );
 
-  const MyTournaments = () => {
-    const [showEnded, setShowEnded] = useState(false);
+  const FirstRoute = () => {
+    const [localShowEnded, setLocalShowEnded] = useState(false);
 
     const activeTournaments = joinedTournaments
       .filter(item => getNextRoundInfo(item).roundLabel !== "Tournament Ended");
@@ -330,45 +330,47 @@ const TournamentSelect = () => {
       <View className="py-4 items-center">
         <TouchableOpacity
           className="bg-slate-700 rounded-full px-6 py-3 flex-row items-center"
-          onPress={() => setShowEnded(prev => !prev)}
+          onPress={() => setLocalShowEnded(prev => !prev)}
         >
           <Ionicons name="time-outline" size={18} color="#fbbf24" />
           <Text className="text-yellow-400 font-semibold ml-2">
-            {showEnded ? "Hide" : "View"} Past Tournaments
+            {localShowEnded ? "Hide" : "View"} Past Tournaments
           </Text>
         </TouchableOpacity>
       </View>
     );
 
-    const tournamentsToDisplay = showEnded ? endedTournaments : activeTournaments;
-    const emptyStateText = showEnded
+    const tournamentsToDisplay = localShowEnded ? endedTournaments : activeTournaments;
+    const emptyStateText = localShowEnded
       ? "No ended tournaments you joined."
       : "You haven't joined any tournaments yet";
 
     return (
-      <FlatList
-        data={tournamentsToDisplay}
-        keyExtractor={(item) => item._id}
-        renderItem={renderJoinedTournamentItem}
-        contentContainerClassName="pb-6 pt-2"
-        ListEmptyComponent={
-          <Text className="text-slate-400 text-center py-6">{emptyStateText}</Text>
-        }
-        ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#a78bfa']}
-            tintColor="#a78bfa"
-          />
-        }
-      />
+      <View style={{ flex: 1 }}>
+        <FlatList
+          data={tournamentsToDisplay}
+          keyExtractor={(item) => item._id}
+          renderItem={renderJoinedTournamentItem}
+          contentContainerClassName="pb-6 pt-2"
+          ListEmptyComponent={
+            <Text className="text-slate-400 text-center py-6">{emptyStateText}</Text>
+          }
+          ListFooterComponent={renderFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#a78bfa']}
+              tintColor="#a78bfa"
+            />
+          }
+        />
+      </View>
     );
   };
 
-  const AvailableTournaments = () => {
-    const [showEnded, setShowEnded] = useState(false);
+  const SecondRoute = () => {
+    const [localShowEnded, setLocalShowEnded] = useState(false);
 
     // Available = not joined, and not ended
     const available = availableTournaments
@@ -388,55 +390,86 @@ const TournamentSelect = () => {
       <View className="py-4 items-center">
         <TouchableOpacity
           className="bg-slate-700 rounded-full px-6 py-3 flex-row items-center"
-          onPress={() => setShowEnded(prev => !prev)}
+          onPress={() => setLocalShowEnded(prev => !prev)}
         >
           <Ionicons name="time-outline" size={18} color="#fbbf24" />
           <Text className="text-yellow-400 font-semibold ml-2">
-            {showEnded ? "Hide" : "View"} Past Tournaments
+            {localShowEnded ? "Hide" : "View"} Past Tournaments
           </Text>
         </TouchableOpacity>
       </View>
     );
 
-    const tournamentsToDisplay = showEnded ? endedTournaments : available;
-    const emptyStateText = showEnded
+    const tournamentsToDisplay = localShowEnded ? endedTournaments : available;
+    const emptyStateText = localShowEnded
       ? "No tournaments joined yet"
       : "No tournaments available at the moment";
 
     return (
-      <FlatList
-        data={tournamentsToDisplay}
-        keyExtractor={(item) => item._id}
-        renderItem={renderAvailableTournamentItem}
-        contentContainerClassName="pb-6 pt-2"
-        ListEmptyComponent={
-          <Text className="text-slate-400 text-center py-6">{emptyStateText}</Text>
-        }
-        ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#a78bfa']}
-            tintColor="#a78bfa"
-          />
-        }
-      />
+      <View style={{ flex: 1 }}>
+        <FlatList
+          data={tournamentsToDisplay}
+          keyExtractor={(item) => item._id}
+          renderItem={renderAvailableTournamentItem}
+          contentContainerClassName="pb-6 pt-2"
+          ListEmptyComponent={
+            <Text className="text-slate-400 text-center py-6">{emptyStateText}</Text>
+          }
+          ListFooterComponent={renderFooter}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#a78bfa']}
+              tintColor="#a78bfa"
+            />
+          }
+        />
+      </View>
     );
   };
 
+  // Updated render tab bar with more explicit iOS styling
   const renderTabBar = (props) => {
     return (
-      <View className="flex-row mx-4 my-3 bg-slate-700 rounded-xl p-1">
+      <View style={{
+        flexDirection: 'row',
+        marginHorizontal: 16,
+        marginVertical: 12,
+        backgroundColor: '#334155',
+        borderRadius: 12,
+        padding: 4,
+        // iOS specific shadow for better visibility
+        ...Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+          }
+        })
+      }}>
         {props.navigationState.routes.map((route, i) => {
           const isActive = i === props.navigationState.index;
           return (
             <TouchableOpacity
               key={route.key}
-              className={`flex-1 items-center py-2.5 rounded-lg ${isActive ? 'bg-slate-800' : ''}`}
+              style={{
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: 10,
+                borderRadius: 8,
+                backgroundColor: isActive ? '#1e293b' : 'transparent',
+                // Ensure proper margins for iOS
+                marginHorizontal: Platform.OS === 'ios' ? 2 : 0,
+              }}
               onPress={() => setIndex(i)}
             >
-              <Text className={`font-semibold ${isActive ? 'text-purple-400' : 'text-slate-400'}`}>
+              <Text style={{
+                fontWeight: '600',
+                color: isActive ? '#a78bfa' : '#94a3b8'
+              }}>
                 {route.title}
               </Text>
             </TouchableOpacity>
@@ -469,12 +502,22 @@ const TournamentSelect = () => {
         <TabView
           navigationState={{ index, routes }}
           renderScene={SceneMap({
-            joined: MyTournaments,
-            available: AvailableTournaments,
+            joined: FirstRoute,
+            available: SecondRoute,
           })}
           onIndexChange={setIndex}
-          initialLayout={{ width: Dimensions.get("window").width }}
+          initialLayout={initialLayout}
           renderTabBar={renderTabBar}
+          swipeEnabled={true}
+          style={{ 
+            flex: 1, 
+            // iOS-specific style adjustments
+            ...Platform.select({
+              ios: {
+                marginTop: 4
+              }
+            }) 
+          }}
         />
       )}
     </SafeAreaView>
