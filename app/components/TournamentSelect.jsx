@@ -150,32 +150,58 @@ const TournamentSelect = () => {
   };
 
   const fetchTournaments = async () => {
+    setLoading(true);
+    let finalJoined = [];
+    let finalAvailable = [];
+
     try {
-      setLoading(true);
-
-      const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
-      if (joinedResponse.data.success) {
-        setJoinedTournaments(joinedResponse.data.data || []);
-      } else {
-        Alert.alert(
-          "Error",
-          joinedResponse.data.message || "Failed to fetch joined tournaments"
-        );
+      try {
+        const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
+        if (joinedResponse.data.success) {
+          finalJoined = joinedResponse.data.data || [];
+        } else {
+          Alert.alert(
+            "Error fetching joined",
+            joinedResponse.data.message || "Failed to process joined tournaments"
+          );
+        }
+      } catch (error) {
+        // Check if it's an HTTP error with a 404 status
+        if (error.response && error.response.status === 404) {
+          console.warn("Fetching joined tournaments resulted in 404 (Not Found). Setting joined list to empty.");
+          finalJoined = [];
+        } else {
+          Alert.alert("Error fetching joined", "An error occurred. Please try again.");
+          console.error("Error fetching joined tournaments:", error);
+        }
       }
 
-      const availableResponse = await api.get("/tournaments/getAllTournaments");
-      if (availableResponse.data.success) {
-        setAvailableTournaments(availableResponse.data.data || []);
-      } else {
-        Alert.alert(
-          "Error",
-          availableResponse.data.message ||
-          "Failed to fetch available tournaments"
-        );
+      // Fetch Available Tournaments
+      try {
+        const availableResponse = await api.get("/tournaments/getAllTournaments");
+        if (availableResponse.data.success) {
+          finalAvailable = availableResponse.data.data || [];
+        } else {
+          // Handle non-success API response
+          Alert.alert(
+            "Error fetching available",
+            availableResponse.data.message || "Failed to process available tournaments"
+          );
+        }
+      } catch (error) {
+        //teams na vaye 404 falxa
+        if (error.response && error.response.status === 404) {
+          // console.warn("Fetching available tournaments resulted in 404 (Not Found). Setting available list to empty.");
+          finalAvailable = []; // Set to empty array
+        } else {
+          Alert.alert("Error fetching available", "An error occurred. Please try again.");
+          console.error("Error fetching available tournaments:", error);
+        }
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to fetch tournaments. Please try again.");
-      console.error("Error fetching tournaments:", error);
+
+      setJoinedTournaments(finalJoined);
+      setAvailableTournaments(finalAvailable);
+
     } finally {
       setLoading(false);
       setRefreshing(false);

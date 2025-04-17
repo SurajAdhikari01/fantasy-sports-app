@@ -39,75 +39,91 @@ export default function LeaderboardScreen() {
   const fetchTournaments = useCallback(
     async (isRefreshing = false) => {
       console.log("fetchTournaments called. isRefreshing:", isRefreshing);
+      // Reset states at the beginning of the fetch attempt
       if (!isRefreshing) setIsLoadingTournaments(true);
       setError(null);
       setInfoMessage(null);
-      // Don't reset selection on refresh immediately, handle after fetch
+      // Note: We don't reset selection here, it's handled based on fetch results
 
       try {
-        // Using getAllTournaments as per the modal example
         const response = await api.get("/tournaments/getTournamentsByUserId");
+
+        // Handle successful response with data
         if (response.data && response.data.success) {
           const fetchedTournaments = response.data.data || [];
           setTournaments(fetchedTournaments);
 
-          let nextSelectedId = selectedTournamentId;
+          let nextSelectedId = selectedTournamentId; // Keep current selection initially
 
           if (fetchedTournaments.length > 0) {
-            // Set initial selection or handle invalid selection after refresh
-            if (
-              !selectedTournamentId ||
-              !fetchedTournaments.some((t) => t._id === selectedTournamentId)
-            ) {
+            // Check if current selection is still valid, or if no selection exists
+            const currentSelectionValid = fetchedTournaments.some(
+              (t) => t._id === selectedTournamentId
+            );
+
+            if (!selectedTournamentId || !currentSelectionValid) {
+              // Select the first tournament if none selected or current is invalid
               nextSelectedId = fetchedTournaments[0]._id;
               console.log(
-                "Setting/Resetting selectedTournamentId to:",
+                "Setting/Resetting selectedTournamentId to first available:",
                 nextSelectedId
               );
-              // Explicitly set state if changing, otherwise useEffect handles it
-              if (nextSelectedId !== selectedTournamentId) {
-                setSelectedTournamentId(nextSelectedId);
-              } else if (isRefreshing) {
-                // If refreshing and selection didn't change, manually trigger leaderboard fetch
-                await fetchLeaderboard(nextSelectedId, true);
-              }
+              setSelectedTournamentId(nextSelectedId); // Update state, useEffect will trigger leaderboard fetch
             } else if (isRefreshing) {
-              // If refreshing and selection is still valid, trigger leaderboard refresh
-              await fetchLeaderboard(selectedTournamentId, true);
+              // If refreshing and selection is still valid, explicitly refresh leaderboard
+              console.log("Refreshing leaderboard for valid selection:", selectedTournamentId);
+              await fetchLeaderboard(selectedTournamentId, true); // Pass refresh flag
             }
+            // If not refreshing and selection is valid, useEffect handles the initial leaderboard fetch
           } else {
-            setInfoMessage("No tournaments available.");
+            // Handle case where user has joined 0 tournaments
+            setInfoMessage("You haven't joined any tournaments yet.");
             nextSelectedId = null;
             setSelectedTournamentId(null); // Explicitly clear selection
-            setLeaderboardData([]);
+            setLeaderboardData([]);    // Clear leaderboard data
           }
         } else {
-          setError(response.data?.message || "Failed to fetch tournaments.");
+          // Handle API success=false or unexpected response structure
+          console.warn("API call successful but indicated failure or unexpected data:", response.data);
+          setError(response.data?.message || "Failed to process tournament data.");
           setTournaments([]);
           setSelectedTournamentId(null);
           setLeaderboardData([]);
         }
       } catch (err) {
         console.error("Fetch Tournaments Error:", err);
-        const message =
-          err.response?.data?.message ||
-          (err.response?.status
-            ? `Status ${err.response.status}`
-            : "Network Error");
-        if (err.response?.status === 404) {
-          setInfoMessage(message || "No tournaments found.");
+
+        // Check specifically for 404 Not Found error
+        if (err.response && err.response.status === 404) {
+          console.warn("Fetching joined tournaments resulted in 404 (Not Found).");
+          // Treat 404 as "no tournaments joined" - set info, not error
+          setInfoMessage(
+            err.response?.data?.message || "You haven't joined any tournaments yet."
+          );
+          setTournaments([]);        // Clear tournaments
+          setSelectedTournamentId(null); // Clear selection
+          setLeaderboardData([]);    // Clear leaderboard
+          // Ensure error state is clear
+          setError(null);
         } else {
+          // Handle all other errors (network, server errors other than 404)
+          const message =
+            err.response?.data?.message ||
+            (err.response?.status
+              ? `Server error (Status ${err.response.status})`
+              : "Network error, please check connection.");
           setError(`Error fetching tournaments: ${message}`);
+          // Reset state on other errors
+          setTournaments([]);
+          setSelectedTournamentId(null);
+          setLeaderboardData([]);
         }
-        setTournaments([]);
-        setSelectedTournamentId(null);
-        setLeaderboardData([]);
       } finally {
+        // Ensure loading state is turned off correctly
         if (!isRefreshing) setIsLoadingTournaments(false);
-        // setRefreshing(false); // Let leaderboard fetch handle this if applicable
       }
     },
-    [selectedTournamentId] // Keep dependency
+    [selectedTournamentId, fetchLeaderboard]
   );
 
   const fetchLeaderboard = useCallback(
@@ -237,12 +253,10 @@ export default function LeaderboardScreen() {
   // --- Render Functions (Adapted from Modal) ---
   const renderLeaderboardItem = ({ item, index }) => {
     const isCurrentUser = item.name === currentUserUsername;
-    const itemContainerClasses = `flex-row px-4 py-3 border-b border-neutral-700 items-center ${
-      isCurrentUser ? "bg-indigo-900/30" : ""
-    }`;
-    const textClasses = `text-neutral-200 text-sm ${
-      isCurrentUser ? "text-white font-bold" : ""
-    }`;
+    const itemContainerClasses = `flex-row px-4 py-3 border-b border-neutral-700 items-center ${isCurrentUser ? "bg-indigo-900/30" : ""
+      }`;
+    const textClasses = `text-neutral-200 text-sm ${isCurrentUser ? "text-white font-bold" : ""
+      }`;
 
     return (
       <View className={itemContainerClasses}>
@@ -284,12 +298,10 @@ export default function LeaderboardScreen() {
 
   const renderTournamentSelectItem = ({ item }) => {
     const isSelected = item._id === selectedTournamentId;
-    const itemButtonClasses = `py-3 px-4 border-b border-neutral-600 ${
-      isSelected ? "bg-indigo-800/50" : "bg-[#444] active:bg-[#555]"
-    }`; // Added active state
-    const itemTextClasses = `text-base ${
-      isSelected ? "text-white font-semibold" : "text-neutral-100"
-    }`;
+    const itemButtonClasses = `py-3 px-4 border-b border-neutral-600 ${isSelected ? "bg-indigo-800/50" : "bg-[#444] active:bg-[#555]"
+      }`; // Added active state
+    const itemTextClasses = `text-base ${isSelected ? "text-white font-semibold" : "text-neutral-100"
+      }`;
     return (
       <TouchableOpacity
         className={itemButtonClasses}
@@ -414,7 +426,7 @@ export default function LeaderboardScreen() {
                 }
                 contentContainerStyle={{ paddingBottom: 40 }} // Adjust padding as needed
                 showsVerticalScrollIndicator={false}
-                // Removed rounding from FlatList itself, apply to items/header
+              // Removed rounding from FlatList itself, apply to items/header
               />
             )}
 

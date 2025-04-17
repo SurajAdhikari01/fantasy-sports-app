@@ -73,28 +73,49 @@ const HomeScreen = () => {
 
   const fetchTournaments = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) setLoadingTournaments(true);
+    // Reset error at the beginning of the fetch attempt
     setErrorTournaments(null);
     try {
       const response = await api.get("/tournaments/getTournamentsByUserId");
       if (response.data?.success && Array.isArray(response.data.data)) {
         setTournaments(response.data.data);
+        // Calculate count based on the actual data received
         setTournamentJoinedCount(
-          response.data.data.filter((tournament) => tournament).length // Assuming non-null means joined
+          response.data.data.filter((tournament) => !!tournament).length // Ensure filtering logic is robust
         );
       } else {
+        // Handle non-success API response gracefully (e.g., API returns success: false)
+        console.warn("API indicated non-success or invalid data format for joined tournaments.");
         setTournaments([]);
-        setTournamentJoinedCount(0); // Reset count if no data
+        setTournamentJoinedCount(0);
+        // Optionally set an error message if the API provides one for non-success
+        if (response.data && !response.data.success && response.data.message) {
+          setErrorTournaments(response.data.message);
+        }
       }
     } catch (err) {
-      setErrorTournaments(
-        err.response?.data?.message || "Failed to load tournaments."
-      );
-      setTournaments([]);
-      setTournamentJoinedCount(0); // Reset count on error
+      // Check specifically for 404 error
+      if (err.response && err.response.status === 404) {
+        // Handle 404 Not Found: Treat as "no tournaments joined"
+        console.warn("Fetching joined tournaments resulted in 404 (Not Found). Setting tournaments to empty.");
+        setTournaments([]);
+        setTournamentJoinedCount(0);
+        // Do NOT set an error state for 404, as it's a valid "not found" scenario
+      } else {
+        // Handle other errors (network, server errors other than 404, etc.)
+        console.error("Failed to load tournaments:", err);
+        setErrorTournaments(
+          err.response?.data?.message || "Failed to load tournaments due to an error."
+        );
+        // Reset state on error
+        setTournaments([]);
+        setTournamentJoinedCount(0);
+      }
     } finally {
+      // Always ensure loading state is turned off correctly
       if (!isRefreshing) setLoadingTournaments(false);
     }
-  }, []);
+  }, []); // Dependencies for useCallback, ensure 'api' is stable or included if necessary
 
   const fetchUserTeams = useCallback(async (isRefreshing = false) => {
     if (!isRefreshing) setLoadingUserTeams(true);
@@ -267,10 +288,9 @@ const HomeScreen = () => {
               <Text className="text-neutral-200 font-semibold text-xl">
                 Hi,{" "}
                 {userData?.username
-                  ? `${
-                      userData.username.charAt(0).toUpperCase() +
-                      userData.username.slice(1).toLowerCase()
-                    }`
+                  ? `${userData.username.charAt(0).toUpperCase() +
+                  userData.username.slice(1).toLowerCase()
+                  }`
                   : "User"}
               </Text>
               <Text className="text-neutral-400 text-sm">Welcome back</Text>
