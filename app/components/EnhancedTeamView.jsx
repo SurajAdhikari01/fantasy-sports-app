@@ -219,6 +219,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
     isEditMode,
     setIsLoading,
     router,
+    setSelectedTournament,
   });
   const [guideVisible, setGuideVisible] = useState(false);
   // Loading indicator

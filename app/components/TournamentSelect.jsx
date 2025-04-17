@@ -449,8 +449,8 @@ const TournamentSelect = () => {
         style={styles.refreshButton}
         onPress={onRefresh}
       >
-        <Ionicons name="refresh" size={18} color="#a5b4fc" />
-        <Text style={styles.refreshButtonText}>Refresh</Text>
+        {/* <Ionicons name="refresh" size={18} color="#a5b4fc" /> */}
+        <Text style={styles.refreshButtonText}>Join Now</Text>
       </TouchableOpacity>
     </View>
   );
@@ -564,7 +564,7 @@ const TournamentSelect = () => {
 
   // --- Custom Tab Bar ---
   const CustomTabBar = () => {
-    const tabs = ["My Tournaments", "Discover"];
+    const tabs = ["Discover", "My Tournaments"];
     return (
       <View style={styles.tabBarContainer}>
         {tabs.map((tab, i) => {
@@ -639,14 +639,12 @@ const TournamentSelect = () => {
           scrollEventThrottle={16}
           style={styles.scrollView}
         >
-          {/* Page 1: Joined Tournaments */}
-          <View style={styles.pageStyle}>
-            <JoinedTournamentsPage />
-          </View>
-
-          {/* Page 2: Available Tournaments */}
           <View style={styles.pageStyle}>
             <AvailableTournamentsPage />
+          </View>
+
+          <View style={styles.pageStyle}>
+            <JoinedTournamentsPage />
           </View>
         </ScrollView>
       )}

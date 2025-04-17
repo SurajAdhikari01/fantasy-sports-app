@@ -24,6 +24,7 @@ export function useTeamActions({
   isEditMode,
   setIsLoading,
   router,
+  setSelectedTournament,
 }) {
 
   const { userData } = useAuth();
@@ -197,16 +198,39 @@ export function useTeamActions({
       const headers = { 'Content-Type': 'application/json' };
       const response = await api.post(`/teams/create`, payload, { headers });
       if (response.data.success) {
-        Alert.alert("Success", "Team created successfully!");
-        if (router && typeof router.push === 'function') {
-          setselectedtournament(tournamentId);
-          setTeamData({});
-          router.push("home");
+        // First update state
+        setTeamData({});
+        if (setSelectedTournament) {
+          setSelectedTournament(tournamentId);
         }
+
+        // Then show alert with navigation in the callback
+        Alert.alert(
+          "Success",
+          "Team created successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                // Move navigation inside Alert callback
+                try {
+                  if (router && typeof router.push === 'function') {
+                    router.push("home");
+                    setSelectedTournament();
+                  }
+                } catch (navError) {
+                  console.error("Navigation error:", navError);
+                  Alert.alert("Navigation Error", "Could not navigate to home. Please try manually.");
+                }
+              }
+            }
+          ]
+        );
       } else {
         Alert.alert("Error", response.data.message || "Failed to create team");
       }
     } catch (error) {
+      console.error("Team creation error:", error);
       if (error.response) {
         const { data } = error.response;
         Alert.alert(
@@ -217,7 +241,7 @@ export function useTeamActions({
       } else {
         Alert.alert(
           "Error",
-          "Network request failed. Please check your connection.",
+          `Network request failed: ${error.message || "Unknown error"}`,
           [{ text: "OK" }]
         );
       }
@@ -234,6 +258,9 @@ export function useTeamActions({
     sport,
     setIsLoading,
     router,
+    username,
+    setTeamData,
+    setSelectedTournament,
   ]);
 
   // Open player selection modal with filtered players
