@@ -93,14 +93,14 @@ const ViewTeam = () => {
         }
 
         setTotalPoints(teamForTournament?.totalPoints || 0)
-        
+
         if (teamForTournament) {
           // Fetch franchise data for all players in this tournament
           const franchiseMapping = await fetchPlayerFranchises(selectedTournament)
-          
+
           // Extract player points from the team data
           const pointsMap = {}
-          
+
           // Process the points data if available
           if (Array.isArray(teamForTournament.points)) {
             // Iterate through each match's points data
@@ -121,16 +121,16 @@ const ViewTeam = () => {
               }
             });
           }
-          
+
           setPlayerPoints(pointsMap)
           console.log("Player Points:", pointsMap)
-          
+
           const stagePlayers = [
             ...(teamForTournament.players?.[currentStage] || []),
           ].map((p) => {
             // Enrich player data with franchise information
             const franchise = franchiseMapping[p._id] || null;
-            
+
             return {
               ...p,
               playerType: (p.playerType?.toLowerCase() || "").trim(),
@@ -138,7 +138,7 @@ const ViewTeam = () => {
               franchise: franchise // Add franchise data to player object
             };
           });
-          
+
           setPlayers(stagePlayers)
         } else {
           setPlayers([])
@@ -166,7 +166,7 @@ const ViewTeam = () => {
       console.log("response", response.data)
 
       // if (response.data.success) {
-        router.push('components/EditTeam');
+      router.push('components/EditTeam');
       // } else {
       //   Alert.alert("Cannot Edit Team", response.data.message || "You do not have permission to edit this team at this time.");
       // }
@@ -181,7 +181,7 @@ const ViewTeam = () => {
         // Error setting up the request
         console.log("Error:", error.message);
       }
-      Alert.alert("Error", "Could not verify team edit permissions. Please try again.");
+      Alert.alert("Error", `You can only edit your team after the ${currentStage} stage ends.`);
     }
   };
 
