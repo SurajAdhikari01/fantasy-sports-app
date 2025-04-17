@@ -72,7 +72,7 @@ function getSectionDistribution(numPlayers) {
   // Apply hard caps while ensuring minimums
   // Ensure we never go below minimum requirements for each position
   def = Math.min(Math.max(def, MIN_DEF), 4);
-  mid = Math.min(Math.max(mid, MIN_MID), 5); 
+  mid = Math.min(Math.max(mid, MIN_MID), 5);
   fwd = Math.min(Math.max(fwd, MIN_FWD), 3);
 
   // Check if total exceeds numPlayers and adjust accordingly
@@ -80,7 +80,7 @@ function getSectionDistribution(numPlayers) {
   if (total > numPlayers) {
     // We need to reduce while respecting minimums
     let excess = total - numPlayers;
-    
+
     // Reduce in this order: MID, DEF, FWD (but never below minimums)
     while (excess > 0 && mid > MIN_MID) {
       mid--;
@@ -94,7 +94,7 @@ function getSectionDistribution(numPlayers) {
       fwd--;
       excess--;
     }
-    
+
     // If we still have excess, we cannot satisfy both constraints
     if (excess > 0) {
       console.warn("Cannot satisfy both max players and minimum position requirements");
@@ -285,13 +285,14 @@ const calculatePositions = (numPlayers, teamData) => {
     });
   });
 
-  // MID
+  // MID - Updated to show in straight line when 4 midfielders
   const midSpacing = fieldWidth / (midPositions.length + 1);
   midPositions.forEach((pos, index) => {
     positionsWithCoordinates.push({
       ...pos,
       x: midPositions.length === 1 ? centerX : 5 + (index + 1) * midSpacing,
-      y: midY + (index % 2 === 0 ? -3 : 3),
+      // When there are exactly 4 midfielders, show them in a straight line
+      y: midPositions.length === 4 ? midY : midY + (index % 2 === 0 ? -3 : 3),
     });
   });
 
@@ -308,7 +309,7 @@ const calculatePositions = (numPlayers, teamData) => {
   return positionsWithCoordinates;
 };
 
-const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) => {
+const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer, playerPointsData = {} }) => {
   const [containerDimensions, setContainerDimensions] = useState({
     width: screenWidth,
     height: screenHeight * 0.6,
@@ -333,7 +334,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
       else if (type.includes("midfielder") || type.includes("midfield")) section = "midfielders";
       else if (type.includes("forward") || type.includes("striker") || type.includes("attack")) section = "forwards";
     }
-    
+
     // Check if replacing this player would violate minimum requirements
     const currentCounts = {
       goalkeepers: (teamData?.goalkeepers || []).length,
@@ -341,28 +342,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
       midfielders: (teamData?.midfielders || []).length,
       forwards: (teamData?.forwards || []).length
     };
-    
-    // If removing would bring a position below minimum
-    if (section === "goalkeepers" && currentCounts.goalkeepers <= 1) {
-      Alert.alert("Invalid Change", "You must keep at least 1 goalkeeper.");
-      return;
-    }
-    
-    if (section === "defenders" && currentCounts.defenders <= 1 && playerLimit >= 2) {
-      Alert.alert("Invalid Change", "You must keep at least 1 defender.");
-      return;
-    }
-    
-    if (section === "midfielders" && currentCounts.midfielders <= 1 && playerLimit >= 4) {
-      Alert.alert("Invalid Change", "You must keep at least 1 midfielder.");
-      return;
-    }
-    
-    if (section === "forwards" && currentCounts.forwards <= 1 && playerLimit >= 3) {
-      Alert.alert("Invalid Change", "You must keep at least 1 forward.");
-      return;
-    }
-    
+
     const positions = calculatePositions(playerLimit, teamData);
     const playerPos = positions.find((pos) => pos.player && pos.player._id === player._id);
     const positionId = playerPos?.positionId || `replace-${player._id || Date.now()}`;
@@ -385,32 +365,32 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
       midfielders: (teamData?.midfielders || []).length,
       forwards: (teamData?.forwards || []).length
     };
-    
+
     const totalPlayers = Object.values(currentCounts).reduce((a, b) => a + b, 0);
-    
+
     // If we're at playerLimit, adding would require removing from elsewhere
     if (totalPlayers >= playerLimit) {
       // Calculate which position would lose a slot
       const idealDist = getSectionDistribution(playerLimit);
-      
+
       // If adding to this section would cause another to go below minimum
-      if (section === "defenders" && 
-          currentCounts.defenders >= idealDist.def && 
-          (currentCounts.midfielders <= idealDist.mid || currentCounts.forwards <= idealDist.fwd)) {
+      if (section === "defenders" &&
+        currentCounts.defenders >= idealDist.def &&
+        (currentCounts.midfielders <= idealDist.mid || currentCounts.forwards <= idealDist.fwd)) {
         Alert.alert("Invalid Change", "Adding another defender would reduce forwards or midfielders below minimum required.");
         return;
       }
-      
-      if (section === "midfielders" && 
-          currentCounts.midfielders >= idealDist.mid && 
-          (currentCounts.defenders <= idealDist.def || currentCounts.forwards <= idealDist.fwd)) {
+
+      if (section === "midfielders" &&
+        currentCounts.midfielders >= idealDist.mid &&
+        (currentCounts.defenders <= idealDist.def || currentCounts.forwards <= idealDist.fwd)) {
         Alert.alert("Invalid Change", "Adding another midfielder would reduce forwards or defenders below minimum required.");
         return;
       }
-      
-      if (section === "forwards" && 
-          currentCounts.forwards >= idealDist.fwd && 
-          (currentCounts.defenders <= idealDist.def || currentCounts.midfielders <= idealDist.mid)) {
+
+      if (section === "forwards" &&
+        currentCounts.forwards >= idealDist.fwd &&
+        (currentCounts.defenders <= idealDist.def || currentCounts.midfielders <= idealDist.mid)) {
         Alert.alert("Invalid Change", "Adding another forward would reduce midfielders or defenders below minimum required.");
         return;
       }
@@ -451,6 +431,11 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
         const posX = (position.x / 100) * containerDimensions.width;
         const posY = (position.y / 100) * containerDimensions.height;
 
+        // Get player points if they exist
+        const playerPoints = player && player._id ? playerPointsData[player._id] : undefined;
+        // if (player && player._id && playerPoints !== undefined) {
+        //   console.log(`Points for ${player.name}: ${playerPoints}`);
+        // }
         return player ? (
           <View
             key={position.positionId || `player-${player._id || index}`}
@@ -474,6 +459,7 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer }) 
               onReplacePlayer={onReplacePlayer}
               position={{ x: posX, y: posY }}
               className="w-18 h-18"
+              playerPoints={playerPoints} // Pass the player points to the PlayerCard
             />
           </View>
         ) : (

@@ -150,32 +150,58 @@ const TournamentSelect = () => {
   };
 
   const fetchTournaments = async () => {
+    setLoading(true);
+    let finalJoined = [];
+    let finalAvailable = [];
+
     try {
-      setLoading(true);
-
-      const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
-      if (joinedResponse.data.success) {
-        setJoinedTournaments(joinedResponse.data.data || []);
-      } else {
-        Alert.alert(
-          "Error",
-          joinedResponse.data.message || "Failed to fetch joined tournaments"
-        );
+      try {
+        const joinedResponse = await api.get("tournaments/getTournamentsByUserId");
+        if (joinedResponse.data.success) {
+          finalJoined = joinedResponse.data.data || [];
+        } else {
+          Alert.alert(
+            "Error fetching joined",
+            joinedResponse.data.message || "Failed to process joined tournaments"
+          );
+        }
+      } catch (error) {
+        // Check if it's an HTTP error with a 404 status
+        if (error.response && error.response.status === 404) {
+          console.warn("Fetching joined tournaments resulted in 404 (Not Found). Setting joined list to empty.");
+          finalJoined = [];
+        } else {
+          Alert.alert("Error fetching joined", "An error occurred. Please try again.");
+          console.error("Error fetching joined tournaments:", error);
+        }
       }
 
-      const availableResponse = await api.get("/tournaments/getAllTournaments");
-      if (availableResponse.data.success) {
-        setAvailableTournaments(availableResponse.data.data || []);
-      } else {
-        Alert.alert(
-          "Error",
-          availableResponse.data.message ||
-            "Failed to fetch available tournaments"
-        );
+      // Fetch Available Tournaments
+      try {
+        const availableResponse = await api.get("/tournaments/getAllTournaments");
+        if (availableResponse.data.success) {
+          finalAvailable = availableResponse.data.data || [];
+        } else {
+          // Handle non-success API response
+          Alert.alert(
+            "Error fetching available",
+            availableResponse.data.message || "Failed to process available tournaments"
+          );
+        }
+      } catch (error) {
+        //teams na vaye 404 falxa
+        if (error.response && error.response.status === 404) {
+          // console.warn("Fetching available tournaments resulted in 404 (Not Found). Setting available list to empty.");
+          finalAvailable = []; // Set to empty array
+        } else {
+          Alert.alert("Error fetching available", "An error occurred. Please try again.");
+          console.error("Error fetching available tournaments:", error);
+        }
       }
-    } catch (error) {
-      Alert.alert("Error", "Failed to fetch tournaments. Please try again.");
-      console.error("Error fetching tournaments:", error);
+
+      setJoinedTournaments(finalJoined);
+      setAvailableTournaments(finalAvailable);
+
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -211,23 +237,23 @@ const TournamentSelect = () => {
   const handleJoinTournament = async (tournamentId, playerLimitPerTeam) => {
     try {
       setLoading(true);
-      
+
       setSelectedTournament(tournamentId);
       setPlayerLimit(playerLimitPerTeam);
       setFetchedPlayers([]); // Clear players, fetch on view
       setViewMode("CREATE_TEAM"); // Go to team creation/view after joining
-      
+
       const tournamentInfo =
         availableTournaments.find((t) => t._id === tournamentId) ||
         joinedTournaments.find((t) => t._id === tournamentId);
-        
+
       if (tournamentInfo) {
         const round = getCurrentRound(tournamentInfo);
         setCurrentRoundState(round);
       } else {
         setCurrentRoundState("NOT_STARTED"); // Default if info not found
       }
-      
+
       router.push("main"); // Navigate to the main screen where team management happens
     } catch (error) {
       Alert.alert("Error", "Failed to join tournament. Please try again.");
@@ -240,6 +266,7 @@ const TournamentSelect = () => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchTournaments();
+    setActiveIndex(0);
   };
 
   // --- Render Item Functions ---
@@ -265,10 +292,10 @@ const TournamentSelect = () => {
                   currentRoundLabel === "FINAL"
                     ? "ribbon-outline"
                     : currentRoundLabel === "SEMIFINAL"
-                    ? "flag-outline"
-                    : currentRoundLabel === "KNOCKOUT"
-                    ? "flash-outline"
-                    : "hourglass-outline"
+                      ? "flag-outline"
+                      : currentRoundLabel === "KNOCKOUT"
+                        ? "flash-outline"
+                        : "hourglass-outline"
                 }
                 size={16}
                 color="#94a3b8"
@@ -277,15 +304,15 @@ const TournamentSelect = () => {
                 {currentRoundLabel === "KNOCKOUT"
                   ? "Knockout round active"
                   : currentRoundLabel === "SEMIFINAL"
-                  ? "Semifinal round active"
-                  : currentRoundLabel === "FINAL"
-                  ? "Final round active"
-                  : nextRoundInfo.roundLabel === "Tournament Ended"
-                  ? "Tournament Ended"
-                  : "Starts Soon"}
+                    ? "Semifinal round active"
+                    : currentRoundLabel === "FINAL"
+                      ? "Final round active"
+                      : nextRoundInfo.roundLabel === "Tournament Ended"
+                        ? "Tournament Ended"
+                        : "Starts Soon"}
               </Text>
             </View>
-            
+
             {/* Display upcoming round dates */}
             {roundsToShow.length === 0 &&
               nextRoundInfo.roundLabel !== "Tournament Ended" && (
@@ -294,7 +321,7 @@ const TournamentSelect = () => {
                   <Text style={styles.infoText}>Awaiting round details</Text>
                 </View>
               )}
-              
+
             {roundsToShow.map((round) => (
               <View style={styles.infoItem} key={round.key}>
                 <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
@@ -422,8 +449,8 @@ const TournamentSelect = () => {
         style={styles.refreshButton}
         onPress={onRefresh}
       >
-        <Ionicons name="refresh" size={18} color="#a5b4fc" />
-        <Text style={styles.refreshButtonText}>Refresh</Text>
+        {/* <Ionicons name="refresh" size={18} color="#a5b4fc" /> */}
+        <Text style={styles.refreshButtonText}>Join Now</Text>
       </TouchableOpacity>
     </View>
   );
@@ -537,7 +564,7 @@ const TournamentSelect = () => {
 
   // --- Custom Tab Bar ---
   const CustomTabBar = () => {
-    const tabs = ["My Tournaments", "Discover"];
+    const tabs = ["Discover", "My Tournaments"];
     return (
       <View style={styles.tabBarContainer}>
         {tabs.map((tab, i) => {
@@ -612,14 +639,12 @@ const TournamentSelect = () => {
           scrollEventThrottle={16}
           style={styles.scrollView}
         >
-          {/* Page 1: Joined Tournaments */}
-          <View style={styles.pageStyle}>
-            <JoinedTournamentsPage />
-          </View>
-
-          {/* Page 2: Available Tournaments */}
           <View style={styles.pageStyle}>
             <AvailableTournamentsPage />
+          </View>
+
+          <View style={styles.pageStyle}>
+            <JoinedTournamentsPage />
           </View>
         </ScrollView>
       )}
@@ -638,7 +663,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 256, 
+    height: 256,
   },
   headerContainer: {
     paddingHorizontal: 20,

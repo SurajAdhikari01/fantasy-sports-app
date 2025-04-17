@@ -26,6 +26,8 @@ const ViewTeam = () => {
 
   const [loading, setLoading] = useState(true)
   const [players, setPlayers] = useState([])
+  const [playerPoints, setPlayerPoints] = useState({}) // Add this state to store player points
+  const [franchiseData, setFranchiseData] = useState({}) // Add this state to store franchise info
   const [selectedTournament, setSelectedTournament] = useRecoilState(selectedTournamentState)
   const [currentStage, setCurrentStage] = useState("knockout")
   const playerLimit = useRecoilValue(playerLimitState)
@@ -51,6 +53,26 @@ const ViewTeam = () => {
     }
   }, [selectedTournament, currentStage])
 
+  // Function to fetch franchise data for all players in tournament
+  const fetchPlayerFranchises = async (tournamentId) => {
+    try {
+      const response = await api.get(`/players/${tournamentId}/players`)
+      if (response.data.success) {
+        const franchiseMapping = {}
+        response.data.data.forEach(player => {
+          if (player._id && player.franchise) {
+            franchiseMapping[player._id] = player.franchise
+          }
+        })
+        setFranchiseData(franchiseMapping)
+        return franchiseMapping
+      }
+    } catch (error) {
+      console.error("Error fetching player franchises:", error)
+    }
+    return {}
+  }
+
   //fetches team
   const fetchTournamentPlayers = async () => {
     try {
@@ -71,19 +93,57 @@ const ViewTeam = () => {
         }
 
         setTotalPoints(teamForTournament?.totalPoints || 0)
+        
         if (teamForTournament) {
+          // Fetch franchise data for all players in this tournament
+          const franchiseMapping = await fetchPlayerFranchises(selectedTournament)
+          
+          // Extract player points from the team data
+          const pointsMap = {}
+          
+          // Process the points data if available
+          if (Array.isArray(teamForTournament.points)) {
+            // Iterate through each match's points data
+            teamForTournament.points.forEach(matchPoints => {
+              // Check if this match has player-specific points data
+              if (Array.isArray(matchPoints.players)) {
+                // Process each player's points in this match
+                matchPoints.players.forEach(playerPointEntry => {
+                  if (playerPointEntry.playerId && playerPointEntry.points !== undefined) {
+                    // If multiple entries for same player, sum them up
+                    if (pointsMap[playerPointEntry.playerId]) {
+                      pointsMap[playerPointEntry.playerId] += playerPointEntry.points;
+                    } else {
+                      pointsMap[playerPointEntry.playerId] = playerPointEntry.points;
+                    }
+                  }
+                });
+              }
+            });
+          }
+          
+          setPlayerPoints(pointsMap)
+          console.log("Player Points:", pointsMap)
+          
           const stagePlayers = [
             ...(teamForTournament.players?.[currentStage] || []),
-          ].map((p) => ({
-            ...p,
-            playerType: (p.playerType?.toLowerCase() || "").trim(),
-            photo:
-              p.photo ||
-              "https://i0.wp.com/e-quester.com/wp-content/uploads/2021/11/placeholder-image-person-jpg.jpg?fit=820%2C678&ssl=1",
-          }))
+          ].map((p) => {
+            // Enrich player data with franchise information
+            const franchise = franchiseMapping[p._id] || null;
+            
+            return {
+              ...p,
+              playerType: (p.playerType?.toLowerCase() || "").trim(),
+              photo: p.photo || "https://i0.wp.com/e-quester.com/wp-content/uploads/2021/11/placeholder-image-person-jpg.jpg?fit=820%2C678&ssl=1",
+              franchise: franchise // Add franchise data to player object
+            };
+          });
+          
           setPlayers(stagePlayers)
         } else {
           setPlayers([])
+          setPlayerPoints({})
+          setFranchiseData({})
         }
       }
     } catch (error) {
@@ -203,8 +263,10 @@ const ViewTeam = () => {
           </View>
         ) : (
           <View style={{ height: screenHeight * 0.6, marginBottom: 16 }}>
+            {/* {console.log("Players:", players)} */}
             <PitchView
               teamData={{ all: players }}
+              playerPointsData={playerPoints} // Pass the player points data to PitchView
               handlePlayerPress={(player) => Alert.alert(player.name, `Price: ${player.price || "N/A"}`)}
               handleOpenPlayerSelection={(section, positionId, position) =>
                 Alert.alert("Add Player", `Add player to ${section} position`)
