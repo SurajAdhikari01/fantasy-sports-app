@@ -343,27 +343,6 @@ const PitchView = ({ teamData, handleOpenPlayerSelection, handleRemovePlayer, pl
       forwards: (teamData?.forwards || []).length
     };
 
-    // If removing would bring a position below minimum
-    if (section === "goalkeepers" && currentCounts.goalkeepers <= 1) {
-      Alert.alert("Invalid Change", "You must keep at least 1 goalkeeper.");
-      return;
-    }
-
-    if (section === "defenders" && currentCounts.defenders <= 1 && playerLimit >= 2) {
-      Alert.alert("Invalid Change", "You must keep at least 1 defender.");
-      return;
-    }
-
-    if (section === "midfielders" && currentCounts.midfielders <= 1 && playerLimit >= 4) {
-      Alert.alert("Invalid Change", "You must keep at least 1 midfielder.");
-      return;
-    }
-
-    if (section === "forwards" && currentCounts.forwards <= 1 && playerLimit >= 3) {
-      Alert.alert("Invalid Change", "You must keep at least 1 forward.");
-      return;
-    }
-
     const positions = calculatePositions(playerLimit, teamData);
     const playerPos = positions.find((pos) => pos.player && pos.player._id === player._id);
     const positionId = playerPos?.positionId || `replace-${player._id || Date.now()}`;

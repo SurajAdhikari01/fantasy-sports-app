@@ -263,6 +263,7 @@ const ViewTeam = () => {
           </View>
         ) : (
           <View style={{ height: screenHeight * 0.6, marginBottom: 16 }}>
+            {/* {console.log("Players:", players)} */}
             <PitchView
               teamData={{ all: players }}
               playerPointsData={playerPoints} // Pass the player points data to PitchView

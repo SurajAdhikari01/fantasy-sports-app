@@ -170,7 +170,7 @@ const TournamentSelect = () => {
         Alert.alert(
           "Error",
           availableResponse.data.message ||
-            "Failed to fetch available tournaments"
+          "Failed to fetch available tournaments"
         );
       }
     } catch (error) {
@@ -211,23 +211,23 @@ const TournamentSelect = () => {
   const handleJoinTournament = async (tournamentId, playerLimitPerTeam) => {
     try {
       setLoading(true);
-      
+
       setSelectedTournament(tournamentId);
       setPlayerLimit(playerLimitPerTeam);
       setFetchedPlayers([]); // Clear players, fetch on view
       setViewMode("CREATE_TEAM"); // Go to team creation/view after joining
-      
+
       const tournamentInfo =
         availableTournaments.find((t) => t._id === tournamentId) ||
         joinedTournaments.find((t) => t._id === tournamentId);
-        
+
       if (tournamentInfo) {
         const round = getCurrentRound(tournamentInfo);
         setCurrentRoundState(round);
       } else {
         setCurrentRoundState("NOT_STARTED"); // Default if info not found
       }
-      
+
       router.push("main"); // Navigate to the main screen where team management happens
     } catch (error) {
       Alert.alert("Error", "Failed to join tournament. Please try again.");
@@ -240,7 +240,7 @@ const TournamentSelect = () => {
   const onRefresh = () => {
     setRefreshing(true);
     fetchTournaments();
-    setActiveIndex(0); 
+    setActiveIndex(0);
   };
 
   // --- Render Item Functions ---
@@ -266,10 +266,10 @@ const TournamentSelect = () => {
                   currentRoundLabel === "FINAL"
                     ? "ribbon-outline"
                     : currentRoundLabel === "SEMIFINAL"
-                    ? "flag-outline"
-                    : currentRoundLabel === "KNOCKOUT"
-                    ? "flash-outline"
-                    : "hourglass-outline"
+                      ? "flag-outline"
+                      : currentRoundLabel === "KNOCKOUT"
+                        ? "flash-outline"
+                        : "hourglass-outline"
                 }
                 size={16}
                 color="#94a3b8"
@@ -278,15 +278,15 @@ const TournamentSelect = () => {
                 {currentRoundLabel === "KNOCKOUT"
                   ? "Knockout round active"
                   : currentRoundLabel === "SEMIFINAL"
-                  ? "Semifinal round active"
-                  : currentRoundLabel === "FINAL"
-                  ? "Final round active"
-                  : nextRoundInfo.roundLabel === "Tournament Ended"
-                  ? "Tournament Ended"
-                  : "Starts Soon"}
+                    ? "Semifinal round active"
+                    : currentRoundLabel === "FINAL"
+                      ? "Final round active"
+                      : nextRoundInfo.roundLabel === "Tournament Ended"
+                        ? "Tournament Ended"
+                        : "Starts Soon"}
               </Text>
             </View>
-            
+
             {/* Display upcoming round dates */}
             {roundsToShow.length === 0 &&
               nextRoundInfo.roundLabel !== "Tournament Ended" && (
@@ -295,7 +295,7 @@ const TournamentSelect = () => {
                   <Text style={styles.infoText}>Awaiting round details</Text>
                 </View>
               )}
-              
+
             {roundsToShow.map((round) => (
               <View style={styles.infoItem} key={round.key}>
                 <Ionicons name="calendar-outline" size={16} color="#94a3b8" />
@@ -639,7 +639,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: 256, 
+    height: 256,
   },
   headerContainer: {
     paddingHorizontal: 20,

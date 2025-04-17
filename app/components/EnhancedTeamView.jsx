@@ -23,6 +23,7 @@ import {
   playerLimitState,
   fetchedPlayersState,
   viewModeState,
+  currentRoundState,
 } from "./atoms";
 import PitchView from "./PitchView";
 import ActionButtons from "./ActionButtons";
@@ -44,6 +45,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
   const [showPlayerSelectionModal, setShowPlayerSelectionModal] = useRecoilState(
     showPlayerSelectionModalState("default")
   );
+  const currentRound = useRecoilValue(currentRoundState);
   const [selectedSection, setSelectedSection] = useRecoilState(selectedSectionState("default"));
   const [franchises, setFranchises] = useRecoilState(franchisesState);
   const [fetchedPlayers, setFetchedPlayers] = useRecoilState(fetchedPlayersState);
@@ -352,7 +354,7 @@ const EnhancedTeamView = ({ onSubmit }) => {
             <View>
               <View className="flex-row items-center bg-emerald-500/10 px-3 py-1.5 rounded-xl mb-2">
                 <MaterialIcons name="sports" size={14} color="#10B981" />
-                <Text className="text-emerald-500 text-sm font-bold ml-1">KO matches</Text>
+                <Text className="text-emerald-500 text-sm font-bold ml-1">{currentRound}</Text>
               </View>
               <Text className="text-gray-400 text-sm">
                 Deadline: <Text className="text-white font-medium">{deadline}</Text>
