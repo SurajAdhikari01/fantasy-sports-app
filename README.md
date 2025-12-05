@@ -1,113 +1,138 @@
-🎨 Fantasy Tournament SaaS - Frontend
+# Tournament Fantasy Management System 🏏⚽
 
-This is the frontend of the Fantasy Tournament SaaS platform, built to provide an engaging and intuitive user experience for tournament organizers and participants.
+> **Bring the thrill of Fantasy Sports to your local tournaments.**
 
-It connects with the Fantasy Tournament SaaS Backend
- and allows users to host, join, and play fantasy leagues for cricket, football, and other sports.
+A comprehensive mobile-based SaaS platform designed to manage fantasy sports leagues for cricket and football. Built with **React Native (Expo)**, it empowers organizers to host tournaments and allows fans to draft teams, track live scores, and compete on real-time leaderboards.
 
-🧠 What is This?
+---
 
-A plug-and-play fantasy sports frontend for organizers & users
-Tournament organizers can manage tournaments, and users can create their fantasy teams, track scores, and compete—all in one simple UI.
+## 📖 About the Project
 
-🎯 Key Features
-👥 Authentication & Access
+Most fantasy sports platforms cater only to major international leagues, leaving local tournaments and community matches behind. This disconnects fans from the games happening in their own backyards.
 
-Secure login/signup with JWT integration
+**The Tournament Fantasy Management System** bridges this gap. It is a specialized solution for:
+*   **Local Organizers**: Who need a simple way to manage leagues and track scores without expensive automated feeds.
+*   **Fans & Players**: Who want to participate actively by managing their own fantasy teams for local matches.
 
-Role-based UI (admin, user)
+### Why this platform?
+*   **For Small & Large Tournaments**: Scalable design that fits neighborhood leagues or university championships.
+*   **Manual Score Management**: Admin dashboard allows for real-time score updates even without API data feeds.
+*   **Engaging User Experience**: Professional-grade interface for drafting teams and viewing leaderboards.
 
-Persistent sessions with refresh tokens
+---
 
-🏟️ Tournament Management (Admin)
+## ✨ Key Features
 
-Create & manage tournaments
+### 📱 For Users (Fantasy Managers)
+*   **Build Your Dream Team**: Draft players within a virtual budget and strategy.
+*   **Real-Time Action**: Watch your score update live as the match progresses.
+*   **Leaderboards**: Compete against friends and the community for the top spot.
+*   **Social Engagement**: Participate in polls and match predictions.
 
-Set deadlines, budget rules, and player constraints
+### 🛡️ For Admins (Organizers)
+*   **Tournament Control**: Create tournaments, set rules, and manage player pools.
+*   **Live Scorekeeping**: Easy-to-use interface for updating match scores manually.
+*   **Automated Rankings**: The system calculates points and updates leaderboards instantly.
+*   **User Management**: Handle registrations and monitor platform usage.
 
-Control visibility and lock deadlines
+---
 
-🧑‍🤝‍🧑 Players
+## 📸 App Screenshots
 
-Add/update players with price, role, and team
+### User Experience
+| Home Dashboard | Team Creation |
+|:---:|:---:|
+| <img src="screenshots/HomePage_UserPortal.png" width="250" /> | <img src="screenshots/CreateTeam_UserPortal.png" width="250" /> |
 
-Filter/search by role/team
+| Live Points | Match Results |
+|:---:|:---:|
+| <img src="screenshots/Viewpoints_UserPortal.png" width="250" /> | <img src="screenshots/Results.png" width="250" /> |
 
-Display player lists with stats
+### Admin Dashboard
+| Create Tournament | Tournament Details |
+|:---:|:---:|
+| <img src="screenshots/CreateTournament_AdminPortal.png" width="250" /> | <img src="screenshots/AddTournament_AdminPortal.png" width="250" /> |
 
-🧩 Team Creation (User)
+---
 
-Pick players under budget constraints
+## 🛠 Tech Stack
 
-Validate team size, uniqueness, and rules
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | React Native (Expo) |
+| **Routing** | Expo Router |
+| **Styling** | NativeWind (Tailwind CSS) |
+| **State Mgmt** | Recoil & React Context |
+| **API Calls** | Axios |
+| **Backend** | Node.js + Express.js (Separate Repo) |
+| **Database** | MongoDB |
 
-Single team per tournament per user
+---
 
-Lock edits after deadlines
+## 📂 Project Structure
 
-📊 Dashboard & Tracking
+```
+fantasy-sports-app/
+├── app/                    # Main application source
+│   ├── (admin)/            # Admin specific routes
+│   ├── (auth)/             # Authentication routes
+│   ├── (tabs)/             # Main tab navigation
+│   ├── adminComponents/    # Admin UI components
+│   ├── components/         # Shared UI components
+│   ├── config/             # Configuration (Axios, Cloudinary)
+│   ├── context/            # React Context (Auth)
+│   ├── services/           # API services
+│   ├── utils/              # Helper functions
+│   ├── _layout.jsx         # Root layout
+│   └── index.jsx           # Entry point
+├── assets/                 # Images, animations (Lottie)
+├── app.json                # Expo configuration
+├── babel.config.js         # Babel configuration
+├── package.json            # Dependencies
+└── tailwind.config.js      # Tailwind configuration
+```
 
-Live leaderboard
+---
 
-User team view with performance breakdown
+## 🏁 Getting Started
 
-Tournament stats & standings
+### Prerequisites
+*   Node.js (v16 or higher)
+*   npm or yarn
+*   Expo Go app on your mobile device (iOS/Android)
 
-🛠 Tech Stack
-Layer	Technology
-Language	JavaScript (ES6)
-Framework	React.js + Vite
-State Mgmt	Redux Toolkit
-Styling	Tailwind CSS
-Routing	React Router
-API Calls	Axios
-Auth	JWT (via backend)
-⚙️ Project Structure
-frontend/
-├── src/
-│   ├── api/            # Axios API services
-│   ├── assets/         # Images, icons
-│   ├── components/     # Shared components
-│   ├── pages/          # Page-level views
-│   ├── store/          # Redux slices
-│   ├── utils/          # Helper functions
-│   └── App.jsx         # Main app entry
-├── public/
-├── package.json
-└── vite.config.js
+### Installation
 
-🚀 Getting Started
+1.  **Clone the Repository**
+    ```bash
+    git clone https://github.com/SurajAdhikari01/fantasy-sports-app.git
+    cd fantasy-sports-app
+    ```
 
-Clone the Repository
+2.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
 
-git clone https://github.com/Sanket2060/fantasy-saas-frontend
-cd fantasy-saas-frontend
+3.  **Configure Environment**
+    *   Check `app/config/axios.js` to ensure the API URL points to your backend server.
+    *   If running locally, ensure your mobile device is on the same network as your PC.
 
+4.  **Start the Application**
+    ```bash
+    npx expo start
+    ```
 
-Install Dependencies
+5.  **Run on Device**
+    *   Scan the QR code with the **Expo Go** app (Android) or Camera app (iOS).
+    *   Press `a` to run on Android Emulator or `i` to run on iOS Simulator.
 
-npm install
+---
 
+## 🤝 Contributing
 
-Set Up Environment Variables
-Create a .env file in the root directory:
+Contributions are welcome! Please fork the repository and submit a pull request.
 
-VITE_API_URL=http://localhost:9005   # Backend API
+## 📄 License
 
-
-Start the Development Server
-
-npm run dev
-
-
-Frontend will run on http://localhost:5173
-
-🔗 Backend Repository
-
-👉 Fantasy Tournament SaaS - Backend
-
-📌 Notes
-
-Ensure the backend server is running before starting the frontend.
-
-Update VITE_API_URL if deploying to production.
+This project is licensed under the MIT License.
